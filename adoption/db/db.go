@@ -1,8 +1,7 @@
 package db
 
 import (
-	//hotelClient "backend/clients/hotel"
-	//userClient "backend/clients/user"
+	"adoption/clients"
 	model "adoption/model"
 	"os"
 
@@ -40,7 +39,7 @@ func init() {
 
 	// Add all clients here
 
-	//userClient.Db = db
+	clients.Db = db
 
 }
 

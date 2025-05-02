@@ -1,8 +1,7 @@
 package app
 
 import (
-	//hotelController "backend/controllers/hotel"
-	//userController "backend/controllers/user"
+	"adoption/controllers"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -10,6 +9,8 @@ import (
 func mapUrls() {
 
 	// URL mappings
+
+	router.POST("/adoptionPost", controllers.InsertAdoptionPost)
 
 	log.Info("Listo el mapeo de configuraciones :)")
 }
