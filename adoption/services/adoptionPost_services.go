@@ -6,6 +6,7 @@ import (
 	"adoption/model"
 	e "adoption/utils/errors"
 	"errors"
+	"strconv"
 )
 
 type adoptionService struct{}
@@ -14,6 +15,8 @@ type adoptionServiceInterface interface {
 	InsertAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, e.ApiError)
 	GetAdoptionPostById(id string) (dto.AdoptionPostDto, e.ApiError)
 	DeleteAdoptionPost(id string) error
+	GetAllAdoptionPosts() (dto.AdoptionPostsDto, error)
+	UpdateAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error)
 }
 
 var (
@@ -101,4 +104,64 @@ func (s *adoptionService) DeleteAdoptionPost(id string) error {
 	err := adoptionPostClient.DeleteAdoptionPost(adoptionPost)
 
 	return err
+}
+
+func (s *adoptionService) GetAllAdoptionPosts() (dto.AdoptionPostsDto, error) {
+	var posts model.AdoptionPosts = adoptionPostClient.GetAllAdoptionPosts()
+	var postsDto dto.AdoptionPostsDto
+
+	for _, post := range posts {
+		postDto := dto.AdoptionPostDto{
+			AdoptionPostId:   post.AdoptionPostId,
+			UserId:           post.UserId,
+			Name:             post.Name,
+			Species:          post.Species,
+			Age:              post.Age,
+			Breed:            post.Breed,
+			Color:            post.Color,
+			Size:             post.Size,
+			Sex:              post.Sex,
+			Description:      post.Description,
+			Neutered:         post.Neutered,
+			CompleteVaccines: post.CompleteVaccines,
+			AdoptionStatus:   post.AdoptionStatus,
+			Date:             post.Date,
+		}
+		postsDto = append(postsDto, postDto)
+	}
+
+	return postsDto, nil
+}
+
+func (s *adoptionService) UpdateAdoptionPost(postDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error) {
+	// Obtener el post actual desde la base de datos
+
+	existingPost := adoptionPostClient.GetAdoptionPostById(strconv.Itoa(postDto.AdoptionPostId))
+
+	if existingPost.AdoptionPostId == 0 {
+		return postDto, errors.New("adoption post not found")
+	}
+
+	// Actualizar los campos del post con los valores del DTO
+	existingPost.UserId = postDto.UserId
+	existingPost.Name = postDto.Name
+	existingPost.Species = postDto.Species
+	existingPost.Age = postDto.Age
+	existingPost.Breed = postDto.Breed
+	existingPost.Color = postDto.Color
+	existingPost.Size = postDto.Size
+	existingPost.Sex = postDto.Sex
+	existingPost.Description = postDto.Description
+	existingPost.Neutered = postDto.Neutered
+	existingPost.CompleteVaccines = postDto.CompleteVaccines
+	existingPost.AdoptionStatus = postDto.AdoptionStatus
+	existingPost.Date = postDto.Date
+
+	// Actualizar en la base de datos
+	updatedPost, err := adoptionPostClient.UpdateAdoptionPostById(postDto.AdoptionPostId, existingPost)
+	if err != nil || updatedPost.AdoptionPostId == 0 {
+		return postDto, errors.New("error updating adoption post")
+	}
+
+	return postDto, nil
 }
