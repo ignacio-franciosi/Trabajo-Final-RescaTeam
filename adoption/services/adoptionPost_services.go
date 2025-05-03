@@ -5,12 +5,15 @@ import (
 	"adoption/dto"
 	"adoption/model"
 	e "adoption/utils/errors"
+	"errors"
 )
 
 type adoptionService struct{}
 
 type adoptionServiceInterface interface {
 	InsertAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, e.ApiError)
+	GetAdoptionPostById(id string) (dto.AdoptionPostDto, e.ApiError)
+	DeleteAdoptionPost(id string) error
 }
 
 var (
@@ -58,4 +61,44 @@ func (s *adoptionService) InsertAdoptionPost(adoptionPostDto dto.AdoptionPostDto
 	response.Date = adoptionPost.Date
 
 	return response, nil
+}
+
+func (s *adoptionService) GetAdoptionPostById(id string) (dto.AdoptionPostDto, e.ApiError) {
+	var adoptionPost model.AdoptionPost = adoptionPostClient.GetAdoptionPostById(id)
+	var adoptionPostDto dto.AdoptionPostDto
+
+	if adoptionPost.AdoptionPostId == 0 {
+		return adoptionPostDto, e.NewBadRequestApiError("Adoption post not found")
+	}
+
+	adoptionPostDto.AdoptionPostId = adoptionPost.AdoptionPostId
+	adoptionPostDto.UserId = adoptionPost.UserId
+	adoptionPostDto.Name = adoptionPost.Name
+	adoptionPostDto.Species = adoptionPost.Species
+	adoptionPostDto.Age = adoptionPost.Age
+	adoptionPostDto.Breed = adoptionPost.Breed
+	adoptionPostDto.Color = adoptionPost.Color
+	adoptionPostDto.Size = adoptionPost.Size
+	adoptionPostDto.Sex = adoptionPost.Sex
+	adoptionPostDto.Description = adoptionPost.Description
+	adoptionPostDto.Neutered = adoptionPost.Neutered
+	adoptionPostDto.CompleteVaccines = adoptionPost.CompleteVaccines
+	adoptionPostDto.AdoptionStatus = adoptionPost.AdoptionStatus
+	adoptionPostDto.Date = adoptionPost.Date
+
+	return adoptionPostDto, nil
+
+}
+
+func (s *adoptionService) DeleteAdoptionPost(id string) error {
+
+	adoptionPost := adoptionPostClient.GetAdoptionPostById(id)
+
+	if adoptionPost.AdoptionPostId == 0 {
+		return errors.New("adoption Post not found")
+	}
+
+	err := adoptionPostClient.DeleteAdoptionPost(adoptionPost)
+
+	return err
 }
