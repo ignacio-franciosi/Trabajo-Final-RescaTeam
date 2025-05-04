@@ -98,6 +98,7 @@ func (s *userService) Login(loginDto dto.LoginDto) (dto.TokenDto, error) {
 		tokenDto.Token = tokenString
 		tokenDto.UserId = user.UserId
 		tokenDto.Type = user.Type
+		tokenDto.Suspended = user.Suspended
 
 		return tokenDto, nil
 	} else {

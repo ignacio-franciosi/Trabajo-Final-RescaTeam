@@ -11,10 +11,9 @@ func mapUrls() {
 	router.GET("/user/:id", userController.GetUserById)
 	router.POST("/register", userController.InsertUser)
 	router.POST("/login", userController.Login)
-	router.GET("/login", userController.Login)
 	router.GET("/user/email/:email", userController.GetUserByEmail)
 
-	// router.DELETE("/user/:id", userController.DeleteUser)
+	//router.DELETE("/user/:id", userController.DeleteUser)
 	//router.GET("/reports", userController.ViewReports)
 	//suspend user
 
