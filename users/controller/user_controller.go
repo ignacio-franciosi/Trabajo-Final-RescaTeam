@@ -3,7 +3,7 @@ package userController
 import (
 	"net/http"
 	"strconv"
-	dto2 "users/dto"
+	dto "users/dto"
 	service "users/services"
 
 	_ "github.com/dgrijalva/jwt-go"
@@ -14,7 +14,7 @@ import (
 func GetUserByEmail(c *gin.Context) {
 
 	email := c.Param("email")
-	var userDto dto2.UserDto
+	var userDto dto.UserDto
 	userDto, err := service.UserService.GetUserByEmail(email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -27,7 +27,7 @@ func GetUserByEmail(c *gin.Context) {
 func GetUserById(c *gin.Context) {
 	log.Debug("ID de usuario a cargar: " + c.Param("id"))
 	id, _ := strconv.Atoi(c.Param("id"))
-	var userDto dto2.UserDto
+	var userDto dto.UserDto
 
 	userDto, err := service.UserService.GetUserById(id)
 
@@ -39,18 +39,17 @@ func GetUserById(c *gin.Context) {
 }
 
 func Login(c *gin.Context) {
-	var loginDto dto2.LoginDto
+	var loginDto dto.LoginDto
 	err := c.BindJSON(&loginDto)
-
 	if err != nil {
 		log.Error(err.Error())
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
-	tokenDto, er := service.UserService.Login(loginDto)
 
+	tokenDto, er := service.UserService.Login(loginDto)
 	if er != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": er.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, tokenDto)
@@ -58,7 +57,7 @@ func Login(c *gin.Context) {
 }
 
 func InsertUser(c *gin.Context) {
-	var userDto dto2.UserDto
+	var userDto dto.UserDto
 	err := c.BindJSON(&userDto)
 
 	// Error Parsing json param
@@ -71,7 +70,7 @@ func InsertUser(c *gin.Context) {
 	tokenDto, er := service.UserService.InsertUser(userDto)
 	// Error del Insert
 	if er != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": er.Error()})
 		return
 	}
 
