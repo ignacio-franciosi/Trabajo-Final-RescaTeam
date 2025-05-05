@@ -14,7 +14,7 @@ func mapUrls() {
 	router.GET("/adoptionPost/:id", controllers.GetAdoptionPostById)
 	router.DELETE("/adoptionPost/:id", controllers.DeleteAdoptionPost)
 	router.GET("/adoptionPost", controllers.GetAllAdoptionPosts)
-	router.PUT("/apotionPost/:id", controllers.UpdateAdoptionPost)
+	//router.PUT("/apotionPost/:id", controllers.UpdateAdoptionPost)
 
 	log.Info("Listo el mapeo de configuraciones :)")
 }

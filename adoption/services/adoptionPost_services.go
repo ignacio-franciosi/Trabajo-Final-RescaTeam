@@ -6,7 +6,6 @@ import (
 	"adoption/model"
 	e "adoption/utils/errors"
 	"errors"
-	"strconv"
 )
 
 type adoptionService struct{}
@@ -16,7 +15,7 @@ type adoptionServiceInterface interface {
 	GetAdoptionPostById(id int) (dto.AdoptionPostDto, e.ApiError)
 	DeleteAdoptionPost(id int) error
 	GetAllAdoptionPosts() (dto.AdoptionPostsDto, error)
-	UpdateAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error)
+	//UpdateAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error)
 }
 
 var (
@@ -43,6 +42,7 @@ func (s *adoptionService) InsertAdoptionPost(adoptionPostDto dto.AdoptionPostDto
 	adoptionPost.CompleteVaccines = adoptionPostDto.CompleteVaccines
 	adoptionPost.AdoptionStatus = adoptionPostDto.AdoptionStatus
 	adoptionPost.Date = adoptionPostDto.Date
+	adoptionPost.Zone = adoptionPostDto.Zone
 
 	adoptionPost = adoptionPostClient.InsertAdoptionPost(adoptionPost)
 
@@ -62,6 +62,7 @@ func (s *adoptionService) InsertAdoptionPost(adoptionPostDto dto.AdoptionPostDto
 	response.CompleteVaccines = adoptionPost.CompleteVaccines
 	response.AdoptionStatus = adoptionPost.AdoptionStatus
 	response.Date = adoptionPost.Date
+	response.Zone = adoptionPost.Zone
 
 	return response, nil
 }
@@ -88,6 +89,7 @@ func (s *adoptionService) GetAdoptionPostById(id int) (dto.AdoptionPostDto, e.Ap
 	adoptionPostDto.CompleteVaccines = adoptionPost.CompleteVaccines
 	adoptionPostDto.AdoptionStatus = adoptionPost.AdoptionStatus
 	adoptionPostDto.Date = adoptionPost.Date
+	adoptionPostDto.Zone = adoptionPost.Zone
 
 	return adoptionPostDto, nil
 
@@ -126,6 +128,7 @@ func (s *adoptionService) GetAllAdoptionPosts() (dto.AdoptionPostsDto, error) {
 			CompleteVaccines: post.CompleteVaccines,
 			AdoptionStatus:   post.AdoptionStatus,
 			Date:             post.Date,
+			Zone:             post.Zone,
 		}
 		postsDto = append(postsDto, postDto)
 	}
@@ -133,6 +136,7 @@ func (s *adoptionService) GetAllAdoptionPosts() (dto.AdoptionPostsDto, error) {
 	return postsDto, nil
 }
 
+/*
 func (s *adoptionService) UpdateAdoptionPost(postDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error) {
 	// Obtener el post actual desde la base de datos
 
@@ -156,6 +160,7 @@ func (s *adoptionService) UpdateAdoptionPost(postDto dto.AdoptionPostDto) (dto.A
 	existingPost.CompleteVaccines = postDto.CompleteVaccines
 	existingPost.AdoptionStatus = postDto.AdoptionStatus
 	existingPost.Date = postDto.Date
+	existingPost.Zone = postDto.Zone
 
 	// Actualizar en la base de datos
 	updatedPost, err := adoptionPostClient.UpdateAdoptionPostById(postDto.AdoptionPostId, existingPost)
@@ -165,3 +170,4 @@ func (s *adoptionService) UpdateAdoptionPost(postDto dto.AdoptionPostDto) (dto.A
 
 	return postDto, nil
 }
+*/
