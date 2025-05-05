@@ -4,7 +4,6 @@ import (
 	"adoption/model"
 
 	log "github.com/sirupsen/logrus"
-
 	"gorm.io/gorm"
 )
 
@@ -80,3 +79,38 @@ func UpdateAdoptionPostById(id int, post model.AdoptionPost) (model.AdoptionPost
 	return post, nil
 }
 */
+
+func GetFilteredAdoptionPosts(filters map[string]string) ([]model.AdoptionPost, error) {
+	var posts []model.AdoptionPost
+	db := Db
+
+	// Aplicar filtros dinámicos
+	for key, value := range filters {
+		switch key {
+		case "species", "size", "sex", "zone":
+			db = db.Where(key+" = ?", value)
+		case "neutered", "complete_vaccines":
+			boolVal := value == "true"
+			db = db.Where(key+" = ?", boolVal)
+		case "age":
+			switch value {
+			case "0-1":
+				db = db.Where("age >= ? AND age <= ?", 0, 1)
+			case "2-3":
+				db = db.Where("age >= ? AND age <= ?", 2, 3)
+			case "4-7":
+				db = db.Where("age >= ? AND age <= ?", 4, 7)
+			case "8plus":
+				db = db.Where("age >= ?", 8)
+			}
+		}
+	}
+
+	result := db.Find(&posts)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return posts, nil
+}

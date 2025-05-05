@@ -16,6 +16,7 @@ type adoptionServiceInterface interface {
 	DeleteAdoptionPost(id int) error
 	GetAllAdoptionPosts() (dto.AdoptionPostsDto, error)
 	//UpdateAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error)
+	GetFilteredAdoptionPosts(filters map[string]string) ([]dto.AdoptionPostDto, e.ApiError)
 }
 
 var (
@@ -171,3 +172,34 @@ func (s *adoptionService) UpdateAdoptionPost(postDto dto.AdoptionPostDto) (dto.A
 	return postDto, nil
 }
 */
+
+func (s *adoptionService) GetFilteredAdoptionPosts(filters map[string]string) ([]dto.AdoptionPostDto, e.ApiError) {
+	posts, err := adoptionPostClient.GetFilteredAdoptionPosts(filters)
+
+	if err != nil {
+		return nil, e.NewNotFoundApiError(err.Error())
+	}
+
+	var postDtos []dto.AdoptionPostDto
+	for _, p := range posts {
+		postDtos = append(postDtos, dto.AdoptionPostDto{
+			AdoptionPostId:   p.AdoptionPostId,
+			UserId:           p.UserId,
+			Name:             p.Name,
+			Species:          p.Species,
+			Age:              p.Age,
+			Breed:            p.Breed,
+			Color:            p.Color,
+			Size:             p.Size,
+			Sex:              p.Sex,
+			Description:      p.Description,
+			Neutered:         p.Neutered,
+			CompleteVaccines: p.CompleteVaccines,
+			AdoptionStatus:   p.AdoptionStatus,
+			Date:             p.Date,
+			Zone:             p.Zone,
+		})
+	}
+
+	return postDtos, nil
+}
