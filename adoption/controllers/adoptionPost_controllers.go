@@ -31,15 +31,17 @@ func InsertAdoptionPost(c *gin.Context) {
 
 }
 
-func GetHotelById(c *gin.Context) {
-
+func GetAdoptionPostById(c *gin.Context) {
 	log.Debug("Adoption post id: " + c.Param("id"))
 
-	id := (c.Param("id"))
-	var adoptionPostDto dto.AdoptionPostDto
+	idParam := c.Param("id")
+	id, convErr := strconv.Atoi(idParam)
+	if convErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
+	}
 
 	adoptionPostDto, err := services.AdoptionService.GetAdoptionPostById(id)
-
 	if err != nil {
 		c.JSON(err.Status(), err)
 		return
@@ -48,10 +50,14 @@ func GetHotelById(c *gin.Context) {
 }
 
 func DeleteAdoptionPost(c *gin.Context) {
-	id := c.Param("id")
+	idParam := c.Param("id")
+	id, convErr := strconv.Atoi(idParam)
+	if convErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
+	}
 
 	err := services.AdoptionService.DeleteAdoptionPost(id)
-
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

@@ -23,7 +23,7 @@ func InsertAdoptionPost(adoption_posts model.AdoptionPost) model.AdoptionPost {
 	return adoption_posts
 }
 
-func GetAdoptionPostById(id string) model.AdoptionPost {
+func GetAdoptionPostById(id int) model.AdoptionPost {
 	var adoption_post model.AdoptionPost
 
 	Db.Where("adoption_post_id = ?", id).First(&adoption_post)

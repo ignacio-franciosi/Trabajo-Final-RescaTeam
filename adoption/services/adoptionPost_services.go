@@ -13,8 +13,8 @@ type adoptionService struct{}
 
 type adoptionServiceInterface interface {
 	InsertAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, e.ApiError)
-	GetAdoptionPostById(id string) (dto.AdoptionPostDto, e.ApiError)
-	DeleteAdoptionPost(id string) error
+	GetAdoptionPostById(id int) (dto.AdoptionPostDto, e.ApiError)
+	DeleteAdoptionPost(id int) error
 	GetAllAdoptionPosts() (dto.AdoptionPostsDto, error)
 	UpdateAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error)
 }
@@ -66,7 +66,7 @@ func (s *adoptionService) InsertAdoptionPost(adoptionPostDto dto.AdoptionPostDto
 	return response, nil
 }
 
-func (s *adoptionService) GetAdoptionPostById(id string) (dto.AdoptionPostDto, e.ApiError) {
+func (s *adoptionService) GetAdoptionPostById(id int) (dto.AdoptionPostDto, e.ApiError) {
 	var adoptionPost model.AdoptionPost = adoptionPostClient.GetAdoptionPostById(id)
 	var adoptionPostDto dto.AdoptionPostDto
 
@@ -93,7 +93,7 @@ func (s *adoptionService) GetAdoptionPostById(id string) (dto.AdoptionPostDto, e
 
 }
 
-func (s *adoptionService) DeleteAdoptionPost(id string) error {
+func (s *adoptionService) DeleteAdoptionPost(id int) error {
 
 	adoptionPost := adoptionPostClient.GetAdoptionPostById(id)
 
