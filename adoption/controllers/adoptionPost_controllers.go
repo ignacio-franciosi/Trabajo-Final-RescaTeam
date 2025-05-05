@@ -104,3 +104,46 @@ func UpdateAdoptionPost(c *gin.Context) {
 	c.JSON(http.StatusOK, postDto)
 }
 */
+
+func GetFilteredAdoptionPosts(c *gin.Context) {
+	filters := map[string]string{}
+
+	// Cargar los filtros solo si están presentes
+	if v := c.Query("species"); v != "" {
+		filters["species"] = v
+	}
+	if v := c.Query("age"); v != "" {
+		filters["age"] = v
+	}
+	if v := c.Query("size"); v != "" {
+		filters["size"] = v
+	}
+	if v := c.Query("sex"); v != "" {
+		filters["sex"] = v
+	}
+	if v := c.Query("neutered"); v != "" {
+		filters["neutered"] = v
+	}
+	if v := c.Query("complete_vaccines"); v != "" {
+		filters["complete_vaccines"] = v
+	}
+	if v := c.Query("zone"); v != "" {
+		filters["zone"] = v
+	}
+
+	posts, err := services.AdoptionService.GetFilteredAdoptionPosts(filters)
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	if len(posts) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "No se encontraron resultados con los filtros especificados",
+			"data":    []dto.AdoptionPostDto{},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, posts)
+}
