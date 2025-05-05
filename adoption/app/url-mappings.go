@@ -11,7 +11,7 @@ func mapUrls() {
 	// URL mappings
 
 	router.POST("/adoptionPost", controllers.InsertAdoptionPost)
-	router.GET("/adoptionPost/:id", controllers.GetHotelById)
+	router.GET("/adoptionPost/:id", controllers.GetAdoptionPostById)
 	router.DELETE("/adoptionPost/:id", controllers.DeleteAdoptionPost)
 	router.GET("/adoptionPost", controllers.GetAllAdoptionPosts)
 	router.PUT("/apotionPost/:id", controllers.UpdateAdoptionPost)
