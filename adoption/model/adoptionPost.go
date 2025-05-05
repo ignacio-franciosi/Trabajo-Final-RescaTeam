@@ -15,6 +15,7 @@ type AdoptionPost struct {
 	CompleteVaccines bool   `gorm:"type:boolean;not null"`
 	AdoptionStatus   bool   `gorm:"type:boolean;not null"`
 	Date             string `gorm:"type:varchar(16);not null"`
+	Zone             string `gorm:"type:varchar(250);not null"`
 }
 
 type AdoptionPosts []AdoptionPost

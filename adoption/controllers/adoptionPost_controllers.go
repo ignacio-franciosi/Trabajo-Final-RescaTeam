@@ -75,6 +75,7 @@ func GetAllAdoptionPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, postsDto)
 }
 
+/*
 func UpdateAdoptionPost(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
@@ -102,3 +103,4 @@ func UpdateAdoptionPost(c *gin.Context) {
 
 	c.JSON(http.StatusOK, postDto)
 }
+*/

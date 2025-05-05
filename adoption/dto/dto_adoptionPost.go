@@ -15,6 +15,7 @@ type AdoptionPostDto struct {
 	CompleteVaccines bool   `json:"completeVaccines"`
 	AdoptionStatus   bool   `json:"adoptionStatus"`
 	Date             string `json:"date"`
+	Zone             string `json:"zone"`
 }
 
 type AdoptionPostsDto []AdoptionPostDto
