@@ -53,7 +53,7 @@ func Login(c *gin.Context) {
 
 	tokenDto, er := service.UserService.Login(loginDto)
 	if er != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": er.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Acceso inválido. Por favor, inténtelo otra vez."})
 		return
 	}
 	c.JSON(http.StatusOK, tokenDto)
@@ -74,7 +74,7 @@ func InsertUser(c *gin.Context) {
 	tokenDto, er := service.UserService.InsertUser(userDto)
 	// Error del Insert
 	if er != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": er.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": er.Error()})
 		return
 	}
 
