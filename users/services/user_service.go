@@ -55,7 +55,7 @@ func (s *userService) GetUserByEmail(email string) (dto.UserDto, error) {
 	var user model.User = userClient.GetUserByEmail(email)
 	var userDto dto.UserDto
 
-	if user.Email == "" {
+	if user.UserId == 0 {
 		return userDto, errors.New("user not found")
 	}
 	userDto.UserId = user.UserId

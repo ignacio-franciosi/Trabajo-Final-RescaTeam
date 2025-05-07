@@ -17,7 +17,11 @@ func GetUserByEmail(c *gin.Context) {
 	var userDto dto.UserDto
 	userDto, err := service.UserService.GetUserByEmail(email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if err.Error() == "user not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
