@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 
 	log "github.com/sirupsen/logrus"
 )
