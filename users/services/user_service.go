@@ -1,12 +1,13 @@
 package services
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"errors"
+	"regexp"
 	userClient "users/clients"
 	dto "users/dto"
 	"users/model"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/dgrijalva/jwt-go"
 
@@ -75,78 +76,92 @@ var jwtKey = []byte("secret_key")
 
 func (s *userService) Login(loginDto dto.LoginDto) (dto.TokenDto, error) {
 
-	log.Debug(loginDto) //para registrar el contenido de loginDto
+	log.Debug(loginDto)
 	var user model.User = userClient.GetUserByEmail(loginDto.Email)
 	var tokenDto dto.TokenDto
 
 	if user.UserId == 0 {
-		return tokenDto, errors.New("user not found")
+		return tokenDto, errors.New("invalid credentials")
 	}
 
-	//pasamos password como slice de bytes
-	//hashea con md5.sum
-	var pswMd5 = md5.Sum([]byte(loginDto.Password))
-	//convertir a cadena hexadecimal
-	pswMd5String := hex.EncodeToString(pswMd5[:])
-
-	if pswMd5String == user.Password {
-		//se firma el token para verificar autenticidad
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"id_user": user.UserId,
-		})
-		tokenString, _ := token.SignedString(jwtKey)
-		tokenDto.Token = tokenString
-		tokenDto.UserId = user.UserId
-		tokenDto.Type = user.Type
-		tokenDto.Suspended = user.Suspended
-
-		return tokenDto, nil
-	} else {
-		return tokenDto, errors.New("incorrect password")
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginDto.Password))
+	if err != nil {
+		return tokenDto, errors.New("invalid credentials")
 	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id_user":   user.UserId,
+		"type":      user.Type,
+		"suspended": user.Suspended,
+	})
+	tokenString, _ := token.SignedString(jwtKey)
+	tokenDto.Token = tokenString
+	tokenDto.UserId = user.UserId
+	tokenDto.Type = user.Type
+	tokenDto.Suspended = user.Suspended
+
+	return tokenDto, nil
 
 }
 
 func (s *userService) InsertUser(userDto dto.UserDto) (dto.TokenDto, error) {
-	log.Debug(userDto) // Para registrar el contenido de userDto
 
 	var user model.User
 	var tokenDto dto.TokenDto
 
-	if user.UserId == 0 { // El usuario no está registrado y puedo crear uno nuevo
-		// Pasamos la contraseña como slice de bytes
-		// Hash con md5.Sum
-		var pswMd5 = md5.Sum([]byte(userDto.Password))
-		// Convertir a cadena hexadecimal
-		pswMd5String := hex.EncodeToString(pswMd5[:])
-
-		// Asignamos valores al usuario antes de generar el token
-		user.Name = userDto.Name
-		user.Surname = userDto.Surname
-		user.Dni = userDto.Dni
-		user.Email = userDto.Email
-		user.Password = pswMd5String
-		user.Type = userDto.Type
-		user.Suspended = userDto.Suspended
-
-		// Insertamos el usuario en la base de datos
-		user = userClient.InsertUser(user)
-
-		// Ahora, después de asignar el ID del usuario, generamos el token
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"id_user": user.UserId,
-			"tipo":    user.Type,
-		})
-
-		// Firmamos el token
-		tokenString, _ := token.SignedString(jwtKey)
-		tokenDto.Token = tokenString
-		tokenDto.UserId = user.UserId
-		tokenDto.Type = user.Type
-
-		return tokenDto, nil
-
-	} else { // El usuario ya existe
-		return tokenDto, errors.New("usuario ya existe")
+	if userDto.Name == "" || userDto.Surname == "" || userDto.Email == "" || userDto.Password == "" {
+		return tokenDto, errors.New("todos los campos son obligatorios")
 	}
+
+	matched, _ := regexp.MatchString(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$`, userDto.Email)
+	if !matched {
+		return tokenDto, errors.New("email inválido")
+	}
+
+	if len(userDto.Password) < 8 ||
+		!regexp.MustCompile(`[A-Z]`).MatchString(userDto.Password) ||
+		!regexp.MustCompile(`[a-z]`).MatchString(userDto.Password) ||
+		!regexp.MustCompile(`[0-9]`).MatchString(userDto.Password) {
+		return tokenDto, errors.New("la contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número")
+	}
+
+	if userDto.Dni <= 0 {
+		return tokenDto, errors.New("el DNI es obligatorio y debe ser un número válido")
+	}
+
+	existingUser := userClient.GetUserByEmail(userDto.Email)
+	if existingUser.UserId != 0 {
+		return tokenDto, errors.New("ya existe un usuario con ese email")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userDto.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return tokenDto, errors.New("error al encriptar la contraseña")
+	}
+
+	user.Name = userDto.Name
+	user.Surname = userDto.Surname
+	user.Dni = userDto.Dni
+	user.Email = userDto.Email
+	user.Password = string(hashedPassword)
+	user.Type = userDto.Type
+	user.Suspended = userDto.Suspended
+
+	user = userClient.InsertUser(user)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id_user":   user.UserId,
+		"type":      user.Type,
+		"suspended": user.Suspended,
+	})
+
+	// Firmamos el token
+	tokenString, _ := token.SignedString(jwtKey)
+	tokenDto.Token = tokenString
+	tokenDto.UserId = user.UserId
+	tokenDto.Type = user.Type
+	tokenDto.Suspended = user.Suspended
+
+	return tokenDto, nil
+
 }
