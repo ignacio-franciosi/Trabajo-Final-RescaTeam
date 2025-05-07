@@ -6,8 +6,8 @@ import (
 	dto "users/dto"
 	service "users/services"
 
-	_ "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	_ "github.com/golang-jwt/jwt/v4"
 	log "github.com/sirupsen/logrus"
 )
 
