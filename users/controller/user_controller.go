@@ -80,3 +80,25 @@ func InsertUser(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, tokenDto)
 }
+
+func UpdateUser(c *gin.Context) {
+	var userDto dto.UserDto
+	err := c.BindJSON(&userDto)
+
+	// Error Parsing json param
+	if err != nil {
+		log.Error(err.Error())
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	userDto, er := service.UserService.UpdateUser(userDto)
+	// Error del update
+	if er != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": er.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, userDto)
+
+}
