@@ -2,6 +2,7 @@ package clients
 
 import (
 	"adoption/model"
+	"errors"
 
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -52,7 +53,6 @@ func GetAllAdoptionPosts() model.AdoptionPosts {
 	return posts
 }
 
-/*
 func UpdateAdoptionPostById(id int, post model.AdoptionPost) (model.AdoptionPost, error) {
 	var existing model.AdoptionPost
 
@@ -78,7 +78,6 @@ func UpdateAdoptionPostById(id int, post model.AdoptionPost) (model.AdoptionPost
 	log.Infof("Post de adopción con ID %d actualizado correctamente", id)
 	return post, nil
 }
-*/
 
 func GetFilteredAdoptionPosts(filters map[string]string) ([]model.AdoptionPost, error) {
 	var posts []model.AdoptionPost

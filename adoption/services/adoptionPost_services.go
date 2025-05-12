@@ -15,7 +15,7 @@ type adoptionServiceInterface interface {
 	GetAdoptionPostById(id int) (dto.AdoptionPostDto, e.ApiError)
 	DeleteAdoptionPost(id int) error
 	GetAllAdoptionPosts() (dto.AdoptionPostsDto, error)
-	//UpdateAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error)
+	UpdateAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error)
 	GetFilteredAdoptionPosts(filters map[string]string) ([]dto.AdoptionPostDto, e.ApiError)
 }
 
@@ -137,11 +137,10 @@ func (s *adoptionService) GetAllAdoptionPosts() (dto.AdoptionPostsDto, error) {
 	return postsDto, nil
 }
 
-/*
 func (s *adoptionService) UpdateAdoptionPost(postDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error) {
 	// Obtener el post actual desde la base de datos
 
-	existingPost := adoptionPostClient.GetAdoptionPostById(strconv.Itoa(postDto.AdoptionPostId))
+	existingPost := adoptionPostClient.GetAdoptionPostById(postDto.AdoptionPostId)
 
 	if existingPost.AdoptionPostId == 0 {
 		return postDto, errors.New("adoption post not found")
@@ -171,7 +170,6 @@ func (s *adoptionService) UpdateAdoptionPost(postDto dto.AdoptionPostDto) (dto.A
 
 	return postDto, nil
 }
-*/
 
 func (s *adoptionService) GetFilteredAdoptionPosts(filters map[string]string) ([]dto.AdoptionPostDto, e.ApiError) {
 	posts, err := adoptionPostClient.GetFilteredAdoptionPosts(filters)
