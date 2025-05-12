@@ -145,3 +145,29 @@ func GetFilteredAdoptionPosts(c *gin.Context) {
 
 	c.JSON(http.StatusOK, posts)
 }
+
+func MarkAdoptionPostAsAdopted(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+
+	// Leer los claims del token JWT desde el contexto
+	claims, ok := c.MustGet("claims").(*authMiddleware.CustomClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autorizado"})
+		return
+	}
+
+	userId := claims.UserId
+
+	err = services.AdoptionService.MarkAdoptionPostAsAdopted(id, userId)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Mascota marcada como adoptada exitosamente"})
+}

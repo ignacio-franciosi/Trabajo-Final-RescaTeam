@@ -113,3 +113,19 @@ func GetFilteredAdoptionPosts(filters map[string]string) ([]model.AdoptionPost, 
 
 	return posts, nil
 }
+
+func MarkAdoptionPostAsAdopted(id int) error {
+	var post model.AdoptionPost
+
+	if err := Db.First(&post, id).Error; err != nil {
+		return err
+	}
+
+	post.AdoptionStatus = true
+
+	if err := Db.Save(&post).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
