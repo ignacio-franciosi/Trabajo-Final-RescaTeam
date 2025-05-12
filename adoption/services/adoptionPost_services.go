@@ -17,6 +17,7 @@ type adoptionServiceInterface interface {
 	GetAllAdoptionPosts() (dto.AdoptionPostsDto, error)
 	UpdateAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error)
 	GetFilteredAdoptionPosts(filters map[string]string) ([]dto.AdoptionPostDto, e.ApiError)
+	MarkAdoptionPostAsAdopted(id int, userId int) error
 }
 
 var (
@@ -200,4 +201,23 @@ func (s *adoptionService) GetFilteredAdoptionPosts(filters map[string]string) ([
 	}
 
 	return postDtos, nil
+}
+
+func (s *adoptionService) MarkAdoptionPostAsAdopted(id int, userId int) error {
+	post := adoptionPostClient.GetAdoptionPostById(id)
+
+	if post.AdoptionPostId == 0 {
+		return errors.New("publicación no encontrada")
+	}
+
+	if post.UserId != userId {
+		return errors.New("no estás autorizado para modificar esta publicación")
+	}
+
+	err := adoptionPostClient.MarkAdoptionPostAsAdopted(id)
+	if err != nil {
+		return errors.New("no se pudo marcar como adoptada")
+	}
+
+	return nil
 }
