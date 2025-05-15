@@ -114,6 +114,7 @@ func GetFilteredAdoptionPosts(filters map[string]string) ([]model.AdoptionPost, 
 	return posts, nil
 }
 
+/*
 func MarkAdoptionPostAsAdopted(id int) error {
 	var post model.AdoptionPost
 
@@ -129,3 +130,17 @@ func MarkAdoptionPostAsAdopted(id int) error {
 
 	return nil
 }
+
+
+func GetAdoptionPostsByUserId(userId int) model.AdoptionPosts {
+	var posts model.AdoptionPosts
+
+	err := Db.Where("user_id = ?", userId).Find(&posts).Error
+	if err != nil {
+		log.Error("Error fetching posts by user: ", err)
+		return model.AdoptionPosts{}
+	}
+
+	return posts
+}
+*/
