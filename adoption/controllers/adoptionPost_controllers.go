@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
+	//authMiddleware "auth/middleware/authMiddleware"
+
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
@@ -146,6 +148,7 @@ func GetFilteredAdoptionPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, posts)
 }
 
+/*
 func MarkAdoptionPostAsAdopted(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
@@ -171,3 +174,28 @@ func MarkAdoptionPostAsAdopted(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Mascota marcada como adoptada exitosamente"})
 }
+
+
+func GetMyAdoptionPosts(c *gin.Context) {
+	claims, ok := c.MustGet("claims").(*authMiddleware.CustomClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+		return
+	}
+
+	userId := claims.UserId
+
+	postsDto, err := services.AdoptionService.GetAdoptionPostsByUserId(userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener las publicaciones"})
+		return
+	}
+
+	if len(postsDto) == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "No tenés publicaciones todavía."})
+		return
+	}
+
+	c.JSON(http.StatusOK, postsDto)
+}
+*/

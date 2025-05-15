@@ -21,7 +21,9 @@ func mapUrls() {
 	//rangos predefinidos de age: 0-1, 2-3, 4-7, 8plus
 	//para los espacios de las zonas se usa: "barrio%centro"
 
-	router.PUT("/adoptionPost/:id/adopted", authMiddleware.AuthRequired(), controllers.MarkAdoptionPostAsAdopted)
+	//router.PUT("/adoptionPost/:id/adopted", authMiddleware.AuthRequired(), controllers.MarkAdoptionPostAsAdopted)
+
+	//router.GET("/myAdoptionPosts", authMiddleware.AuthRequired(), controllers.GetMyAdoptionPosts)
 
 	log.Info("Listo el mapeo de configuraciones :)")
 }

@@ -17,7 +17,8 @@ type adoptionServiceInterface interface {
 	GetAllAdoptionPosts() (dto.AdoptionPostsDto, error)
 	UpdateAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error)
 	GetFilteredAdoptionPosts(filters map[string]string) ([]dto.AdoptionPostDto, e.ApiError)
-	MarkAdoptionPostAsAdopted(id int, userId int) error
+	//MarkAdoptionPostAsAdopted(id int, userId int) error
+	//GetAdoptionPostsByUserId(userId int) (dto.AdoptionPostsDto, error)
 }
 
 var (
@@ -203,6 +204,7 @@ func (s *adoptionService) GetFilteredAdoptionPosts(filters map[string]string) ([
 	return postDtos, nil
 }
 
+/*
 func (s *adoptionService) MarkAdoptionPostAsAdopted(id int, userId int) error {
 	post := adoptionPostClient.GetAdoptionPostById(id)
 
@@ -221,3 +223,33 @@ func (s *adoptionService) MarkAdoptionPostAsAdopted(id int, userId int) error {
 
 	return nil
 }
+
+
+func (s *adoptionService) GetAdoptionPostsByUserId(userId int) (dto.AdoptionPostsDto, error) {
+	posts := adoptionPostClient.GetAdoptionPostsByUserId(userId)
+	var postsDto dto.AdoptionPostsDto
+
+	for _, post := range posts {
+		postDto := dto.AdoptionPostDto{
+			AdoptionPostId:   post.AdoptionPostId,
+			UserId:           post.UserId,
+			Name:             post.Name,
+			Species:          post.Species,
+			Age:              post.Age,
+			Breed:            post.Breed,
+			Color:            post.Color,
+			Size:             post.Size,
+			Sex:              post.Sex,
+			Description:      post.Description,
+			Neutered:         post.Neutered,
+			CompleteVaccines: post.CompleteVaccines,
+			AdoptionStatus:   post.AdoptionStatus,
+			Date:             post.Date,
+			Zone:             post.Zone,
+		}
+		postsDto = append(postsDto, postDto)
+	}
+
+	return postsDto, nil
+}
+*/
