@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"errors"
 	"users/model"
 
 	log "github.com/sirupsen/logrus"
@@ -36,4 +37,30 @@ func InsertUser(user model.User) model.User {
 	log.Debug("User Created: ", user.UserId)
 
 	return user
+}
+
+func UpdateUser(user model.User) (model.User, error) {
+	result := Db.Model(&model.User{}).
+		Where("user_id = ?", user.UserId).
+		Updates(map[string]any{
+			"name":    user.Name,
+			"surname": user.Surname,
+			"email":   user.Email,
+		})
+
+	if result.Error != nil {
+		return model.User{}, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return model.User{}, errors.New("no se actualizó ningún usuario")
+	}
+
+	var updatedUser model.User
+	err := Db.Where("user_id = ?", user.UserId).First(&updatedUser).Error
+	if err != nil {
+		return model.User{}, err
+	}
+
+	return updatedUser, nil
 }

@@ -11,15 +11,15 @@ func mapUrls() {
 	router.POST("/register", userController.InsertUser)
 	router.POST("/login", userController.Login)
 
-	// Authenticated user - with same user id or admin
+	// Authenticated user - user is account owner (id = endpoint_id) or admin
 	router.GET("/user/email/:email", userController.GetUserByEmail)
 	router.GET("/user/:id", userController.GetUserById)
-	router.PATCH("/user", userController.UpdateUser)
+	router.PATCH("/user/:id", userController.UpdateUser)
 	//router.DELETE("/user/:id", userController.DeleteUser)
 
 	// Only admin
 	//router.GET("/reports", userController.ViewReports)
-	//router.PATCH("/suspend", userController.SuspendUSer)
+	//router.PATCH("/suspend/:id", userController.SuspendUSer)
 
 	log.Info("Url Mapping ready")
 }
