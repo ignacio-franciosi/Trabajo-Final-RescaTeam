@@ -82,8 +82,8 @@ func InsertUser(c *gin.Context) {
 }
 
 func UpdateUser(c *gin.Context) {
-	var userDto dto.UserDto
-	err := c.BindJSON(&userDto)
+	var updateUserDto dto.UpdateUserDto
+	err := c.BindJSON(&updateUserDto)
 
 	// Error Parsing json param
 	if err != nil {
@@ -92,10 +92,24 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	userDto, er := service.UserService.UpdateUser(userDto)
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+	updateUserDto.UserId = id
+
+	userDto, err := service.UserService.UpdateUser(updateUserDto)
 	// Error del update
-	if er != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": er.Error()})
+	if err != nil {
+		switch err.Error() {
+		case "usuario no encontrado":
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case "ya existe otro usuario con ese email", "email inválido":
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 

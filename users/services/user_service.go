@@ -21,7 +21,7 @@ type userServiceInterface interface {
 	Login(loginDto dto.LoginDto) (dto.TokenDto, error)
 	InsertUser(userDto dto.UserDto) (dto.TokenDto, error)
 	GetUserByEmail(email string) (dto.UserDto, error)
-	UpdateUser(userDto dto.UserDto) (dto.UserDto, error)
+	UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, error)
 }
 
 var (
@@ -167,56 +167,52 @@ func (s *userService) InsertUser(userDto dto.UserDto) (dto.TokenDto, error) {
 
 }
 
-func (s *userService) UpdateUser(userDto dto.UserDto) (dto.UserDto, error) {
+func (s *userService) UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, error) {
 
-	var updatedUserDto dto.UserDto
-	existingUser := userClient.GetUserById(userDto.UserId)
+	var userDto dto.UserDto
+
+	existingUser := userClient.GetUserById(updateUserDto.UserId)
+
 	if existingUser.UserId == 0 {
-		return updatedUserDto, errors.New("usuario no encontrado")
+		return userDto, errors.New("usuario no encontrado")
 	}
 
-	// Actualizar el nombre si viene
-	if userDto.Name != "" {
-		existingUser.Name = userDto.Name
+	if updateUserDto.Name != "" {
+		existingUser.Name = updateUserDto.Name
 	}
 
-	// Actualizar el apellido si viene
-	if userDto.Surname != "" {
-		existingUser.Surname = userDto.Surname
+	if updateUserDto.Surname != "" {
+		existingUser.Surname = updateUserDto.Surname
 	}
 
-	// Actualizar el email si viene
-	if userDto.Email != "" {
-		// Validar formato
-		matched, _ := regexp.MatchString(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$`, userDto.Email)
+	if updateUserDto.Email != "" {
+		matched, _ := regexp.MatchString(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$`, updateUserDto.Email)
 		if !matched {
-			return updatedUserDto, errors.New("email inválido")
+			return userDto, errors.New("email inválido")
 		}
 
-		// Verificar que no esté en uso por otro
-		otherUser := userClient.GetUserByEmail(userDto.Email)
-		if otherUser.UserId != 0 && otherUser.UserId != userDto.UserId {
-			return updatedUserDto, errors.New("ya existe otro usuario con ese email")
+		otherUser := userClient.GetUserByEmail(updateUserDto.Email)
+		if otherUser.UserId != 0 && otherUser.UserId != updateUserDto.UserId {
+			return userDto, errors.New("ya existe otro usuario con ese email")
 		}
 
-		existingUser.Email = userDto.Email
+		existingUser.Email = updateUserDto.Email
 	}
 
-	// Persistir cambios
-	err := userClient.UpdateUser(existingUser)
+	updatedUser, err := userClient.UpdateUser(existingUser)
 	if err != nil {
-		return updatedUserDto, errors.New("error al actualizar el usuario: " + err.Error())
+		return userDto, errors.New("error al actualizar el usuario: " + err.Error())
 	}
 
-	updatedUserDto.UserId = user.UserId
-	updatedUserDto.Name = user.Name
-	updatedUserDto.Surname = user.Surname
-	updatedUserDto.Dni = user.Dni
-	updatedUserDto.Email = user.Email
-	updatedUserDto.Password = user.Password
-	updatedUserDto.Type = user.Type
-	updatedUserDto.Suspended = user.Suspended
+	userDto.UserId = updatedUser.UserId
+	userDto.Name = updatedUser.Name
+	userDto.Surname = updatedUser.Surname
+	userDto.Dni = updatedUser.Dni
+	userDto.Email = updatedUser.Email
+	userDto.Password = updatedUser.Password
+	userDto.Type = updatedUser.Type
+	userDto.Suspended = updatedUser.Suspended
 
-	return updatedUserDto, nil
+	return userDto, nil
 
 }
