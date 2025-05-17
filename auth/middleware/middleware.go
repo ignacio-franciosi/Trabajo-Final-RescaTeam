@@ -1,4 +1,4 @@
-package authMiddleware
+package auth
 
 import (
 	"errors"
@@ -62,6 +62,7 @@ func AuthRequired() gin.HandlerFunc {
 }
 
 // Middleware solo para admins
+/*
 func AdminOnly() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr := extractToken(c)
@@ -85,6 +86,7 @@ func AdminOnly() gin.HandlerFunc {
 		c.Next()
 	}
 }
+*/
 
 // Extrae el token del header Authorization
 func extractToken(c *gin.Context) string {
