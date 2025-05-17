@@ -17,8 +17,8 @@ type adoptionServiceInterface interface {
 	GetAllAdoptionPosts() (dto.AdoptionPostsDto, error)
 	UpdateAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error)
 	GetFilteredAdoptionPosts(filters map[string]string) ([]dto.AdoptionPostDto, e.ApiError)
-	//MarkAdoptionPostAsAdopted(id int, userId int) error
-	//GetAdoptionPostsByUserId(userId int) (dto.AdoptionPostsDto, error)
+	MarkAdoptionPostAsAdopted(id int, userId int) error
+	GetAllAdoptionPostsByUserId(userId int) (dto.AdoptionPostsDto, error)
 }
 
 var (
@@ -204,7 +204,6 @@ func (s *adoptionService) GetFilteredAdoptionPosts(filters map[string]string) ([
 	return postDtos, nil
 }
 
-/*
 func (s *adoptionService) MarkAdoptionPostAsAdopted(id int, userId int) error {
 	post := adoptionPostClient.GetAdoptionPostById(id)
 
@@ -224,9 +223,8 @@ func (s *adoptionService) MarkAdoptionPostAsAdopted(id int, userId int) error {
 	return nil
 }
 
-
-func (s *adoptionService) GetAdoptionPostsByUserId(userId int) (dto.AdoptionPostsDto, error) {
-	posts := adoptionPostClient.GetAdoptionPostsByUserId(userId)
+func (s *adoptionService) GetAllAdoptionPostsByUserId(userId int) (dto.AdoptionPostsDto, error) {
+	posts := adoptionPostClient.GetAllAdoptionPostsByUserId(userId)
 	var postsDto dto.AdoptionPostsDto
 
 	for _, post := range posts {
@@ -252,4 +250,3 @@ func (s *adoptionService) GetAdoptionPostsByUserId(userId int) (dto.AdoptionPost
 
 	return postsDto, nil
 }
-*/

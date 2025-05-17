@@ -22,8 +22,11 @@ func mapUrls() {
 	//para los espacios de las zonas se usa: "barrio%centro"
 
 	//router.PUT("/adoptionPost/:id/adopted", authMiddleware.AuthRequired(), controllers.MarkAdoptionPostAsAdopted)
+	router.PUT("/adoptionPost/adopted/:id", controllers.MarkAdoptionPostAsAdopted)
+	//tiene la forma: adoptionPost/adopted/2?userId=3
 
 	//router.GET("/myAdoptionPosts", authMiddleware.AuthRequired(), controllers.GetMyAdoptionPosts)
+	router.GET("/adoptionPost/user/:userId", controllers.GetAllAdoptionPostsByUserId)
 
 	log.Info("Listo el mapeo de configuraciones :)")
 }

@@ -39,7 +39,7 @@ func GetAdoptionPostById(c *gin.Context) {
 	idParam := c.Param("id")
 	id, convErr := strconv.Atoi(idParam)
 	if convErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de ID inválido"})
 		return
 	}
 
@@ -55,7 +55,7 @@ func DeleteAdoptionPost(c *gin.Context) {
 	idParam := c.Param("id")
 	id, convErr := strconv.Atoi(idParam)
 	if convErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de ID inválido"})
 		return
 	}
 
@@ -65,7 +65,7 @@ func DeleteAdoptionPost(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Adoption post deleted"})
+	c.JSON(http.StatusOK, gin.H{"message": "Publicación eliminada"})
 }
 
 func GetAllAdoptionPosts(c *gin.Context) {
@@ -148,7 +148,6 @@ func GetFilteredAdoptionPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, posts)
 }
 
-/*
 func MarkAdoptionPostAsAdopted(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
@@ -157,14 +156,12 @@ func MarkAdoptionPostAsAdopted(c *gin.Context) {
 		return
 	}
 
-	// Leer los claims del token JWT desde el contexto
-	claims, ok := c.MustGet("claims").(*authMiddleware.CustomClaims)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autorizado"})
+	userIdParam := c.Query("userId") // o puede venir por body
+	userId, err := strconv.Atoi(userIdParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Id de publicación inválido"})
 		return
 	}
-
-	userId := claims.UserId
 
 	err = services.AdoptionService.MarkAdoptionPostAsAdopted(id, userId)
 	if err != nil {
@@ -175,27 +172,24 @@ func MarkAdoptionPostAsAdopted(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Mascota marcada como adoptada exitosamente"})
 }
 
-
-func GetMyAdoptionPosts(c *gin.Context) {
-	claims, ok := c.MustGet("claims").(*authMiddleware.CustomClaims)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+func GetAllAdoptionPostsByUserId(c *gin.Context) {
+	userIdParam := c.Param("userId")
+	userId, err := strconv.Atoi(userIdParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId inválido"})
 		return
 	}
 
-	userId := claims.UserId
-
-	postsDto, err := services.AdoptionService.GetAdoptionPostsByUserId(userId)
+	postsDto, err := services.AdoptionService.GetAllAdoptionPostsByUserId(userId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener las publicaciones"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener publicaciones"})
 		return
 	}
 
 	if len(postsDto) == 0 {
-		c.JSON(http.StatusOK, gin.H{"message": "No tenés publicaciones todavía."})
+		c.JSON(http.StatusOK, gin.H{"message": "Aún no hay publicaciones."})
 		return
 	}
 
 	c.JSON(http.StatusOK, postsDto)
 }
-*/
