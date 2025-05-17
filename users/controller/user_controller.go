@@ -116,3 +116,37 @@ func UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, userDto)
 
 }
+
+func ChangePassword(c *gin.Context) {
+	var changePasswordDto dto.ChangePasswordDto
+	err := c.BindJSON(&changePasswordDto)
+
+	// Error Parsing json param
+	if err != nil {
+		log.Error(err.Error())
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+	changePasswordDto.UserId = id
+
+	err = service.UserService.ChangePassword(changePasswordDto)
+	if err != nil {
+		switch err.Error() {
+		case "user not found":
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case "invalid credentials", "la contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número", "las contraseñas nuevas no coinciden":
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, "Contraseña cambiada con éxito")
+}

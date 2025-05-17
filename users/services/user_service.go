@@ -22,6 +22,7 @@ type userServiceInterface interface {
 	InsertUser(userDto dto.UserDto) (dto.TokenDto, error)
 	GetUserByEmail(email string) (dto.UserDto, error)
 	UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, error)
+	ChangePassword(changePasswordDto dto.ChangePasswordDto) error
 }
 
 var (
@@ -215,4 +216,43 @@ func (s *userService) UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, 
 
 	return userDto, nil
 
+}
+
+func (s *userService) ChangePassword(changePasswordDto dto.ChangePasswordDto) error {
+
+	// check if input password is the same as the one in the database
+	var user model.User = userClient.GetUserById(changePasswordDto.UserId)
+	if user.UserId == 0 {
+		return errors.New("user not found")
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(changePasswordDto.OldPassword))
+	if err != nil {
+		return errors.New("invalid credentials")
+	}
+
+	//check if new password1 is valid
+	if len(changePasswordDto.NewPassword1) < 8 ||
+		!regexp.MustCompile(`[A-Z]`).MatchString(changePasswordDto.NewPassword1) ||
+		!regexp.MustCompile(`[a-z]`).MatchString(changePasswordDto.NewPassword1) ||
+		!regexp.MustCompile(`[0-9]`).MatchString(changePasswordDto.NewPassword1) {
+		return errors.New("la contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número")
+	}
+
+	// check if the 2 input new passwords are the same
+	if changePasswordDto.NewPassword1 != changePasswordDto.NewPassword2 {
+		return errors.New("las contraseñas nuevas no coinciden")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(changePasswordDto.NewPassword1), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New("error al encriptar la contraseña")
+	}
+
+	err = userClient.ChangePassword(changePasswordDto.UserId, string(hashedPassword))
+	if err != nil {
+		return errors.New("error al cambiar la contraseña" + err.Error())
+	}
+
+	return nil
 }

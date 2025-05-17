@@ -53,7 +53,7 @@ func UpdateUser(user model.User) (model.User, error) {
 	}
 
 	if result.RowsAffected == 0 {
-		return model.User{}, errors.New("no se actualizó ningún usuario")
+		return model.User{}, errors.New("los datos ingresados son iguales a los preexistentes")
 	}
 
 	var updatedUser model.User
@@ -63,4 +63,18 @@ func UpdateUser(user model.User) (model.User, error) {
 	}
 
 	return updatedUser, nil
+}
+
+func ChangePassword(userId int, hashedPassword string) error {
+	result := Db.Model(&model.User{}).
+		Where("user_id = ?", userId).
+		Updates(map[string]any{
+			"password": hashedPassword,
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
 }
