@@ -5,6 +5,7 @@ import (
 	"strconv"
 	dto "users/dto"
 	service "users/services"
+	authhelper "users/utils/auth"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/golang-jwt/jwt/v4"
@@ -12,9 +13,11 @@ import (
 )
 
 func GetUserByEmail(c *gin.Context) {
+	if !authhelper.VerifyTokenAndAuthorize(c, true, true) {
+		return
+	}
 
 	email := c.Param("email")
-	var userDto dto.UserDto
 	userDto, err := service.UserService.GetUserByEmail(email)
 	if err != nil {
 		if err.Error() == "user not found" {
@@ -25,20 +28,46 @@ func GetUserByEmail(c *gin.Context) {
 		return
 	}
 
+	// Obtener datos del contexto (guardados en el helper)
+	tokenUserId, _ := c.Get("userId")
+	isAdmin, _ := c.Get("isAdmin")
+
+	// Verificar si es dueño o admin
+	if tokenUserId.(int) != userDto.UserId && !isAdmin.(bool) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No tiene permisos suficientes"})
+		return
+	}
+
 	c.JSON(http.StatusOK, userDto)
 }
 
 func GetUserById(c *gin.Context) {
-	log.Debug("ID de usuario a cargar: " + c.Param("id"))
-	id, _ := strconv.Atoi(c.Param("id"))
-	var userDto dto.UserDto
+	if !authhelper.VerifyTokenAndAuthorize(c, true, true) {
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
 
 	userDto, err := service.UserService.GetUserById(id)
-
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Obtener datos del contexto
+	tokenUserId, _ := c.Get("userId")
+	isAdmin, _ := c.Get("isAdmin")
+
+	// Verificar si es dueño o admin
+	if tokenUserId.(int) != userDto.UserId && !isAdmin.(bool) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No tiene permisos suficientes"})
+		return
+	}
+
 	c.JSON(http.StatusOK, userDto)
 }
 
