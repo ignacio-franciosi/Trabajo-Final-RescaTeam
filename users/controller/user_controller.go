@@ -179,3 +179,24 @@ func ChangePassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, "Contraseña cambiada con éxito")
 }
+
+func ForgotPassword(c *gin.Context) {
+	var reqDto dto.ForgotPasswordRequestDto
+	if err := c.ShouldBindJSON(&reqDto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email inválido"})
+		return
+	}
+
+	err := service.SendPasswordResetEmail(reqDto.Email)
+	if err != nil {
+		// Agregar algun Log interno
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Si existe una cuenta asociada a ese correo, recibirás un mail con instrucciones para restablecer tu contraseña.",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Si existe una cuenta asociada a ese correo, recibirás un mail con instrucciones para restablecer tu contraseña.",
+	})
+}

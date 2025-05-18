@@ -2,7 +2,11 @@ package services
 
 import (
 	"errors"
+	"fmt"
+	"net/smtp"
+	"os"
 	"regexp"
+	"time"
 	userClient "users/clients"
 	dto "users/dto"
 	"users/model"
@@ -23,6 +27,7 @@ type userServiceInterface interface {
 	GetUserByEmail(email string) (dto.UserDto, error)
 	UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, error)
 	ChangePassword(changePasswordDto dto.ChangePasswordDto) error
+	SendPasswordResetEmail(email string) error
 }
 
 var (
@@ -252,6 +257,45 @@ func (s *userService) ChangePassword(changePasswordDto dto.ChangePasswordDto) er
 	err = userClient.ChangePassword(changePasswordDto.UserId, string(hashedPassword))
 	if err != nil {
 		return errors.New("error al cambiar la contraseña" + err.Error())
+	}
+
+	return nil
+}
+
+var smtpServer = "smtp.gmail.com"
+var smtpPort = "587"
+
+func (s *userService) SendPasswordResetEmail(email string) error {
+
+	user := userClient.GetUserByEmail(email)
+	if user.UserId == 0 {
+		return errors.New("user not found")
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"email": email,
+		"exp":   time.Now().Add(10 * time.Minute).Unix(), //token válido por 10 mins
+	})
+	tokenStr, err := token.SignedString(jwtKey)
+	if err != nil {
+		return err
+	}
+
+	resetLink := fmt.Sprintf("http://localhost:3000/reset-password?token=%s", tokenStr) // despues, url de front
+
+	// Email
+	subject := "Subject: Recuperación de contraseña\n"
+	body := fmt.Sprintf("Para restablecer tu contraseña, hacé clic en este enlace:\n\n%s", resetLink)
+	msg := []byte(subject + "\n" + body)
+
+	from := os.Getenv("MAIL_USER")
+	pass := os.Getenv("MAIL_PASS")
+
+	auth := smtp.PlainAuth("", from, pass, smtpServer)
+	err = smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{email}, msg)
+	if err != nil {
+		log.Println("Error al enviar mail:", err)
+		return err
 	}
 
 	return nil
