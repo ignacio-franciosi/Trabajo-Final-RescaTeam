@@ -10,6 +10,7 @@ func mapUrls() {
 	// Public routes
 	router.POST("/register", userController.InsertUser)
 	router.POST("/login", userController.Login)
+	router.POST("/forgot-password", userController.ForgotPassword)
 
 	// User is Authenticated and account owner (id = endpoint_id)
 	router.GET("/user/email/:email", userController.GetUserByEmail)
