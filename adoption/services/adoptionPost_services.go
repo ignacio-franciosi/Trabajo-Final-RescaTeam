@@ -141,15 +141,13 @@ func (s *adoptionService) GetAllAdoptionPosts() (dto.AdoptionPostsDto, error) {
 
 func (s *adoptionService) UpdateAdoptionPost(postDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error) {
 	// Obtener el post actual desde la base de datos
-
 	existingPost := adoptionPostClient.GetAdoptionPostById(postDto.AdoptionPostId)
 
 	if existingPost.AdoptionPostId == 0 {
 		return postDto, errors.New("adoption post not found")
 	}
 
-	// Actualizar los campos del post con los valores del DTO
-	existingPost.UserId = postDto.UserId
+	// Actualizar los campos
 	existingPost.Name = postDto.Name
 	existingPost.Species = postDto.Species
 	existingPost.Age = postDto.Age
@@ -169,6 +167,9 @@ func (s *adoptionService) UpdateAdoptionPost(postDto dto.AdoptionPostDto) (dto.A
 	if err != nil || updatedPost.AdoptionPostId == 0 {
 		return postDto, errors.New("error updating adoption post")
 	}
+
+	// Setear el userId en el DTO para la respuesta
+	postDto.UserId = existingPost.UserId
 
 	return postDto, nil
 }

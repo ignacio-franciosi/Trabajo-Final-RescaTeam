@@ -10,23 +10,22 @@ func mapUrls() {
 
 	// URL mappings
 
-	router.POST("/adoptionPost", controllers.InsertAdoptionPost)
-	router.GET("/adoptionPost/:id", controllers.GetAdoptionPostById)
-	router.DELETE("/adoptionPost/:id", controllers.DeleteAdoptionPost)
-	router.GET("/adoptionPost", controllers.GetAllAdoptionPosts)
-	router.PUT("/adoptionPost/:id", controllers.UpdateAdoptionPost)
+	router.POST("/adoptionPost", controllers.InsertAdoptionPost)       //with auth user/admin
+	router.GET("/adoptionPost/:id", controllers.GetAdoptionPostById)   // no auth (cualquiera puede ver)
+	router.DELETE("/adoptionPost/:id", controllers.DeleteAdoptionPost) // with auth user/admin
+	router.GET("/adoptionPost", controllers.GetAllAdoptionPosts)       //no auth (cualquiera puede ver)
+	router.PUT("/adoptionPost/:id", controllers.UpdateAdoptionPost)    // with auth user/admin
 
-	router.GET("/adoptionPost/filter", controllers.GetFilteredAdoptionPosts)
+	router.GET("/adoptionPost/filter", controllers.GetFilteredAdoptionPosts) //no auth (cualquiera puede)
 	//tiene la forma: adoptionPost/filter?species=hembra&size=mediano...
-	//rangos predefinidos de age: 0-1, 2-3, 4-7, 8plus
+	//rangos predefinidos de age: 0-1, 2-3, 4-7, 8plus [ej: adoptionPost/filter?species=hembra&size=mediano&age=0-1]
 	//para los espacios de las zonas se usa: "barrio%centro"
+	//hay que ir concatenando los parametros de la url segun los filtros que el usuario va seleccionando
 
-	//router.PUT("/adoptionPost/:id/adopted", authMiddleware.AuthRequired(), controllers.MarkAdoptionPostAsAdopted)
-	router.PUT("/adoptionPost/adopted/:id", controllers.MarkAdoptionPostAsAdopted)
-	//tiene la forma: adoptionPost/adopted/2?userId=3
+	router.PUT("/adoptionPost/adopted/:id", controllers.MarkAdoptionPostAsAdopted) //with auth user/admin
+	//tiene la forma: adoptionPost/adopted/2?userId=3 (estoy marcando la publicacion 2 y soy el usuario 3)
 
-	//router.GET("/myAdoptionPosts", authMiddleware.AuthRequired(), controllers.GetMyAdoptionPosts)
-	router.GET("/adoptionPost/user/:userId", controllers.GetAllAdoptionPostsByUserId)
+	router.GET("/adoptionPost/user/:userId", controllers.GetAllAdoptionPostsByUserId) //with auth user/admin
 
 	log.Info("Listo el mapeo de configuraciones :)")
 }
