@@ -78,3 +78,14 @@ func ChangePassword(userId int, hashedPassword string) error {
 
 	return nil
 }
+
+func DeleteUser(user model.User) error {
+	err := Db.Delete(&user).Error
+
+	if err != nil {
+		log.Debug("Failed to delete user")
+	} else {
+		log.Debug("User deleted: ", user.UserId)
+	}
+	return err
+}

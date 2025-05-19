@@ -221,9 +221,46 @@ func ResetPassword(c *gin.Context) {
 	err = service.UserService.ResetPassword(resetPasswordDto)
 
 	if err != nil {
+		// manage different errors
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Contraseña actualizada correctamente"})
+}
+
+func DeleteUser(c *gin.Context) {
+	/*
+		if !authhelper.VerifyTokenAndAuthorize(c, true, true) {
+			return
+		}
+	*/
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+
+	/*
+		// Obtener datos del contexto
+		tokenUserId, _ := c.Get("userId")
+		isAdmin, _ := c.Get("isAdmin")
+
+		// Verificar si es dueño o admin
+		if tokenUserId.(int) != id && !isAdmin.(bool) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "No tiene permisos suficientes"})
+			return
+		}
+	*/
+
+	err = service.UserService.DeleteUser(id)
+	if err != nil {
+		// manage different errors
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Cuenta eliminada con éxito"})
+
 }
