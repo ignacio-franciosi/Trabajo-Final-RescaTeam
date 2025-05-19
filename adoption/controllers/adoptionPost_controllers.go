@@ -3,34 +3,39 @@ package controllers
 import (
 	"adoption/dto"
 	"adoption/services"
+	authhelper "adoption/utils/auth"
+	"fmt"
 	"net/http"
 	"strconv"
-
-	//authMiddleware "auth/middleware/authMiddleware"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
 func InsertAdoptionPost(c *gin.Context) {
-
-	var adoptionPostDto dto.AdoptionPostDto
-	err := c.BindJSON(&adoptionPostDto)
-
-	// Error Parsing json param
-	if err != nil {
-		log.Error(err.Error())
-		c.JSON(http.StatusBadRequest, err.Error())
+	authorized, userId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, true)
+	if !authorized {
 		return
 	}
 
-	adoptionPostDto, er := services.AdoptionService.InsertAdoptionPost(adoptionPostDto)
-	if er != nil {
-		c.JSON(er.Status(), er)
+	// (Si más adelante querés usar isAdmin, ya lo tenés como bool)
+	fmt.Println("isAdmin:", isAdmin)
+
+	var adoptionPostDto dto.AdoptionPostDto
+	if err := c.BindJSON(&adoptionPostDto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
+		return
+	}
+
+	// Asociar el userId del token a la publicación
+	adoptionPostDto.UserId = userId
+
+	adoptionPostDto, err := services.AdoptionService.InsertAdoptionPost(adoptionPostDto)
+	if err != nil {
+		c.JSON(err.Status(), err)
 		return
 	}
 	c.JSON(http.StatusCreated, adoptionPostDto)
-
 }
 
 func GetAdoptionPostById(c *gin.Context) {
