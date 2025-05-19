@@ -29,6 +29,7 @@ type userServiceInterface interface {
 	ChangePassword(changePasswordDto dto.ChangePasswordDto) error
 	SendPasswordResetEmail(email string) error
 	ResetPassword(resetPasswordDto dto.ResetPasswordDto) error
+	DeleteUser(id int) error
 }
 
 var (
@@ -338,4 +339,16 @@ func (s *userService) ResetPassword(resetPasswordDto dto.ResetPasswordDto) error
 
 	*/
 	return nil
+}
+
+func (s *userService) DeleteUser(id int) error {
+	user := userClient.GetUserById(id)
+
+	if user.UserId == 0 {
+		return errors.New("user not found")
+	}
+
+	err := userClient.DeleteUser(user)
+
+	return err
 }
