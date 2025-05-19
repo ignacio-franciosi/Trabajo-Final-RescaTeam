@@ -187,7 +187,7 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	err := service.SendPasswordResetEmail(reqDto.Email)
+	err := service.UserService.SendPasswordResetEmail(reqDto.Email)
 	if err != nil {
 		// Agregar algun Log interno
 		c.JSON(http.StatusOK, gin.H{
@@ -199,4 +199,31 @@ func ForgotPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Si existe una cuenta asociada a ese correo, recibirás un mail con instrucciones para restablecer tu contraseña.",
 	})
+}
+
+func ResetPassword(c *gin.Context) {
+	var resetPasswordDto dto.ResetPasswordDto
+
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Token faltante"})
+		return
+	}
+	resetPasswordDto.Token = token
+
+	err := c.BindJSON(&resetPasswordDto)
+	if err != nil {
+		log.Error(err.Error())
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = service.UserService.ResetPassword(resetPasswordDto)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Contraseña actualizada correctamente"})
 }
