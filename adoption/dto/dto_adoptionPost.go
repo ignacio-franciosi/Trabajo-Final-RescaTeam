@@ -1,8 +1,8 @@
 package dto
 
 type AdoptionPostDto struct {
-	AdoptionPostId   int    `json:"adoptionPostId"`
-	UserId           int    `json:"userId"`
+	AdoptionPostId   int    `json:"id_adoption_post"`
+	UserId           int    `json:"id_user"`
 	Name             string `json:"name"`
 	Species          string `json:"species"`
 	Age              int    `json:"age"`
