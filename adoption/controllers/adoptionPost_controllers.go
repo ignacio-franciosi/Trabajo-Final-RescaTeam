@@ -57,6 +57,11 @@ func GetAdoptionPostById(c *gin.Context) {
 }
 
 func DeleteAdoptionPost(c *gin.Context) {
+	authorized, userId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, true)
+	if !authorized {
+		return
+	}
+
 	idParam := c.Param("id")
 	id, convErr := strconv.Atoi(idParam)
 	if convErr != nil {
@@ -64,9 +69,21 @@ func DeleteAdoptionPost(c *gin.Context) {
 		return
 	}
 
+	adoptionPostDto, apiErr := services.AdoptionService.GetAdoptionPostById(id)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	if !isAdmin && adoptionPostDto.UserId != userId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No autorizado para eliminar esta publicación"})
+		return
+	}
+
+	// Acá err es un error estándar de Go
 	err := services.AdoptionService.DeleteAdoptionPost(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error interno al eliminar la publicación"})
 		return
 	}
 
@@ -83,6 +100,11 @@ func GetAllAdoptionPosts(c *gin.Context) {
 }
 
 func UpdateAdoptionPost(c *gin.Context) {
+	authorized, userId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, true)
+	if !authorized {
+		return
+	}
+
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -100,10 +122,22 @@ func UpdateAdoptionPost(c *gin.Context) {
 
 	postDto.AdoptionPostId = id
 
+	// Obtener la publicación actual para verificar si es dueño o admin
+	currentPost, apiErr := services.AdoptionService.GetAdoptionPostById(id)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	if !isAdmin && currentPost.UserId != userId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No autorizado para editar esta publicación"})
+		return
+	}
+
 	postDto, err = services.AdoptionService.UpdateAdoptionPost(postDto)
 	if err != nil {
 		log.Error("update failed: ", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -154,6 +188,11 @@ func GetFilteredAdoptionPosts(c *gin.Context) {
 }
 
 func MarkAdoptionPostAsAdopted(c *gin.Context) {
+	authorized, tokenUserId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, true)
+	if !authorized {
+		return
+	}
+
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -161,16 +200,27 @@ func MarkAdoptionPostAsAdopted(c *gin.Context) {
 		return
 	}
 
-	userIdParam := c.Query("userId") // o puede venir por body
+	userIdParam := c.Query("userId")
 	userId, err := strconv.Atoi(userIdParam)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Id de publicación inválido"})
 		return
 	}
 
+	post, apiErr := services.AdoptionService.GetAdoptionPostById(id)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	if !isAdmin && post.UserId != tokenUserId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No autorizado para marcar como adoptado"})
+		return
+	}
+
 	err = services.AdoptionService.MarkAdoptionPostAsAdopted(id, userId)
 	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -178,10 +228,20 @@ func MarkAdoptionPostAsAdopted(c *gin.Context) {
 }
 
 func GetAllAdoptionPostsByUserId(c *gin.Context) {
+	authorized, tokenUserId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, true)
+	if !authorized {
+		return
+	}
+
 	userIdParam := c.Param("userId")
 	userId, err := strconv.Atoi(userIdParam)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "userId inválido"})
+		return
+	}
+
+	if !isAdmin && tokenUserId != userId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No autorizado para ver estas publicaciones"})
 		return
 	}
 

@@ -11,17 +11,18 @@ func mapUrls() {
 	router.POST("/register", userController.InsertUser)
 	router.POST("/login", userController.Login)
 	router.POST("/forgot-password", userController.ForgotPassword)
+	router.PATCH("/reset-password", userController.ResetPassword)
 
-	// User is Authenticated and account owner (id = endpoint_id)
+	// can access: Only if User is Authenticated and account owner (id = endpoint_id)
 	router.GET("/user/email/:email", userController.GetUserByEmail)
 	router.PATCH("/user/:id", userController.UpdateUser)
 	router.PATCH("/user/:id/change-password", userController.ChangePassword)
 
-	// User is Authenticated and account owner (id = endpoint_id) or ADMIN
+	// can access: if User is Authenticated and account owner (id = endpoint_id) or ADMIN
 	router.GET("/user/:id", userController.GetUserById)
-	//router.DELETE("/user/:id", userController.DeleteUser)
+	router.DELETE("/user/:id", userController.DeleteUser)
 
-	// Only admin
+	// can access: Only admin
 	//router.GET("/reports", userController.ViewReports)
 	//router.PATCH("/suspend/:id", userController.SuspendUser)
 
