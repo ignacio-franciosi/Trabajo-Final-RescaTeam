@@ -28,6 +28,8 @@ type userServiceInterface interface {
 	UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, error)
 	ChangePassword(changePasswordDto dto.ChangePasswordDto) error
 	SendPasswordResetEmail(email string) error
+	ResetPassword(resetPasswordDto dto.ResetPasswordDto) error
+	DeleteUser(id int) error
 }
 
 var (
@@ -281,7 +283,7 @@ func (s *userService) SendPasswordResetEmail(email string) error {
 		return err
 	}
 
-	resetLink := fmt.Sprintf("http://localhost:3000/reset-password?token=%s", tokenStr) // despues, url de front
+	resetLink := fmt.Sprintf("http://localhost:8080/reset-password?token=%s", tokenStr) // despues, url de front
 
 	// Email
 	subject := "Subject: Recuperación de contraseña\n"
@@ -299,4 +301,54 @@ func (s *userService) SendPasswordResetEmail(email string) error {
 	}
 
 	return nil
+}
+
+func (s *userService) ResetPassword(resetPasswordDto dto.ResetPasswordDto) error {
+	/*
+		claims, err := jwt.ParseWithClaims(token, &ResetClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return []byte(os.Getenv("JWT_SECRET")), nil
+		})
+		if err != nil || !claims.Valid {
+			return "", errors.New("token inválido")
+		}
+
+		email := claims.Claims.(*ResetClaims).Email
+		return email, nil
+
+		email, err := tokenService.ValidateResetToken(token)
+		if err != nil {
+			return err
+		}
+
+		user, err := repository.GetUserByEmail(email)
+		if err != nil {
+			return err
+		}
+
+		hashedPassword, err := utils.HashPassword(newPassword)
+		if err != nil {
+			return err
+		}
+
+		user.Password = hashedPassword
+		if err := repository.UpdateUserPassword(user); err != nil {
+			return err
+		}
+
+		tokenService.InvalidateResetToken(token)
+
+	*/
+	return nil
+}
+
+func (s *userService) DeleteUser(id int) error {
+	user := userClient.GetUserById(id)
+
+	if user.UserId == 0 {
+		return errors.New("user not found")
+	}
+
+	err := userClient.DeleteUser(user)
+
+	return err
 }
