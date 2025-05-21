@@ -6,9 +6,11 @@ import (
 	authhelper "adoption/utils/auth"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -257,4 +259,57 @@ func GetAllAdoptionPostsByUserId(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, postsDto)
+}
+
+func UploadAdoptionImage(c *gin.Context) {
+	postIdStr := c.PostForm("adoption_post_id")
+	postId, err := strconv.Atoi(postIdStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid adoption_post_id"})
+		return
+	}
+
+	file, err := c.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Image not provided"})
+		return
+	}
+
+	// Generar un UUID único para el nombre del archivo
+	uniqueID := uuid.New().String()
+	ext := filepath.Ext(file.Filename)
+	filename := fmt.Sprintf("%d_%s%s", postId, uniqueID, ext)
+	savePath := "images/adoption_posts/" + filename
+
+	// Guardar el archivo localmente
+	if err := c.SaveUploadedFile(file, savePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save image"})
+		return
+	}
+
+	// Llamar al servicio para registrar en BD
+	imageDto, apiErr := services.AdoptionService.UploadImage(postId, filename)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, imageDto)
+}
+
+func GetImagesByAdoptionPostId(c *gin.Context) {
+	postIdStr := c.Param("id")
+	postId, err := strconv.Atoi(postIdStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalido adoption_post_id"})
+		return
+	}
+
+	images, apiErr := services.AdoptionService.GetImagesByAdoptionPostId(postId)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, images)
 }

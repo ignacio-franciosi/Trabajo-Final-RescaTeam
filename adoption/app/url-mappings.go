@@ -27,5 +27,8 @@ func mapUrls() {
 
 	router.GET("/adoptionPost/user/:userId", controllers.GetAllAdoptionPostsByUserId) //with auth user/admin
 
+	router.POST("adoptionPost/images/upload", controllers.UploadAdoptionImage)
+	router.GET("/adoptionPost/images/:id", controllers.GetImagesByAdoptionPostId)
+
 	log.Info("Listo el mapeo de configuraciones :)")
 }

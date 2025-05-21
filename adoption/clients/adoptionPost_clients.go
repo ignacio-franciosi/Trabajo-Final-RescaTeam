@@ -141,3 +141,14 @@ func GetAllAdoptionPostsByUserId(userId int) model.AdoptionPosts {
 
 	return posts
 }
+
+func UploadAdoptionImage(image model.AdoptionImage) (model.AdoptionImage, error) {
+	result := Db.Create(&image)
+	return image, result.Error
+}
+
+func GetImagesByAdoptionPostId(postId int) ([]model.AdoptionImage, error) {
+	var images []model.AdoptionImage
+	result := Db.Where("adoption_post_id = ?", postId).Find(&images)
+	return images, result.Error
+}

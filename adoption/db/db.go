@@ -46,6 +46,7 @@ func init() {
 func StartDbEngine() {
 	// We need to migrate all classes model.
 	db.AutoMigrate(&model.AdoptionPost{})
+	db.AutoMigrate(&model.AdoptionImage{})
 
 	log.Info("Finishing Migration Database Tables :)")
 }
