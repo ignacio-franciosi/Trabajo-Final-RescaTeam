@@ -19,6 +19,8 @@ type adoptionServiceInterface interface {
 	GetFilteredAdoptionPosts(filters map[string]string) ([]dto.AdoptionPostDto, e.ApiError)
 	MarkAdoptionPostAsAdopted(id int, userId int) error
 	GetAllAdoptionPostsByUserId(userId int) (dto.AdoptionPostsDto, error)
+	UploadImage(postId int, filename string) (dto.AdoptionImageDto, e.ApiError)
+	GetImagesByAdoptionPostId(postId int) ([]dto.AdoptionImageDto, e.ApiError)
 }
 
 var (
@@ -250,4 +252,38 @@ func (s *adoptionService) GetAllAdoptionPostsByUserId(userId int) (dto.AdoptionP
 	}
 
 	return postsDto, nil
+}
+
+func (s adoptionService) UploadImage(postId int, filename string) (dto.AdoptionImageDto, e.ApiError) {
+	image := model.AdoptionImage{
+		AdoptionPostId: postId,
+		FilePath:       "/images/adoption_posts/" + filename,
+	}
+	savedImage, err := adoptionPostClient.UploadAdoptionImage(image)
+	if err != nil {
+		return dto.AdoptionImageDto{}, e.NewInternalServerApiError("Cannot save image", err)
+	}
+
+	return dto.AdoptionImageDto{
+		ImageId:        savedImage.ImageId,
+		AdoptionPostId: savedImage.AdoptionPostId,
+		FilePath:       savedImage.FilePath,
+	}, nil
+}
+
+func (s adoptionService) GetImagesByAdoptionPostId(postId int) ([]dto.AdoptionImageDto, e.ApiError) {
+	images, err := adoptionPostClient.GetImagesByAdoptionPostId(postId)
+	if err != nil {
+		return nil, e.NewInternalServerApiError("No se pudieron obtener imagenes", err)
+	}
+
+	var dtos []dto.AdoptionImageDto
+	for _, img := range images {
+		dtos = append(dtos, dto.AdoptionImageDto{
+			ImageId:        img.ImageId,
+			AdoptionPostId: img.AdoptionPostId,
+			FilePath:       img.FilePath,
+		})
+	}
+	return dtos, nil
 }
