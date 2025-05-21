@@ -209,7 +209,14 @@ func ResetPassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Token faltante"})
 		return
 	}
+
+	if !authhelper.VerifyTokenAndAuthorize(c, true, true) {
+		return
+	}
 	resetPasswordDto.Token = token
+
+	tokenUserId, _ := c.Get("userId")
+	// Agregar control de exp del token
 
 	err := c.BindJSON(&resetPasswordDto)
 	if err != nil {
@@ -218,7 +225,7 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	err = service.UserService.ResetPassword(resetPasswordDto)
+	err = service.UserService.ResetPassword(tokenUserId.(int), resetPasswordDto)
 
 	if err != nil {
 		// manage different errors
