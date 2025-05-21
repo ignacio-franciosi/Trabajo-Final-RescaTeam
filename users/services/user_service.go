@@ -28,7 +28,7 @@ type userServiceInterface interface {
 	UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, error)
 	ChangePassword(changePasswordDto dto.ChangePasswordDto) error
 	SendPasswordResetEmail(email string) error
-	ResetPassword(resetPasswordDto dto.ResetPasswordDto) error
+	ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error
 	DeleteUser(id int) error
 }
 
@@ -275,8 +275,10 @@ func (s *userService) SendPasswordResetEmail(email string) error {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email": email,
-		"exp":   time.Now().Add(10 * time.Minute).Unix(), //token válido por 10 mins
+		"id_user":   user.UserId,
+		"type":      user.Type,
+		"suspended": user.Suspended,
+		"exp":       time.Now().Add(10 * time.Minute).Unix(), //token válido por 10 mins
 	})
 	tokenStr, err := token.SignedString(jwtKey)
 	if err != nil {
@@ -287,7 +289,7 @@ func (s *userService) SendPasswordResetEmail(email string) error {
 
 	// Email
 	subject := "Subject: Recuperación de contraseña\n"
-	body := fmt.Sprintf("Para restablecer tu contraseña, hacé clic en este enlace:\n\n%s", resetLink)
+	body := fmt.Sprintf("Hola! Para restablecer tu contraseña, hacé clic en este enlace:\n\n%s", resetLink)
 	msg := []byte(subject + "\n" + body)
 
 	from := os.Getenv("MAIL_USER")
@@ -303,41 +305,36 @@ func (s *userService) SendPasswordResetEmail(email string) error {
 	return nil
 }
 
-func (s *userService) ResetPassword(resetPasswordDto dto.ResetPasswordDto) error {
-	/*
-		claims, err := jwt.ParseWithClaims(token, &ResetClaims{}, func(token *jwt.Token) (interface{}, error) {
-			return []byte(os.Getenv("JWT_SECRET")), nil
-		})
-		if err != nil || !claims.Valid {
-			return "", errors.New("token inválido")
-		}
+func (s *userService) ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error {
+	var user model.User = userClient.GetUserById(tokenUserId)
 
-		email := claims.Claims.(*ResetClaims).Email
-		return email, nil
+	if user.UserId == 0 {
+		return errors.New("user not found")
+	}
 
-		email, err := tokenService.ValidateResetToken(token)
-		if err != nil {
-			return err
-		}
+	//check if new password1 is valid
+	if len(resetPasswordDto.NewPassword1) < 8 ||
+		!regexp.MustCompile(`[A-Z]`).MatchString(resetPasswordDto.NewPassword1) ||
+		!regexp.MustCompile(`[a-z]`).MatchString(resetPasswordDto.NewPassword1) ||
+		!regexp.MustCompile(`[0-9]`).MatchString(resetPasswordDto.NewPassword1) {
+		return errors.New("la contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número")
+	}
 
-		user, err := repository.GetUserByEmail(email)
-		if err != nil {
-			return err
-		}
+	// check if the 2 input new passwords are the same
+	if resetPasswordDto.NewPassword1 != resetPasswordDto.NewPassword2 {
+		return errors.New("las contraseñas nuevas no coinciden")
+	}
 
-		hashedPassword, err := utils.HashPassword(newPassword)
-		if err != nil {
-			return err
-		}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(resetPasswordDto.NewPassword1), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New("error al encriptar la contraseña")
+	}
 
-		user.Password = hashedPassword
-		if err := repository.UpdateUserPassword(user); err != nil {
-			return err
-		}
+	err = userClient.ChangePassword(tokenUserId, string(hashedPassword))
+	if err != nil {
+		return errors.New("error al cambiar la contraseña" + err.Error())
+	}
 
-		tokenService.InvalidateResetToken(token)
-
-	*/
 	return nil
 }
 
