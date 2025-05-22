@@ -1,5 +1,6 @@
 import React from 'react';
-import LayoutDropdownMenu from './LayoutDropdownMenu';
+import DropdownMenu from './DropdownMenu';
+
 
 const Header = ({ isLoggedIn, onLogout, onChangeView }) => {
   const profileOptions = [
@@ -71,9 +72,9 @@ const Header = ({ isLoggedIn, onLogout, onChangeView }) => {
 
         <div className="hidden md:block">
           {isLoggedIn ? (
-            <LayoutDropdownMenu options={profileOptions} onSelect={handleProfileSelect} />
+            <DropdownMenu options={profileOptions} onSelect={handleProfileSelect} />
           ) : (
-            <LayoutDropdownMenu options={guestOptions} onSelect={handleProfileSelect} />
+            <DropdownMenu options={guestOptions} onSelect={handleProfileSelect} />
           )}
         </div>
 
