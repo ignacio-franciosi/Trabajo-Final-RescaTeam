@@ -13,12 +13,14 @@ import (
 )
 
 func GetUserByEmail(c *gin.Context) {
-	if !authhelper.VerifyTokenAndAuthorize(c, true, true) {
-		return
-	}
 
 	email := c.Param("email")
 	userDto, err := service.UserService.GetUserByEmail(email)
+
+	if !authhelper.VerifyTokenAndAuthorize(c, true, true, userDto.UserId) {
+		return
+	}
+
 	if err != nil {
 		if err.Error() == "user not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -28,43 +30,23 @@ func GetUserByEmail(c *gin.Context) {
 		return
 	}
 
-	// Obtener datos del contexto (guardados en el helper)
-	tokenUserId, _ := c.Get("userId")
-	isAdmin, _ := c.Get("isAdmin")
-
-	// Verificar si es dueño o admin
-	if tokenUserId.(int) != userDto.UserId && !isAdmin.(bool) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "No tiene permisos suficientes"})
-		return
-	}
-
 	c.JSON(http.StatusOK, userDto)
 }
 
 func GetUserById(c *gin.Context) {
-	if !authhelper.VerifyTokenAndAuthorize(c, true, true) {
-		return
-	}
-
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
 		return
 	}
 
-	userDto, err := service.UserService.GetUserById(id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+	if !authhelper.VerifyTokenAndAuthorize(c, true, true, id) {
 		return
 	}
 
-	// Obtener datos del contexto
-	tokenUserId, _ := c.Get("userId")
-	isAdmin, _ := c.Get("isAdmin")
-
-	// Verificar si es dueño o admin
-	if tokenUserId.(int) != userDto.UserId && !isAdmin.(bool) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "No tiene permisos suficientes"})
+	userDto, err := service.UserService.GetUserById(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -128,6 +110,10 @@ func UpdateUser(c *gin.Context) {
 	}
 	updateUserDto.UserId = id
 
+	if !authhelper.VerifyTokenAndAuthorize(c, false, true, id) {
+		return
+	}
+
 	userDto, err := service.UserService.UpdateUser(updateUserDto)
 	// Error del update
 	if err != nil {
@@ -163,6 +149,10 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 	changePasswordDto.UserId = id
+
+	if !authhelper.VerifyTokenAndAuthorize(c, false, true, id) {
+		return
+	}
 
 	err = service.UserService.ChangePassword(changePasswordDto)
 	if err != nil {
@@ -203,20 +193,15 @@ func ForgotPassword(c *gin.Context) {
 
 func ResetPassword(c *gin.Context) {
 	var resetPasswordDto dto.ResetPasswordDto
-
-	token := c.Query("token")
-	if token == "" {
+	tokenString := c.Query("token")
+	if tokenString == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Token faltante"})
-		return
 	}
 
-	if !authhelper.VerifyTokenAndAuthorize(c, true, true) {
+	if !authhelper.VerifyQueryToken(c) {
 		return
 	}
-	resetPasswordDto.Token = token
-
-	tokenUserId, _ := c.Get("userId")
-	// Agregar control de exp del token
+	resetPasswordDto.Token = tokenString
 
 	err := c.BindJSON(&resetPasswordDto)
 	if err != nil {
@@ -225,7 +210,9 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	err = service.UserService.ResetPassword(tokenUserId.(int), resetPasswordDto)
+	userId, _ := c.Get("userId")
+
+	err = service.UserService.ResetPassword(userId.(int), resetPasswordDto)
 
 	if err != nil {
 		// manage different errors
@@ -237,11 +224,6 @@ func ResetPassword(c *gin.Context) {
 }
 
 func DeleteUser(c *gin.Context) {
-	/*
-		if !authhelper.VerifyTokenAndAuthorize(c, true, true) {
-			return
-		}
-	*/
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -249,17 +231,9 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	/*
-		// Obtener datos del contexto
-		tokenUserId, _ := c.Get("userId")
-		isAdmin, _ := c.Get("isAdmin")
-
-		// Verificar si es dueño o admin
-		if tokenUserId.(int) != id && !isAdmin.(bool) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "No tiene permisos suficientes"})
-			return
-		}
-	*/
+	if !authhelper.VerifyTokenAndAuthorize(c, true, true, id) {
+		return
+	}
 
 	err = service.UserService.DeleteUser(id)
 	if err != nil {
