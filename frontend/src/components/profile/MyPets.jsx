@@ -1,5 +1,5 @@
 import React from 'react';
-import PetPetCard from './PetPetCard';
+import PetCard from '../pets/PetCard';
 
 const MyPets = ({ pets, onEdit, onDelete, onMarkAdopted }) => {
   return (
@@ -11,7 +11,7 @@ const MyPets = ({ pets, onEdit, onDelete, onMarkAdopted }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {pets.map(pet => (
             <div key={pet.id} className="border rounded-lg overflow-hidden">
-              <PetPetCard pet={pet} onClick={() => {}} /> {/* No clickable in this view */}
+              <PetCard pet={pet} onClick={() => {}} /> {/* No clickable in this view */}
               <div className="p-4 bg-gray-50 flex justify-around space-x-2">
                 <button
                   onClick={() => onEdit(pet)}

@@ -147,16 +147,16 @@ const App = () => {
       case 'home':
         return (
           <>
-            <HomeHeroSection onScrollToPets={handleScrollToPets} />
-            <HomeAboutSection />
+            <HeroSection onScrollToPets={handleScrollToPets} />
+            <AboutSection />
             <section id="pets-list" className="container mx-auto px-4 py-8">
               <h2 className="text-3xl font-bold mb-6 text-center">Mascotas en Adopción</h2>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="md:col-span-1">
-                  <PetFilterPanel onFilterChange={handleFilterChange} />
+                  <FilterPanel onFilterChange={handleFilterChange} />
                 </div>
                 <div className="md:col-span-3">
-                  <PetPetList 
+                  <PetList 
                     pets={filteredPets.filter(pet => !pet.adopted)} // Mostrar solo no adoptados en el listado general
                     onPetClick={(pet) => {
                       setSelectedPet(pet);
@@ -169,11 +169,11 @@ const App = () => {
           </>
         );
       case 'login':
-        return <AuthLoginForm onLogin={handleLogin} />;
+        return <LoginForm onLogin={handleLogin} />;
       case 'register':
         return (
           <div className="container mx-auto px-4 py-8">
-            <AuthRegisterForm onRegister={handleRegister} existingUsers={users} />
+            <RegisterForm onRegister={handleRegister} existingUsers={users} />
           </div>
         );
       case 'profile':
@@ -183,7 +183,7 @@ const App = () => {
           }
         return (
           <div className="container mx-auto px-4 py-8">
-            <ProfileUserProfile 
+            <UserProfile 
               user={loggedInUser} 
               onEdit={() => alert('Funcionalidad de editar perfil')}
               onChangePassword={() => alert('Funcionalidad de cambiar contraseña')}
@@ -203,7 +203,7 @@ const App = () => {
         const userPets = pets.filter(pet => loggedInUser && pet.userId === loggedInUser.id);
         return (
           <div className="container mx-auto px-4 py-8">
-            <ProfileMyPets 
+            <MyPets 
               pets={userPets} 
               onEdit={handleEditPet}
               onDelete={handleDeletePet}
@@ -220,7 +220,7 @@ const App = () => {
             >
               ← Volver al listado
             </button>
-            <PetPetDetail pet={selectedPet} />
+            <PetDetail pet={selectedPet} />
           </div>
         );
       case 'newPet':
@@ -230,7 +230,7 @@ const App = () => {
           }
         return (
           <div className="container mx-auto px-4 py-8">
-            <PetPetForm onSubmit={handleAddPet} />
+            <PetForm onSubmit={handleAddPet} />
           </div>
         );
       default:
@@ -240,7 +240,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <LayoutHeader 
+      <Header 
         isLoggedIn={!!loggedInUser} 
         onLogout={handleLogout}
         onChangeView={setCurrentView}

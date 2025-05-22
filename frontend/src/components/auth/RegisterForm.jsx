@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { validateEmail, validatePassword, validateRequiredFields } from '../utils/validators';
+import { validateEmail, validatePassword, validateRequiredFields } from '../../utils/validators';
 
 const RegisterForm = ({ onRegister, existingUsers }) => {
   const [formData, setFormData] = useState({
