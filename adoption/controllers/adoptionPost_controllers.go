@@ -262,6 +262,13 @@ func GetAllAdoptionPostsByUserId(c *gin.Context) {
 }
 
 func UploadAdoptionImage(c *gin.Context) {
+	//Verifico token y extraigo userId/isAdmin
+	authorized, tokenUserId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, false)
+	if !authorized {
+		return
+	}
+
+	//Parseo postId de la request
 	postIdStr := c.PostForm("adoption_post_id")
 	postId, err := strconv.Atoi(postIdStr)
 	if err != nil {
@@ -269,25 +276,38 @@ func UploadAdoptionImage(c *gin.Context) {
 		return
 	}
 
+	//Traigo el adoption post
+	postDto, apiErr := services.AdoptionService.GetAdoptionPostById(postId)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	//Hago que solo el dueño o admin puede subir imágenes
+	if !isAdmin && postDto.UserId != tokenUserId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No autorizado para subir imagen a este post"})
+		return
+	}
+
+	//Recibo del archivo
 	file, err := c.FormFile("image")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Image not provided"})
 		return
 	}
 
-	// Generar un UUID único para el nombre del archivo
+	//Generar nombre aleatorio y guardo la img localmente
 	uniqueID := uuid.New().String()
 	ext := filepath.Ext(file.Filename)
 	filename := fmt.Sprintf("%d_%s%s", postId, uniqueID, ext)
-	savePath := "images/adoption_posts/" + filename
+	savePath := filepath.Join("images", "adoption_posts", filename)
 
-	// Guardar el archivo localmente
 	if err := c.SaveUploadedFile(file, savePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save image"})
 		return
 	}
 
-	// Llamar al servicio para registrar en BD
+	//Guardo el path/url en BD
 	imageDto, apiErr := services.AdoptionService.UploadImage(postId, filename)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)

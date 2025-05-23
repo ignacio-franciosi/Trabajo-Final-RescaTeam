@@ -26,9 +26,12 @@ func mapUrls() {
 	//tiene la forma: adoptionPost/adopted/2?userId=3 (estoy marcando la publicacion 2 y soy el usuario 3)
 
 	router.GET("/adoptionPost/user/:userId", controllers.GetAllAdoptionPostsByUserId) //with auth user/admin
+	//mis publicaciones
 
-	router.POST("adoptionPost/images/upload", controllers.UploadAdoptionImage)
-	router.GET("/adoptionPost/images/:id", controllers.GetImagesByAdoptionPostId)
+	router.POST("adoptionPost/images/upload", controllers.UploadAdoptionImage) //with auth
+	//no se le pasa un JSON, es un form-data
+
+	router.GET("/adoptionPost/images/:id", controllers.GetImagesByAdoptionPostId) //no auth (cualquiera puede ver)
 
 	log.Info("Listo el mapeo de configuraciones :)")
 }
