@@ -6,6 +6,9 @@ import (
 	"adoption/model"
 	e "adoption/utils/errors"
 	"errors"
+	"fmt"
+	"os"
+	"strings"
 )
 
 type adoptionService struct{}
@@ -21,6 +24,9 @@ type adoptionServiceInterface interface {
 	GetAllAdoptionPostsByUserId(userId int) (dto.AdoptionPostsDto, error)
 	UploadImage(postId int, filename string) (dto.AdoptionImageDto, e.ApiError)
 	GetImagesByAdoptionPostId(postId int) ([]dto.AdoptionImageDto, e.ApiError)
+	GetImageById(id int) (dto.AdoptionImageDto, e.ApiError)
+	DeleteImageById(imageId int) error
+	DeleteAllImagesByAdoptionPostId(postId int) error
 }
 
 var (
@@ -286,4 +292,66 @@ func (s adoptionService) GetImagesByAdoptionPostId(postId int) ([]dto.AdoptionIm
 		})
 	}
 	return dtos, nil
+}
+
+func (s *adoptionService) GetImageById(id int) (dto.AdoptionImageDto, e.ApiError) {
+	var image model.AdoptionImage = adoptionPostClient.GetImageById(id)
+	var imageDto dto.AdoptionImageDto
+
+	if image.ImageId == 0 {
+		return imageDto, e.NewBadRequestApiError("Image not found")
+	}
+
+	imageDto.ImageId = image.ImageId
+	imageDto.AdoptionPostId = image.AdoptionPostId
+	imageDto.FilePath = image.FilePath
+
+	return imageDto, nil
+
+}
+
+func (s *adoptionService) DeleteImageById(imageId int) error {
+	//Obtener imagen desde BD
+	image := adoptionPostClient.GetImageById(imageId)
+	if image.ImageId == 0 {
+		return errors.New("imagen no encontrada")
+	}
+
+	//Eliminar físicamente la imagen del sistema de archivos
+	//El FilePath es "/images/adoption_posts/xxx.jpg"
+	filePath := strings.TrimPrefix(image.FilePath, "/")
+	//se borra
+	if err := os.Remove(filePath); err != nil {
+		return fmt.Errorf("error al eliminar archivo: %v", err)
+	}
+
+	//Eliminar desde la BD
+	return adoptionPostClient.DeleteImageById(imageId)
+}
+
+func (s *adoptionService) DeleteAllImagesByAdoptionPostId(postId int) error {
+	//Obtener todas las imágenes asociadas al post
+	images, err := adoptionPostClient.GetImagesByAdoptionPostId(postId)
+	if err != nil {
+		return fmt.Errorf("error al obtener imágenes: %v", err)
+	}
+
+	if len(images) == 0 {
+		return nil
+	}
+
+	//Iterar y eliminar archivos uno por uno
+	for _, img := range images {
+		filePath := strings.TrimPrefix(img.FilePath, "/") //"images/adoption_posts/xxx.jpg"
+		if err := os.Remove(filePath); err != nil {
+			return fmt.Errorf("error al eliminar archivo %s: %v", filePath, err)
+		}
+	}
+
+	//Eliminar los registros de la base de datos
+	if err := adoptionPostClient.DeleteAllImagesByAdoptionPostId(postId); err != nil {
+		return fmt.Errorf("error al eliminar imágenes en la base de datos: %v", err)
+	}
+
+	return nil
 }
