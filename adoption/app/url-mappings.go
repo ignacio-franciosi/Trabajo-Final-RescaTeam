@@ -21,8 +21,10 @@ func mapUrls() {
 
 	//PRIVATE ROUTES (REQUIRE TOKEN)
 
-	router.POST("/adoptionPost", controllers.InsertAdoptionPost)
+	router.POST("/adoptionPost", controllers.InsertAdoptionPost) //no se hace con JSON, se hace con form-data
 	router.POST("/adoptionPost/images/upload", controllers.UploadAdoptionImage)
+	router.DELETE("adoptionPost/images/:idImage", controllers.DeleteImageById)
+	router.DELETE("adoptionPost/images/deleteall/:idAdPost", controllers.DeleteAllImagesByAdoptionPostId)
 	router.DELETE("/adoptionPost/:id", controllers.DeleteAdoptionPost)
 	router.PUT("/adoptionPost/adopted/:id", controllers.MarkAdoptionPostAsAdopted)
 	router.GET("/adoptionPost/user/:userId", controllers.GetAllAdoptionPostsByUserId) //mis publicaciones

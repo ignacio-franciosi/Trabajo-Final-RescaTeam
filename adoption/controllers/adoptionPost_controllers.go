@@ -387,3 +387,84 @@ func GetImagesByAdoptionPostId(c *gin.Context) {
 
 	c.JSON(http.StatusOK, images)
 }
+
+func DeleteImageById(c *gin.Context) {
+	// Verifica token
+	authorized, userId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, true)
+	if !authorized {
+		return
+	}
+
+	// Convierte el parámetro idImage
+	idParam := c.Param("idImage")
+	id, convErr := strconv.Atoi(idParam)
+	if convErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de ID inválido"})
+		return
+	}
+
+	// Obtiene la imagen
+	imageDto, apiErr := services.AdoptionService.GetImageById(id)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// Obtiene el adoption post al que pertenece la imagen
+	adoptionPostDto, apiErr := services.AdoptionService.GetAdoptionPostById(imageDto.AdoptionPostId)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// Verifica si el usuario es dueño del post o admin
+	if !isAdmin && adoptionPostDto.UserId != userId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No autorizado para eliminar esta imagen"})
+		return
+	}
+
+	// Llama al service para eliminar
+	err := services.AdoptionService.DeleteImageById(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al eliminar la imagen"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Imagen eliminada exitosamente"})
+}
+
+func DeleteAllImagesByAdoptionPostId(c *gin.Context) {
+	authorized, userId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, true)
+	if !authorized {
+		return
+	}
+	// Convierte el parámetro postId
+	postIdParam := c.Param("idAdPost")
+	postId, err := strconv.Atoi(postIdParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de ID inválido"})
+		return
+	}
+
+	// Obtiene el adoption post
+	adoptionPostDto, apiErr := services.AdoptionService.GetAdoptionPostById(postId)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// Verifica si el usuario es dueño del post o admin
+	if !isAdmin && adoptionPostDto.UserId != userId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No autorizado para eliminar las imágenes de este post"})
+		return
+	}
+
+	// Llama al service
+	err = services.AdoptionService.DeleteAllImagesByAdoptionPostId(postId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al eliminar las imágenes"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Todas las imágenes eliminadas exitosamente"})
+}
