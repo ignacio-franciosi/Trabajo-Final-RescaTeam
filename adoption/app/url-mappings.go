@@ -8,30 +8,24 @@ import (
 
 func mapUrls() {
 
-	// URL mappings
+	//PUBLIC ROUTES
 
-	router.POST("/adoptionPost", controllers.InsertAdoptionPost)       //with auth user/admin
-	router.GET("/adoptionPost/:id", controllers.GetAdoptionPostById)   // no auth (cualquiera puede ver)
-	router.DELETE("/adoptionPost/:id", controllers.DeleteAdoptionPost) // with auth user/admin
-	router.GET("/adoptionPost", controllers.GetAllAdoptionPosts)       //no auth (cualquiera puede ver)
-	router.PUT("/adoptionPost/:id", controllers.UpdateAdoptionPost)    // with auth user/admin
-
-	router.GET("/adoptionPost/filter", controllers.GetFilteredAdoptionPosts) //no auth (cualquiera puede)
+	router.GET("/adoptionPost/:id", controllers.GetAdoptionPostById)
+	router.GET("/adoptionPost", controllers.GetAllAdoptionPosts)
+	router.GET("/adoptionPost/filter", controllers.GetFilteredAdoptionPosts)
 	//tiene la forma: adoptionPost/filter?species=hembra&size=mediano...
 	//rangos predefinidos de age: 0-1, 2-3, 4-7, 8plus [ej: adoptionPost/filter?species=hembra&size=mediano&age=0-1]
 	//para los espacios de las zonas se usa: "barrio%centro"
 	//hay que ir concatenando los parametros de la url segun los filtros que el usuario va seleccionando
+	router.GET("/adoptionPost/images/:id", controllers.GetImagesByAdoptionPostId)
 
-	router.PUT("/adoptionPost/adopted/:id", controllers.MarkAdoptionPostAsAdopted) //with auth user/admin
-	//tiene la forma: adoptionPost/adopted/2?userId=3 (estoy marcando la publicacion 2 y soy el usuario 3)
+	//PRIVATE ROUTES (REQUIRE TOKEN)
 
-	router.GET("/adoptionPost/user/:userId", controllers.GetAllAdoptionPostsByUserId) //with auth user/admin
-	//mis publicaciones
+	router.POST("/adoptionPost", controllers.InsertAdoptionPost)
+	router.POST("/adoptionPost/images/upload", controllers.UploadAdoptionImage)
+	router.DELETE("/adoptionPost/:id", controllers.DeleteAdoptionPost)
+	router.PUT("/adoptionPost/adopted/:id", controllers.MarkAdoptionPostAsAdopted)
+	router.GET("/adoptionPost/user/:userId", controllers.GetAllAdoptionPostsByUserId) //mis publicaciones
 
-	router.POST("adoptionPost/images/upload", controllers.UploadAdoptionImage) //with auth
-	//no se le pasa un JSON, es un form-data
-
-	router.GET("/adoptionPost/images/:id", controllers.GetImagesByAdoptionPostId) //no auth (cualquiera puede ver)
-
-	log.Info("Listo el mapeo de configuraciones :)")
+	log.Info("Url mapping ready")
 }
