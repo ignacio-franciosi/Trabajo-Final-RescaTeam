@@ -15,29 +15,90 @@ import (
 )
 
 func InsertAdoptionPost(c *gin.Context) {
-	authorized, userId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, true)
+	authorized, userId, _ := authhelper.VerifyTokenAndAuthorize(c, true, true)
 	if !authorized {
 		return
 	}
 
-	// (Si más adelante querés usar isAdmin, ya lo tenés como bool)
-	fmt.Println("isAdmin:", isAdmin)
-
 	var adoptionPostDto dto.AdoptionPostDto
-	if err := c.BindJSON(&adoptionPostDto); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
-		return
-	}
-
-	// Asociar el userId del token a la publicación
 	adoptionPostDto.UserId = userId
+	adoptionPostDto.Name = c.PostForm("name")
+	adoptionPostDto.Species = c.PostForm("species")
+	adoptionPostDto.Breed = c.PostForm("breed")
+	adoptionPostDto.Color = c.PostForm("color")
+	adoptionPostDto.Size = c.PostForm("size")
+	adoptionPostDto.Sex = c.PostForm("sex")
+	adoptionPostDto.Description = c.PostForm("description")
+	adoptionPostDto.Zone = c.PostForm("zone")
+	adoptionPostDto.Date = c.PostForm("date")
 
-	adoptionPostDto, err := services.AdoptionService.InsertAdoptionPost(adoptionPostDto)
+	// Conversion de age
+	age, err := strconv.Atoi(c.PostForm("age"))
 	if err != nil {
-		c.JSON(err.Status(), err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid age"})
 		return
 	}
-	c.JSON(http.StatusCreated, adoptionPostDto)
+	adoptionPostDto.Age = age
+
+	// Conversion de neutered
+	neutered, err := strconv.ParseBool(c.PostForm("neutered"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid neutered value"})
+		return
+	}
+	adoptionPostDto.Neutered = neutered
+
+	// Conversion de completeVaccines
+	completeVaccines, err := strconv.ParseBool(c.PostForm("complete_vaccines"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid complete_vaccines value"})
+		return
+	}
+	adoptionPostDto.CompleteVaccines = completeVaccines
+
+	// Conversion de adoptionStatus
+	adoptionStatus := c.PostForm("adoption_status")
+	if adoptionStatus != "true" && adoptionStatus != "false" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid adoption_status"})
+		return
+	}
+	//si lo que viene es true, compara con true y guarda true. Si lo que viene es false, compara con true y guarda false
+	adoptionPostDto.AdoptionStatus = adoptionStatus == "true"
+
+	// Insertar el post
+	createdPost, apiErr := services.AdoptionService.InsertAdoptionPost(adoptionPostDto)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// Procesar imágenes
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Could not parse multipart form"})
+		return
+	}
+
+	files := form.File["images"]
+	for _, file := range files {
+		uniqueID := uuid.New().String()
+		ext := filepath.Ext(file.Filename)
+		filename := fmt.Sprintf("%d_%s%s", createdPost.AdoptionPostId, uniqueID, ext)
+		savePath := filepath.Join("images", "adoption_posts", filename)
+
+		if err := c.SaveUploadedFile(file, savePath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save image"})
+			return
+		}
+
+		_, apiErr := services.AdoptionService.UploadImage(createdPost.AdoptionPostId, filename)
+		if apiErr != nil {
+			c.JSON(apiErr.Status(), apiErr)
+			return
+		}
+	}
+
+	c.JSON(http.StatusCreated, createdPost)
 }
 
 func GetAdoptionPostById(c *gin.Context) {
@@ -202,13 +263,6 @@ func MarkAdoptionPostAsAdopted(c *gin.Context) {
 		return
 	}
 
-	userIdParam := c.Query("userId")
-	userId, err := strconv.Atoi(userIdParam)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Id de publicación inválido"})
-		return
-	}
-
 	post, apiErr := services.AdoptionService.GetAdoptionPostById(id)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
@@ -220,7 +274,7 @@ func MarkAdoptionPostAsAdopted(c *gin.Context) {
 		return
 	}
 
-	err = services.AdoptionService.MarkAdoptionPostAsAdopted(id, userId)
+	err = services.AdoptionService.MarkAdoptionPostAsAdopted(id, tokenUserId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
