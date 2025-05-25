@@ -8,27 +8,26 @@ import (
 
 func mapUrls() {
 
-	// URL mappings
+	//PUBLIC ROUTES
 
-	router.POST("/adoptionPost", controllers.InsertAdoptionPost)       //with auth user/admin
-	router.GET("/adoptionPost/:id", controllers.GetAdoptionPostById)   // no auth (cualquiera puede ver)
-	router.DELETE("/adoptionPost/:id", controllers.DeleteAdoptionPost) // with auth user/admin
-	router.GET("/adoptionPost", controllers.GetAllAdoptionPosts)       //no auth (cualquiera puede ver)
-	router.PUT("/adoptionPost/:id", controllers.UpdateAdoptionPost)    // with auth user/admin
-
-	router.GET("/adoptionPost/filter", controllers.GetFilteredAdoptionPosts) //no auth (cualquiera puede)
+	router.GET("/adoptionPost/:id", controllers.GetAdoptionPostById)
+	router.GET("/adoptionPost", controllers.GetAllAdoptionPosts)
+	router.GET("/adoptionPost/filter", controllers.GetFilteredAdoptionPosts)
 	//tiene la forma: adoptionPost/filter?species=hembra&size=mediano...
 	//rangos predefinidos de age: 0-1, 2-3, 4-7, 8plus [ej: adoptionPost/filter?species=hembra&size=mediano&age=0-1]
 	//para los espacios de las zonas se usa: "barrio%centro"
 	//hay que ir concatenando los parametros de la url segun los filtros que el usuario va seleccionando
-
-	router.PUT("/adoptionPost/adopted/:id", controllers.MarkAdoptionPostAsAdopted) //with auth user/admin
-	//tiene la forma: adoptionPost/adopted/2?userId=3 (estoy marcando la publicacion 2 y soy el usuario 3)
-
-	router.GET("/adoptionPost/user/:userId", controllers.GetAllAdoptionPostsByUserId) //with auth user/admin
-
-	router.POST("adoptionPost/images/upload", controllers.UploadAdoptionImage)
 	router.GET("/adoptionPost/images/:id", controllers.GetImagesByAdoptionPostId)
 
-	log.Info("Listo el mapeo de configuraciones :)")
+	//PRIVATE ROUTES (REQUIRE TOKEN)
+
+	router.POST("/adoptionPost", controllers.InsertAdoptionPost) //no se hace con JSON, se hace con form-data
+	router.POST("/adoptionPost/images/upload", controllers.UploadAdoptionImage)
+	router.DELETE("adoptionPost/images/:idImage", controllers.DeleteImageById)
+	router.DELETE("adoptionPost/images/deleteall/:idAdPost", controllers.DeleteAllImagesByAdoptionPostId)
+	router.DELETE("/adoptionPost/:id", controllers.DeleteAdoptionPost)
+	router.PUT("/adoptionPost/adopted/:id", controllers.MarkAdoptionPostAsAdopted)
+	router.GET("/adoptionPost/user/:userId", controllers.GetAllAdoptionPostsByUserId) //mis publicaciones
+
+	log.Info("Url mapping ready")
 }

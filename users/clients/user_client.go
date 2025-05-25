@@ -21,7 +21,7 @@ func GetUserById(id int) model.User {
 func GetUserByEmail(email string) model.User {
 	var user model.User
 	Db.Where("email = ?", email).First(&user)
-	log.Debug("User: ", user)
+	//log.Debug("User: ", user)
 
 	return user
 }

@@ -152,3 +152,21 @@ func GetImagesByAdoptionPostId(postId int) ([]model.AdoptionImage, error) {
 	result := Db.Where("adoption_post_id = ?", postId).Find(&images)
 	return images, result.Error
 }
+
+func GetImageById(id int) model.AdoptionImage {
+	var image model.AdoptionImage
+	Db.First(&image, id)
+	return image
+}
+
+func DeleteImageById(imageId int) error {
+	if err := Db.Delete(&model.AdoptionImage{}, imageId).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteAllImagesByAdoptionPostId(postId int) error {
+	result := Db.Where("adoption_post_id = ?", postId).Delete(&model.AdoptionImage{})
+	return result.Error
+}

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +16,8 @@ type TokenVerificationResponse struct {
 	Suspended bool `json:"suspended"`
 }
 
-func VerifyTokenAndAuthorize(c *gin.Context, allowAdmin bool, allowOwner bool) bool {
+func VerifyTokenAndAuthorize(c *gin.Context, allowAdmin bool, allowOwner bool, reqUserId int) bool {
+
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Falta el token de autorización"})
@@ -34,16 +34,7 @@ func VerifyTokenAndAuthorize(c *gin.Context, allowAdmin bool, allowOwner bool) b
 		return false
 	}
 
-	resourceIDStr := c.Param("id")
-
-	// Si no hay ":id" en la ruta, por ejemplo cuando se usa email, el owner check se ignora
-	isOwner := false
-	if resourceIDStr != "" {
-		resourceID, err := strconv.Atoi(resourceIDStr)
-		if err == nil {
-			isOwner = claims.UserID == resourceID
-		}
-	}
+	isOwner := claims.UserID == reqUserId
 
 	if (allowOwner && isOwner) || (allowAdmin && claims.IsAdmin) {
 		c.Set("userId", claims.UserID)
@@ -51,9 +42,31 @@ func VerifyTokenAndAuthorize(c *gin.Context, allowAdmin bool, allowOwner bool) b
 		return true
 	}
 
+	//log.Debug("isOwner", isOwner)
+	//log.Debug("isAdmin", claims.IsAdmin)
+
 	c.JSON(http.StatusForbidden, gin.H{"error": "No tiene permisos suficientes"})
 	c.Abort()
 	return false
+}
+
+func VerifyQueryToken(c *gin.Context) bool {
+	tokenString := c.Query("token")
+	if tokenString == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Token faltante"})
+		return false
+	}
+
+	claims, err := verifyTokenExternally(tokenString)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.Abort()
+		return false
+	}
+
+	c.Set("userId", claims.UserID)
+	return true
+
 }
 
 func verifyTokenExternally(token string) (*TokenVerificationResponse, error) {
