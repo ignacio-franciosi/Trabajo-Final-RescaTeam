@@ -1,3 +1,4 @@
+/*
 import React from 'react';
 import DropdownMenu from './DropdownMenu';
 
@@ -35,7 +36,7 @@ const Header = ({ isLoggedIn, onLogout, onChangeView }) => {
     <header className="bg-white shadow-sm sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          {/* Aquí iría el logo si tuviéramos uno */}
+          {/* Aquí iría el logo si tuviéramos uno }
           <h1 
             onClick={() => onChangeView('home')}
             className="text-2xl font-bold text-blue-600 cursor-pointer"
@@ -78,10 +79,98 @@ const Header = ({ isLoggedIn, onLogout, onChangeView }) => {
           )}
         </div>
 
-        {/* Mobile menu button - Implementar si es necesario */}
+        {/*Mobile menu button - Implementar si es necesario}
         <div className="md:hidden">
-          {/* Aquí iría el botón para abrir el menú móvil */}
+          {/* Aquí iría el botón para abrir el menú móvil }
         </div>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
+*/
+
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import DropdownMenu from './DropdownMenu';
+import { useAuth } from '../../context/AuthContext';
+
+const Header = () => {
+  const navigate = useNavigate();
+  const { user, logout, token } = useAuth();
+  const isLoggedIn = !!token;
+
+  const profileOptions = [
+    { label: 'Ver mi perfil', action: 'profile' },
+    { label: 'Mis publicaciones', action: 'mis-publicaciones' },
+    { label: 'Cerrar Sesión', action: 'logout' },
+  ];
+
+  const guestOptions = [
+    { label: 'Iniciar Sesión', action: 'login' },
+    { label: 'Registrarme', action: 'register' },
+  ];
+
+  const handleProfileSelect = (action) => {
+    if (action === 'logout') {
+      logout();
+      navigate('/');
+    } else {
+      navigate(`/${action}`);
+    }
+  };
+
+  const handleProtectedAction = (action) => {
+    if (isLoggedIn) {
+      navigate(`/${action}`);
+    } else {
+      alert('Debes registrarte para realizar esta acción.');
+      navigate('/register');
+    }
+  };
+
+  return (
+    <header className="bg-white shadow-sm sticky top-0 z-40">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <Link to="/" className="text-2xl font-bold text-blue-600 cursor-pointer">
+            RescaTeam
+          </Link>
+        </div>
+
+        <nav className="hidden md:flex space-x-4">
+          <Link to="/" className="text-gray-700 hover:text-blue-600">
+            Home
+          </Link>
+          <button
+            onClick={() => {
+              const aboutSection = document.getElementById('about');
+              if (aboutSection) {
+                aboutSection.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            className="text-gray-700 hover:text-blue-600"
+          >
+            About
+          </button>
+          <button
+            onClick={() => handleProtectedAction('publicar-mascota')}
+            className="text-gray-700 hover:text-blue-600"
+          >
+            Publicar Mascota
+          </button>
+        </nav>
+
+        <div className="hidden md:block">
+          <DropdownMenu
+            options={isLoggedIn ? profileOptions : guestOptions}
+            onSelect={handleProfileSelect}
+          />
+        </div>
+
+        {/* Botón para menú móvil (pendiente) */}
+        <div className="md:hidden">{/* Mobile menu */}</div>
       </div>
     </header>
   );
