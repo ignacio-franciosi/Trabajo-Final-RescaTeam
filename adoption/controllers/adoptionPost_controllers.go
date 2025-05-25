@@ -15,29 +15,90 @@ import (
 )
 
 func InsertAdoptionPost(c *gin.Context) {
-	authorized, userId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, true)
+	authorized, userId, _ := authhelper.VerifyTokenAndAuthorize(c, true, true)
 	if !authorized {
 		return
 	}
 
-	// (Si más adelante querés usar isAdmin, ya lo tenés como bool)
-	fmt.Println("isAdmin:", isAdmin)
-
 	var adoptionPostDto dto.AdoptionPostDto
-	if err := c.BindJSON(&adoptionPostDto); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
-		return
-	}
-
-	// Asociar el userId del token a la publicación
 	adoptionPostDto.UserId = userId
+	adoptionPostDto.Name = c.PostForm("name")
+	adoptionPostDto.Species = c.PostForm("species")
+	adoptionPostDto.Breed = c.PostForm("breed")
+	adoptionPostDto.Color = c.PostForm("color")
+	adoptionPostDto.Size = c.PostForm("size")
+	adoptionPostDto.Sex = c.PostForm("sex")
+	adoptionPostDto.Description = c.PostForm("description")
+	adoptionPostDto.Zone = c.PostForm("zone")
+	adoptionPostDto.Date = c.PostForm("date")
 
-	adoptionPostDto, err := services.AdoptionService.InsertAdoptionPost(adoptionPostDto)
+	// Conversion de age
+	age, err := strconv.Atoi(c.PostForm("age"))
 	if err != nil {
-		c.JSON(err.Status(), err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid age"})
 		return
 	}
-	c.JSON(http.StatusCreated, adoptionPostDto)
+	adoptionPostDto.Age = age
+
+	// Conversion de neutered
+	neutered, err := strconv.ParseBool(c.PostForm("neutered"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid neutered value"})
+		return
+	}
+	adoptionPostDto.Neutered = neutered
+
+	// Conversion de completeVaccines
+	completeVaccines, err := strconv.ParseBool(c.PostForm("complete_vaccines"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid complete_vaccines value"})
+		return
+	}
+	adoptionPostDto.CompleteVaccines = completeVaccines
+
+	// Conversion de adoptionStatus
+	adoptionStatus := c.PostForm("adoption_status")
+	if adoptionStatus != "true" && adoptionStatus != "false" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid adoption_status"})
+		return
+	}
+	//si lo que viene es true, compara con true y guarda true. Si lo que viene es false, compara con true y guarda false
+	adoptionPostDto.AdoptionStatus = adoptionStatus == "true"
+
+	// Insertar el post
+	createdPost, apiErr := services.AdoptionService.InsertAdoptionPost(adoptionPostDto)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// Procesar imágenes
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Could not parse multipart form"})
+		return
+	}
+
+	files := form.File["images"]
+	for _, file := range files {
+		uniqueID := uuid.New().String()
+		ext := filepath.Ext(file.Filename)
+		filename := fmt.Sprintf("%d_%s%s", createdPost.AdoptionPostId, uniqueID, ext)
+		savePath := filepath.Join("images", "adoption_posts", filename)
+
+		if err := c.SaveUploadedFile(file, savePath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save image"})
+			return
+		}
+
+		_, apiErr := services.AdoptionService.UploadImage(createdPost.AdoptionPostId, filename)
+		if apiErr != nil {
+			c.JSON(apiErr.Status(), apiErr)
+			return
+		}
+	}
+
+	c.JSON(http.StatusCreated, createdPost)
 }
 
 func GetAdoptionPostById(c *gin.Context) {
@@ -202,13 +263,6 @@ func MarkAdoptionPostAsAdopted(c *gin.Context) {
 		return
 	}
 
-	userIdParam := c.Query("userId")
-	userId, err := strconv.Atoi(userIdParam)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Id de publicación inválido"})
-		return
-	}
-
 	post, apiErr := services.AdoptionService.GetAdoptionPostById(id)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
@@ -220,7 +274,7 @@ func MarkAdoptionPostAsAdopted(c *gin.Context) {
 		return
 	}
 
-	err = services.AdoptionService.MarkAdoptionPostAsAdopted(id, userId)
+	err = services.AdoptionService.MarkAdoptionPostAsAdopted(id, tokenUserId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -262,6 +316,13 @@ func GetAllAdoptionPostsByUserId(c *gin.Context) {
 }
 
 func UploadAdoptionImage(c *gin.Context) {
+	//Verifico token y extraigo userId/isAdmin
+	authorized, tokenUserId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, false)
+	if !authorized {
+		return
+	}
+
+	//Parseo postId de la request
 	postIdStr := c.PostForm("adoption_post_id")
 	postId, err := strconv.Atoi(postIdStr)
 	if err != nil {
@@ -269,25 +330,38 @@ func UploadAdoptionImage(c *gin.Context) {
 		return
 	}
 
+	//Traigo el adoption post
+	postDto, apiErr := services.AdoptionService.GetAdoptionPostById(postId)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	//Hago que solo el dueño o admin puede subir imágenes
+	if !isAdmin && postDto.UserId != tokenUserId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No autorizado para subir imagen a este post"})
+		return
+	}
+
+	//Recibo del archivo
 	file, err := c.FormFile("image")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Image not provided"})
 		return
 	}
 
-	// Generar un UUID único para el nombre del archivo
+	//Generar nombre aleatorio y guardo la img localmente
 	uniqueID := uuid.New().String()
 	ext := filepath.Ext(file.Filename)
 	filename := fmt.Sprintf("%d_%s%s", postId, uniqueID, ext)
-	savePath := "images/adoption_posts/" + filename
+	savePath := filepath.Join("images", "adoption_posts", filename)
 
-	// Guardar el archivo localmente
 	if err := c.SaveUploadedFile(file, savePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save image"})
 		return
 	}
 
-	// Llamar al servicio para registrar en BD
+	//Guardo el path/url en BD
 	imageDto, apiErr := services.AdoptionService.UploadImage(postId, filename)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
@@ -312,4 +386,85 @@ func GetImagesByAdoptionPostId(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, images)
+}
+
+func DeleteImageById(c *gin.Context) {
+	// Verifica token
+	authorized, userId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, true)
+	if !authorized {
+		return
+	}
+
+	// Convierte el parámetro idImage
+	idParam := c.Param("idImage")
+	id, convErr := strconv.Atoi(idParam)
+	if convErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de ID inválido"})
+		return
+	}
+
+	// Obtiene la imagen
+	imageDto, apiErr := services.AdoptionService.GetImageById(id)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// Obtiene el adoption post al que pertenece la imagen
+	adoptionPostDto, apiErr := services.AdoptionService.GetAdoptionPostById(imageDto.AdoptionPostId)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// Verifica si el usuario es dueño del post o admin
+	if !isAdmin && adoptionPostDto.UserId != userId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No autorizado para eliminar esta imagen"})
+		return
+	}
+
+	// Llama al service para eliminar
+	err := services.AdoptionService.DeleteImageById(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al eliminar la imagen"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Imagen eliminada exitosamente"})
+}
+
+func DeleteAllImagesByAdoptionPostId(c *gin.Context) {
+	authorized, userId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, true)
+	if !authorized {
+		return
+	}
+	// Convierte el parámetro postId
+	postIdParam := c.Param("idAdPost")
+	postId, err := strconv.Atoi(postIdParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de ID inválido"})
+		return
+	}
+
+	// Obtiene el adoption post
+	adoptionPostDto, apiErr := services.AdoptionService.GetAdoptionPostById(postId)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// Verifica si el usuario es dueño del post o admin
+	if !isAdmin && adoptionPostDto.UserId != userId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No autorizado para eliminar las imágenes de este post"})
+		return
+	}
+
+	// Llama al service
+	err = services.AdoptionService.DeleteAllImagesByAdoptionPostId(postId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al eliminar las imágenes"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Todas las imágenes eliminadas exitosamente"})
 }
