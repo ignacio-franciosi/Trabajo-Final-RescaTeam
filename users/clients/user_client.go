@@ -46,6 +46,7 @@ func UpdateUser(user model.User) (model.User, error) {
 			"name":    user.Name,
 			"surname": user.Surname,
 			"email":   user.Email,
+			"phone":   user.Phone,
 		})
 
 	if result.Error != nil {

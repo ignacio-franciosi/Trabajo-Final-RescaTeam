@@ -53,6 +53,7 @@ func (s *userService) GetUserById(id int) (dto.UserDto, error) {
 	userDto.Surname = user.Surname
 	userDto.Dni = user.Dni
 	userDto.Email = user.Email
+	userDto.Phone = user.Phone
 	userDto.Password = user.Password
 	userDto.Type = user.Type
 	userDto.Suspended = user.Suspended
@@ -73,6 +74,7 @@ func (s *userService) GetUserByEmail(email string) (dto.UserDto, error) {
 	userDto.Surname = user.Surname
 	userDto.Dni = user.Dni
 	userDto.Email = user.Email
+	userDto.Phone = user.Phone
 	userDto.Password = user.Password
 	userDto.Type = user.Type
 	userDto.Suspended = user.Suspended
@@ -152,6 +154,7 @@ func (s *userService) InsertUser(userDto dto.UserDto) (dto.TokenDto, error) {
 	user.Surname = userDto.Surname
 	user.Dni = userDto.Dni
 	user.Email = userDto.Email
+	user.Phone = userDto.Phone
 	user.Password = string(hashedPassword)
 	user.Type = userDto.Type
 	user.Suspended = userDto.Suspended
@@ -193,6 +196,10 @@ func (s *userService) UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, 
 		existingUser.Surname = updateUserDto.Surname
 	}
 
+	if updateUserDto.Phone != "" {
+		existingUser.Phone = updateUserDto.Phone
+	}
+
 	if updateUserDto.Email != "" {
 		matched, _ := regexp.MatchString(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$`, updateUserDto.Email)
 		if !matched {
@@ -217,6 +224,7 @@ func (s *userService) UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, 
 	userDto.Surname = updatedUser.Surname
 	userDto.Dni = updatedUser.Dni
 	userDto.Email = updatedUser.Email
+	userDto.Phone = updateUserDto.Phone
 	userDto.Password = updatedUser.Password
 	userDto.Type = updatedUser.Type
 	userDto.Suspended = updatedUser.Suspended

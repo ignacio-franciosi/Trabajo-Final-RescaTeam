@@ -6,6 +6,7 @@ type UserDto struct {
 	Surname   string `json:"surname"`
 	Dni       int    `json:"dni"`
 	Email     string `json:"email"`
+	Phone     string `json:"phone"`
 	Password  string `json:"password"`
 	Type      bool   `json:"type"`
 	Suspended bool   `json:"suspended"`
