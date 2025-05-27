@@ -10,7 +10,7 @@ const RegisterForm = () => {
     dni: '',
     email: '',
     password: '',
-    telefono: ''
+    phone: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -56,7 +56,7 @@ const RegisterForm = () => {
         dni: parseInt(formData.dni),
         email: formData.email,
         password: formData.password,
-        telefono: formData.telefono, // si tu backend lo acepta
+        phone: formData.telefono, // si tu backend lo acepta
         type: false,
         suspended: false
       };

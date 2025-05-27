@@ -9,21 +9,27 @@ export const getUserById = async (id) => {
   }
 };
 
-export const updateUser = async (id, updatedData) => {
+export const updateUser = async (id, data) => {
   try {
-    const res = await api.patch(`/user/${id}`, updatedData);
+    const res = await api.patch(`/user/${id}`, data);
     return { success: true, data: res.data };
-  } catch (err) {
-    return { success: false, message: err.response?.data?.message || 'Error al actualizar usuario' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.error || 'Error al actualizar el usuario',
+    };
   }
 };
 
 export const deleteUser = async (id) => {
   try {
-    await api.delete(`/user/${id}`);
-    return { success: true };
-  } catch (err) {
-    return { success: false, message: err.response?.data?.message || 'Error al eliminar usuario' };
+    const res = await api.delete(`/user/${id}`);
+    return { success: true, message: res.data.message };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.error || "Error al eliminar el usuario",
+    };
   }
 };
 
