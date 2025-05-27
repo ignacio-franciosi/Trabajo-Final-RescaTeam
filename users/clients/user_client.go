@@ -45,6 +45,7 @@ func UpdateUser(user model.User) (model.User, error) {
 		Updates(map[string]any{
 			"name":    user.Name,
 			"surname": user.Surname,
+			"dni":     user.Dni,
 			"email":   user.Email,
 			"phone":   user.Phone,
 		})
