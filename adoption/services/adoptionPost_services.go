@@ -38,6 +38,10 @@ func init() {
 }
 
 func (s *adoptionService) InsertAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, e.ApiError) {
+	if adoptionPostDto.UserId == 0 {
+		return dto.AdoptionPostDto{}, e.NewBadRequestApiError("UserId cannot be 0")
+	}
+
 	var adoptionPost model.AdoptionPost
 
 	adoptionPost.UserId = adoptionPostDto.UserId
@@ -55,7 +59,7 @@ func (s *adoptionService) InsertAdoptionPost(adoptionPostDto dto.AdoptionPostDto
 	adoptionPost.Date = adoptionPostDto.Date
 	adoptionPost.Zone = adoptionPostDto.Zone
 
-	adoptionPost = adoptionPostClient.InsertAdoptionPost(adoptionPost)
+	adoptionPost = adoptionPostClient.AdoptionPostClient.InsertAdoptionPost(adoptionPost)
 
 	var response dto.AdoptionPostDto
 
@@ -79,7 +83,7 @@ func (s *adoptionService) InsertAdoptionPost(adoptionPostDto dto.AdoptionPostDto
 }
 
 func (s *adoptionService) GetAdoptionPostById(id int) (dto.AdoptionPostDto, e.ApiError) {
-	var adoptionPost model.AdoptionPost = adoptionPostClient.GetAdoptionPostById(id)
+	var adoptionPost model.AdoptionPost = adoptionPostClient.AdoptionPostClient.GetAdoptionPostById(id)
 	var adoptionPostDto dto.AdoptionPostDto
 
 	if adoptionPost.AdoptionPostId == 0 {
@@ -108,19 +112,19 @@ func (s *adoptionService) GetAdoptionPostById(id int) (dto.AdoptionPostDto, e.Ap
 
 func (s *adoptionService) DeleteAdoptionPost(id int) error {
 
-	adoptionPost := adoptionPostClient.GetAdoptionPostById(id)
+	adoptionPost := adoptionPostClient.AdoptionPostClient.GetAdoptionPostById(id)
 
 	if adoptionPost.AdoptionPostId == 0 {
 		return errors.New("adoption Post not found")
 	}
 
-	err := adoptionPostClient.DeleteAdoptionPost(adoptionPost)
+	err := adoptionPostClient.AdoptionPostClient.DeleteAdoptionPost(adoptionPost)
 
 	return err
 }
 
 func (s *adoptionService) GetAllAdoptionPosts() (dto.AdoptionPostsDto, error) {
-	var posts model.AdoptionPosts = adoptionPostClient.GetAllAdoptionPosts()
+	var posts model.AdoptionPosts = adoptionPostClient.AdoptionPostClient.GetAllAdoptionPosts()
 	var postsDto dto.AdoptionPostsDto
 
 	for _, post := range posts {
@@ -149,7 +153,7 @@ func (s *adoptionService) GetAllAdoptionPosts() (dto.AdoptionPostsDto, error) {
 
 func (s *adoptionService) UpdateAdoptionPost(postDto dto.AdoptionPostDto) (dto.AdoptionPostDto, error) {
 	// Obtener el post actual desde la base de datos
-	existingPost := adoptionPostClient.GetAdoptionPostById(postDto.AdoptionPostId)
+	existingPost := adoptionPostClient.AdoptionPostClient.GetAdoptionPostById(postDto.AdoptionPostId)
 
 	if existingPost.AdoptionPostId == 0 {
 		return postDto, errors.New("adoption post not found")
@@ -171,7 +175,7 @@ func (s *adoptionService) UpdateAdoptionPost(postDto dto.AdoptionPostDto) (dto.A
 	existingPost.Zone = postDto.Zone
 
 	// Actualizar en la base de datos
-	updatedPost, err := adoptionPostClient.UpdateAdoptionPostById(postDto.AdoptionPostId, existingPost)
+	updatedPost, err := adoptionPostClient.AdoptionPostClient.UpdateAdoptionPostById(postDto.AdoptionPostId, existingPost)
 	if err != nil || updatedPost.AdoptionPostId == 0 {
 		return postDto, errors.New("error updating adoption post")
 	}
@@ -183,7 +187,7 @@ func (s *adoptionService) UpdateAdoptionPost(postDto dto.AdoptionPostDto) (dto.A
 }
 
 func (s *adoptionService) GetFilteredAdoptionPosts(filters map[string]string) ([]dto.AdoptionPostDto, e.ApiError) {
-	posts, err := adoptionPostClient.GetFilteredAdoptionPosts(filters)
+	posts, err := adoptionPostClient.AdoptionPostClient.GetFilteredAdoptionPosts(filters)
 
 	if err != nil {
 		return nil, e.NewNotFoundApiError(err.Error())
@@ -214,7 +218,7 @@ func (s *adoptionService) GetFilteredAdoptionPosts(filters map[string]string) ([
 }
 
 func (s *adoptionService) MarkAdoptionPostAsAdopted(id int, userId int) error {
-	post := adoptionPostClient.GetAdoptionPostById(id)
+	post := adoptionPostClient.AdoptionPostClient.GetAdoptionPostById(id)
 
 	if post.AdoptionPostId == 0 {
 		return errors.New("publicación no encontrada")
@@ -224,7 +228,7 @@ func (s *adoptionService) MarkAdoptionPostAsAdopted(id int, userId int) error {
 		return errors.New("no estás autorizado para modificar esta publicación")
 	}
 
-	err := adoptionPostClient.MarkAdoptionPostAsAdopted(id)
+	err := adoptionPostClient.AdoptionPostClient.MarkAdoptionPostAsAdopted(id)
 	if err != nil {
 		return errors.New("no se pudo marcar como adoptada")
 	}
@@ -233,7 +237,7 @@ func (s *adoptionService) MarkAdoptionPostAsAdopted(id int, userId int) error {
 }
 
 func (s *adoptionService) GetAllAdoptionPostsByUserId(userId int) (dto.AdoptionPostsDto, error) {
-	posts := adoptionPostClient.GetAllAdoptionPostsByUserId(userId)
+	posts := adoptionPostClient.AdoptionPostClient.GetAllAdoptionPostsByUserId(userId)
 	var postsDto dto.AdoptionPostsDto
 
 	for _, post := range posts {
@@ -265,7 +269,7 @@ func (s adoptionService) UploadImage(postId int, filename string) (dto.AdoptionI
 		AdoptionPostId: postId,
 		FilePath:       "/images/adoption_posts/" + filename,
 	}
-	savedImage, err := adoptionPostClient.UploadAdoptionImage(image)
+	savedImage, err := adoptionPostClient.AdoptionPostClient.UploadAdoptionImage(image)
 	if err != nil {
 		return dto.AdoptionImageDto{}, e.NewInternalServerApiError("Cannot save image", err)
 	}
@@ -278,7 +282,7 @@ func (s adoptionService) UploadImage(postId int, filename string) (dto.AdoptionI
 }
 
 func (s adoptionService) GetImagesByAdoptionPostId(postId int) ([]dto.AdoptionImageDto, e.ApiError) {
-	images, err := adoptionPostClient.GetImagesByAdoptionPostId(postId)
+	images, err := adoptionPostClient.AdoptionPostClient.GetImagesByAdoptionPostId(postId)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("No se pudieron obtener imagenes", err)
 	}
@@ -295,7 +299,7 @@ func (s adoptionService) GetImagesByAdoptionPostId(postId int) ([]dto.AdoptionIm
 }
 
 func (s *adoptionService) GetImageById(id int) (dto.AdoptionImageDto, e.ApiError) {
-	var image model.AdoptionImage = adoptionPostClient.GetImageById(id)
+	var image model.AdoptionImage = adoptionPostClient.AdoptionPostClient.GetImageById(id)
 	var imageDto dto.AdoptionImageDto
 
 	if image.ImageId == 0 {
@@ -312,7 +316,7 @@ func (s *adoptionService) GetImageById(id int) (dto.AdoptionImageDto, e.ApiError
 
 func (s *adoptionService) DeleteImageById(imageId int) error {
 	//Obtener imagen desde BD
-	image := adoptionPostClient.GetImageById(imageId)
+	image := adoptionPostClient.AdoptionPostClient.GetImageById(imageId)
 	if image.ImageId == 0 {
 		return errors.New("imagen no encontrada")
 	}
@@ -326,12 +330,12 @@ func (s *adoptionService) DeleteImageById(imageId int) error {
 	}
 
 	//Eliminar desde la BD
-	return adoptionPostClient.DeleteImageById(imageId)
+	return adoptionPostClient.AdoptionPostClient.DeleteImageById(imageId)
 }
 
 func (s *adoptionService) DeleteAllImagesByAdoptionPostId(postId int) error {
 	//Obtener todas las imágenes asociadas al post
-	images, err := adoptionPostClient.GetImagesByAdoptionPostId(postId)
+	images, err := adoptionPostClient.AdoptionPostClient.GetImagesByAdoptionPostId(postId)
 	if err != nil {
 		return fmt.Errorf("error al obtener imágenes: %v", err)
 	}
@@ -349,7 +353,7 @@ func (s *adoptionService) DeleteAllImagesByAdoptionPostId(postId int) error {
 	}
 
 	//Eliminar los registros de la base de datos
-	if err := adoptionPostClient.DeleteAllImagesByAdoptionPostId(postId); err != nil {
+	if err := adoptionPostClient.AdoptionPostClient.DeleteAllImagesByAdoptionPostId(postId); err != nil {
 		return fmt.Errorf("error al eliminar imágenes en la base de datos: %v", err)
 	}
 
