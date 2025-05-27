@@ -6,6 +6,7 @@ type UpdateUserDto struct {
 	Surname string `json:"surname"`
 	Email   string `json:"email"`
 	Phone   string `json:"phone"`
+	Dni     int    `json:"dni"`
 }
 
 type UpdateUsersDto []UpdateUserDto

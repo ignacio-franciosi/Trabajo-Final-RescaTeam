@@ -200,6 +200,10 @@ func (s *userService) UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, 
 		existingUser.Phone = updateUserDto.Phone
 	}
 
+	if updateUserDto.Dni != 0 {
+		existingUser.Dni = updateUserDto.Dni
+	}
+
 	if updateUserDto.Email != "" {
 		matched, _ := regexp.MatchString(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$`, updateUserDto.Email)
 		if !matched {
