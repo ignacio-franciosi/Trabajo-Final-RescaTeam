@@ -42,7 +42,7 @@ func init() {
 
 func (s *userService) GetUserById(id int) (dto.UserDto, error) {
 
-	var user model.User = userClient.GetUserById(id)
+	var user model.User = userClient.UserClient.GetUserById(id)
 	var userDto dto.UserDto
 
 	if user.UserId == 0 {
@@ -63,7 +63,7 @@ func (s *userService) GetUserById(id int) (dto.UserDto, error) {
 
 func (s *userService) GetUserByEmail(email string) (dto.UserDto, error) {
 
-	var user model.User = userClient.GetUserByEmail(email)
+	var user model.User = userClient.UserClient.GetUserByEmail(email)
 	var userDto dto.UserDto
 
 	if user.UserId == 0 {
@@ -88,7 +88,7 @@ var jwtKey = []byte("secret_key")
 func (s *userService) Login(loginDto dto.LoginDto) (dto.TokenDto, error) {
 
 	log.Debug(loginDto)
-	var user model.User = userClient.GetUserByEmail(loginDto.Email)
+	var user model.User = userClient.UserClient.GetUserByEmail(loginDto.Email)
 	var tokenDto dto.TokenDto
 
 	if user.UserId == 0 {
@@ -140,7 +140,7 @@ func (s *userService) InsertUser(userDto dto.UserDto) (dto.TokenDto, error) {
 		return tokenDto, errors.New("el DNI es obligatorio y debe ser un número válido")
 	}
 
-	existingUser := userClient.GetUserByEmail(userDto.Email)
+	existingUser := userClient.UserClient.GetUserByEmail(userDto.Email)
 	if existingUser.UserId != 0 {
 		return tokenDto, errors.New("ya existe un usuario con ese email")
 	}
@@ -159,7 +159,7 @@ func (s *userService) InsertUser(userDto dto.UserDto) (dto.TokenDto, error) {
 	user.Type = userDto.Type
 	user.Suspended = userDto.Suspended
 
-	user = userClient.InsertUser(user)
+	user = userClient.UserClient.InsertUser(user)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id_user":   user.UserId,
@@ -182,7 +182,7 @@ func (s *userService) UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, 
 
 	var userDto dto.UserDto
 
-	existingUser := userClient.GetUserById(updateUserDto.UserId)
+	existingUser := userClient.UserClient.GetUserById(updateUserDto.UserId)
 
 	if existingUser.UserId == 0 {
 		return userDto, errors.New("usuario no encontrado")
@@ -210,7 +210,7 @@ func (s *userService) UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, 
 			return userDto, errors.New("email inválido")
 		}
 
-		otherUser := userClient.GetUserByEmail(updateUserDto.Email)
+		otherUser := userClient.UserClient.GetUserByEmail(updateUserDto.Email)
 		if otherUser.UserId != 0 && otherUser.UserId != updateUserDto.UserId {
 			return userDto, errors.New("ya existe otro usuario con ese email")
 		}
@@ -218,7 +218,7 @@ func (s *userService) UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, 
 		existingUser.Email = updateUserDto.Email
 	}
 
-	updatedUser, err := userClient.UpdateUser(existingUser)
+	updatedUser, err := userClient.UserClient.UpdateUser(existingUser)
 	if err != nil {
 		return userDto, errors.New("error al actualizar el usuario: " + err.Error())
 	}
@@ -240,7 +240,7 @@ func (s *userService) UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, 
 func (s *userService) ChangePassword(changePasswordDto dto.ChangePasswordDto) error {
 
 	// check if input password is the same as the one in the database
-	var user model.User = userClient.GetUserById(changePasswordDto.UserId)
+	var user model.User = userClient.UserClient.GetUserById(changePasswordDto.UserId)
 	if user.UserId == 0 {
 		return errors.New("user not found")
 	}
@@ -268,7 +268,7 @@ func (s *userService) ChangePassword(changePasswordDto dto.ChangePasswordDto) er
 		return errors.New("error al encriptar la contraseña")
 	}
 
-	err = userClient.ChangePassword(changePasswordDto.UserId, string(hashedPassword))
+	err = userClient.UserClient.ChangePassword(changePasswordDto.UserId, string(hashedPassword))
 	if err != nil {
 		return errors.New("error al cambiar la contraseña" + err.Error())
 	}
@@ -281,7 +281,7 @@ var smtpPort = "587"
 
 func (s *userService) SendPasswordResetEmail(email string) error {
 
-	user := userClient.GetUserByEmail(email)
+	user := userClient.UserClient.GetUserByEmail(email)
 	if user.UserId == 0 {
 		return errors.New("user not found")
 	}
@@ -319,7 +319,7 @@ func (s *userService) SendPasswordResetEmail(email string) error {
 }
 
 func (s *userService) ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error {
-	var user model.User = userClient.GetUserById(tokenUserId)
+	var user model.User = userClient.UserClient.GetUserById(tokenUserId)
 
 	if user.UserId == 0 {
 		return errors.New("user not found")
@@ -343,7 +343,7 @@ func (s *userService) ResetPassword(tokenUserId int, resetPasswordDto dto.ResetP
 		return errors.New("error al encriptar la contraseña")
 	}
 
-	err = userClient.ChangePassword(tokenUserId, string(hashedPassword))
+	err = userClient.UserClient.ChangePassword(tokenUserId, string(hashedPassword))
 	if err != nil {
 		return errors.New("error al cambiar la contraseña" + err.Error())
 	}
@@ -352,13 +352,13 @@ func (s *userService) ResetPassword(tokenUserId int, resetPasswordDto dto.ResetP
 }
 
 func (s *userService) DeleteUser(id int) error {
-	user := userClient.GetUserById(id)
+	user := userClient.UserClient.GetUserById(id)
 
 	if user.UserId == 0 {
 		return errors.New("user not found")
 	}
 
-	err := userClient.DeleteUser(user)
+	err := userClient.UserClient.DeleteUser(user)
 
 	return err
 }

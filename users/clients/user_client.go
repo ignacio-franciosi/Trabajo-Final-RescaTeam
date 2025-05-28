@@ -8,9 +8,26 @@ import (
 	"gorm.io/gorm"
 )
 
+type userClient struct{}
+
+type userClientInterface interface {
+	GetUserById(id int) model.User
+	GetUserByEmail(email string) model.User
+	InsertUser(user model.User) model.User
+	UpdateUser(user model.User) (model.User, error)
+	ChangePassword(userId int, hashedPassword string) error
+	DeleteUser(user model.User) error
+}
+
+var UserClient userClientInterface
+
 var Db *gorm.DB
 
-func GetUserById(id int) model.User {
+func init() {
+	UserClient = &userClient{}
+}
+
+func (c *userClient) GetUserById(id int) model.User {
 	var user model.User
 	Db.Where("user_id = ?", id).First(&user)
 	log.Debug("User: ", user)
@@ -18,19 +35,17 @@ func GetUserById(id int) model.User {
 	return user
 }
 
-func GetUserByEmail(email string) model.User {
+func (c *userClient) GetUserByEmail(email string) model.User {
 	var user model.User
 	Db.Where("email = ?", email).First(&user)
-	//log.Debug("User: ", user)
 
 	return user
 }
 
-func InsertUser(user model.User) model.User {
+func (c *userClient) InsertUser(user model.User) model.User {
 	result := Db.Create(&user)
 
 	if result.Error != nil {
-		//TO DO Manage Errors
 		log.Error("Couldn't create user")
 		return model.User{}
 	}
@@ -39,7 +54,7 @@ func InsertUser(user model.User) model.User {
 	return user
 }
 
-func UpdateUser(user model.User) (model.User, error) {
+func (c *userClient) UpdateUser(user model.User) (model.User, error) {
 	result := Db.Model(&model.User{}).
 		Where("user_id = ?", user.UserId).
 		Updates(map[string]any{
@@ -67,7 +82,7 @@ func UpdateUser(user model.User) (model.User, error) {
 	return updatedUser, nil
 }
 
-func ChangePassword(userId int, hashedPassword string) error {
+func (c *userClient) ChangePassword(userId int, hashedPassword string) error {
 	result := Db.Model(&model.User{}).
 		Where("user_id = ?", userId).
 		Updates(map[string]any{
@@ -81,7 +96,7 @@ func ChangePassword(userId int, hashedPassword string) error {
 	return nil
 }
 
-func DeleteUser(user model.User) error {
+func (c *userClient) DeleteUser(user model.User) error {
 	err := Db.Delete(&user).Error
 
 	if err != nil {
