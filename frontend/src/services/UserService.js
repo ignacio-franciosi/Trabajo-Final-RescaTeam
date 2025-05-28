@@ -42,3 +42,17 @@ export const getUserByEmail = async (email) => {
     return { success: false, message: 'Email no encontrado' };
   }
 };
+
+export const changePassword = async (userId, payload) => {
+  try {
+    const res = await api.patch(`/user/${userId}/change-password`, payload);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.error || "Error al cambiar la contraseña"
+    };
+  }
+};
+
+
