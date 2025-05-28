@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // ✅ Link estaba faltando
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -58,6 +58,11 @@ const LoginForm = () => {
         >
           Ingresar
         </button>
+        <div className="text-sm text-center mt-2">
+          <Link to="/forgot-password" className="text-blue-600 hover:underline">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
       </form>
     </div>
   );

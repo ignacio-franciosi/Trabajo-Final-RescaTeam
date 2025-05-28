@@ -15,6 +15,8 @@ import Home from "../pages/Home";
 import MyPets from "../components/profile/MyPets";
 import UserProfilePage from '../pages/UserProfilePage';
 import ChangePasswordPage from '../pages/ChangePasswordPage';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 
 // Vistas compartidas
 import PetList from "../components/pets/PetList";
@@ -36,6 +38,8 @@ const AppRouter = () => {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginForm />} />
           <Route path="/register" element={<RegisterForm />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route
             path="/mis-publicaciones"
             element={
