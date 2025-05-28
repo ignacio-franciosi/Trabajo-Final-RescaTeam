@@ -297,7 +297,8 @@ func (s *userService) SendPasswordResetEmail(email string) error {
 		return err
 	}
 
-	resetLink := fmt.Sprintf("http://localhost:8080/reset-password?token=%s", tokenStr) // despues, url de front
+	frontendURL := os.Getenv("FRONTEND_BASE_URL")                                 // ej: http://localhost:5173
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s", frontendURL, tokenStr) // despues, url de front
 
 	// Email
 	subject := "Subject: Recuperación de contraseña\n"
