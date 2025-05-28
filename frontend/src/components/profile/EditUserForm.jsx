@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 
 const EditUserForm = ({ initialData, onSave, onCancel }) => {
-  const [formData, setFormData] = useState({ ...initialData });
+  const [formData, setFormData] = useState({ 
+    //...initialData 
+    name: initialData?.name || '',
+    surname: initialData?.surname || '',
+    dni: initialData?.dni || '',
+    email: initialData?.email || '',
+    phone: initialData?.phone || ''
+  });
   const [error, setError] = useState('');
 
   const handleChange = (e) => {

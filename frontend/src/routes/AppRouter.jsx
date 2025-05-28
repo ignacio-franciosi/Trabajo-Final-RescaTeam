@@ -14,6 +14,7 @@ import Home from "../pages/Home";
 // Vistas privadas
 import MyPets from "../components/profile/MyPets";
 import UserProfilePage from '../pages/UserProfilePage';
+import ChangePasswordPage from '../pages/ChangePasswordPage';
 
 // Vistas compartidas
 import PetList from "../components/pets/PetList";
@@ -48,6 +49,14 @@ const AppRouter = () => {
             element={
               <PrivateRoute>
                 <UserProfilePage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/cambiar-contraseña"
+            element={
+              <PrivateRoute>
+                <ChangePasswordPage />
               </PrivateRoute>
             }
           />
