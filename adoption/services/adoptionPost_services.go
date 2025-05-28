@@ -39,7 +39,7 @@ func init() {
 
 func (s *adoptionService) InsertAdoptionPost(adoptionPostDto dto.AdoptionPostDto) (dto.AdoptionPostDto, e.ApiError) {
 	if adoptionPostDto.UserId == 0 {
-		return dto.AdoptionPostDto{}, e.NewBadRequestApiError("UserId cannot be 0")
+		return dto.AdoptionPostDto{}, e.NewBadRequestApiError("user not found")
 	}
 
 	var adoptionPost model.AdoptionPost
