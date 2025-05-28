@@ -55,4 +55,21 @@ export const changePassword = async (userId, payload) => {
   }
 };
 
+export const forgotPassword = async (email) => {
+  try {
+    const res = await api.post('/forgot-password', { email });
+    return { success: true, message: res.data.message };
+  } catch {
+    return { success: false };
+  }
+};
+
+export const resetPassword = async (token, data) => {
+  try {
+    const res = await api.patch(`/reset-password?token=${token}`, data);
+    return { success: true };
+  } catch (error) {
+    return { success: false, message: error.response?.data?.error || 'Error' };
+  }
+};
 
