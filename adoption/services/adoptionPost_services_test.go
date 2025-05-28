@@ -19,27 +19,39 @@ type mockAdoptionPostClient struct {
 }
 
 func (m *mockAdoptionPostClient) InsertAdoptionPost(post model.AdoptionPost) model.AdoptionPost {
-	args := m.Called(post)
+	args := m.Called(post)                  //Registra que se llamó a esta función y devuelve lo que se configuró con .On().Return()
+	return args.Get(0).(model.AdoptionPost) //Devuelve el valor que se configuró como "retorno" del mock
+}
+
+func (m *mockAdoptionPostClient) GetAdoptionPostById(id int) model.AdoptionPost {
+	args := m.Called(id)
 	return args.Get(0).(model.AdoptionPost)
 }
 
-// Métodos no utilizados en este test:
-func (m *mockAdoptionPostClient) GetAdoptionPostById(id int) model.AdoptionPost {
-	return model.AdoptionPost{}
+func (m *mockAdoptionPostClient) DeleteAdoptionPost(post model.AdoptionPost) error {
+	args := m.Called(post)
+	return args.Error(0)
 }
-func (m *mockAdoptionPostClient) DeleteAdoptionPost(adoptionPost model.AdoptionPost) error {
-	return nil
+func (m *mockAdoptionPostClient) GetAllAdoptionPosts() model.AdoptionPosts {
+	args := m.Called()
+	return args.Get(0).(model.AdoptionPosts)
 }
-func (m *mockAdoptionPostClient) GetAllAdoptionPosts() model.AdoptionPosts { return nil }
+
 func (m *mockAdoptionPostClient) UpdateAdoptionPostById(id int, post model.AdoptionPost) (model.AdoptionPost, error) {
 	return model.AdoptionPost{}, nil
 }
 func (m *mockAdoptionPostClient) GetFilteredAdoptionPosts(filters map[string]string) ([]model.AdoptionPost, error) {
-	return nil, nil
+	args := m.Called(filters)
+	return args.Get(0).([]model.AdoptionPost), args.Error(1)
 }
-func (m *mockAdoptionPostClient) MarkAdoptionPostAsAdopted(id int) error { return nil }
+
+func (m *mockAdoptionPostClient) MarkAdoptionPostAsAdopted(id int) error {
+	args := m.Called(id)
+	return args.Error(0)
+}
 func (m *mockAdoptionPostClient) GetAllAdoptionPostsByUserId(userId int) model.AdoptionPosts {
-	return nil
+	args := m.Called()
+	return args.Get(0).(model.AdoptionPosts)
 }
 func (m *mockAdoptionPostClient) UploadAdoptionImage(image model.AdoptionImage) (model.AdoptionImage, error) {
 	return model.AdoptionImage{}, nil
@@ -50,8 +62,12 @@ func (m *mockAdoptionPostClient) GetImagesByAdoptionPostId(postId int) ([]model.
 func (m *mockAdoptionPostClient) GetImageById(id int) model.AdoptionImage {
 	return model.AdoptionImage{}
 }
-func (m *mockAdoptionPostClient) DeleteImageById(imageId int) error                { return nil }
-func (m *mockAdoptionPostClient) DeleteAllImagesByAdoptionPostId(postId int) error { return nil }
+func (m *mockAdoptionPostClient) DeleteImageById(imageId int) error {
+	return nil
+}
+func (m *mockAdoptionPostClient) DeleteAllImagesByAdoptionPostId(postId int) error {
+	return nil
+}
 
 // --- TEST SUCCESS ---
 func TestInsertAdoptionPost_Success(t *testing.T) {
@@ -93,7 +109,7 @@ func TestInsertAdoptionPost_Success(t *testing.T) {
 		Zone:             inputDto.Zone,
 	}
 
-	mockClient.On("InsertAdoptionPost", mock.AnythingOfType("model.AdoptionPost")).Return(expectedModel)
+	mockClient.On("InsertAdoptionPost", mock.AnythingOfType("model.AdoptionPost")).Return(expectedModel) //Cuando se llame a InsertAdPost(), devolvé expectedModel.
 
 	result, err := services.AdoptionService.InsertAdoptionPost(inputDto)
 
@@ -103,28 +119,107 @@ func TestInsertAdoptionPost_Success(t *testing.T) {
 	mockClient.AssertExpectations(t)
 }
 
-// --- TEST ERROR (simula error devolviendo modelo vacío) ---
-func TestInsertAdoptionPost_Error(t *testing.T) {
+func TestGetAdoptionPostById_Success(t *testing.T) {
 	mockClient := new(mockAdoptionPostClient)
-	clients.AdoptionPostClient = mockClient // sustituimos el client real por el mock
+	clients.AdoptionPostClient = mockClient
 
-	inputDto := dto.AdoptionPostDto{
-		Name: "Sin ID",
+	mockResponse := model.AdoptionPost{
+		AdoptionPostId: 1,
+		UserId:         5,
+		Name:           "Firulais",
 	}
 
-	emptyModel := model.AdoptionPost{} // simulamos fallo: no se asigna ID ni datos
+	mockClient.On("GetAdoptionPostById", 1).Return(mockResponse)
 
-	mockClient.On("InsertAdoptionPost", mock.AnythingOfType("model.AdoptionPost")).Return(emptyModel)
+	expected := dto.AdoptionPostDto{
+		AdoptionPostId: 1,
+		UserId:         5,
+		Name:           "Firulais",
+	}
 
-	result, err := services.AdoptionService.InsertAdoptionPost(inputDto)
+	response, err := services.AdoptionService.GetAdoptionPostById(1)
 
-	assert.Nil(t, err) // el servicio actual no devuelve errores, así que err debe ser nil
-	assert.Equal(t, 0, result.AdoptionPostId)
-	assert.Empty(t, result.Name)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, response)
+
 	mockClient.AssertExpectations(t)
 }
 
-func TestInsertAdoptionPost_UserIdZero_Error(t *testing.T) {
+func TestDeleteAdoptionPost_Success(t *testing.T) {
+	mockClient := new(mockAdoptionPostClient)
+	clients.AdoptionPostClient = mockClient
+
+	id := 1
+	post := model.AdoptionPost{
+		AdoptionPostId: id, //simula que el AdoptionPost existe
+		Name:           "Firulais",
+	}
+
+	mockClient.On("GetAdoptionPostById", id).Return(post)
+	mockClient.On("DeleteAdoptionPost", post).Return(nil)
+
+	err := services.AdoptionService.DeleteAdoptionPost(id)
+
+	assert.Nil(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestGetAllAdoptionPosts_Success(t *testing.T) {
+	mockClient := new(mockAdoptionPostClient)
+	clients.AdoptionPostClient = mockClient
+
+	mockPosts := model.AdoptionPosts{
+		{
+			AdoptionPostId:   1,
+			UserId:           100,
+			Name:             "Luna",
+			Species:          "Perro",
+			Age:              3,
+			Breed:            "Labrador",
+			Color:            "Negro",
+			Size:             "Grande",
+			Sex:              "Hembra",
+			Description:      "Muy juguetona",
+			Neutered:         true,
+			CompleteVaccines: true,
+			AdoptionStatus:   true,
+			Date:             "2024-01-01",
+			Zone:             "Centro",
+		},
+	}
+
+	mockClient.On("GetAllAdoptionPosts").Return(mockPosts)
+
+	result, err := services.AdoptionService.GetAllAdoptionPosts()
+
+	assert.Nil(t, err)
+	assert.Len(t, result, 1)
+
+	expected := dto.AdoptionPostDto{
+		AdoptionPostId:   1,
+		UserId:           100,
+		Name:             "Luna",
+		Species:          "Perro",
+		Age:              3,
+		Breed:            "Labrador",
+		Color:            "Negro",
+		Size:             "Grande",
+		Sex:              "Hembra",
+		Description:      "Muy juguetona",
+		Neutered:         true,
+		CompleteVaccines: true,
+		AdoptionStatus:   true,
+		Date:             "2024-01-01",
+		Zone:             "Centro",
+	}
+
+	assert.Equal(t, expected, result[0])
+	mockClient.AssertExpectations(t)
+}
+
+// --- TEST ERROR ---
+
+func TestInsertAdoptionPost_UserNotFound_Error(t *testing.T) {
 	// No necesitamos mock en este caso porque no se llama al client si UserId es 0
 	inputDto := dto.AdoptionPostDto{
 		UserId: 0,
@@ -134,7 +229,38 @@ func TestInsertAdoptionPost_UserIdZero_Error(t *testing.T) {
 	result, err := services.AdoptionService.InsertAdoptionPost(inputDto)
 
 	assert.NotNil(t, err)
-	assert.Equal(t, "UserId cannot be 0", err.Message())
+	assert.Equal(t, "user not found", err.Message())
 	assert.Equal(t, http.StatusBadRequest, err.Status())
 	assert.Equal(t, 0, result.AdoptionPostId) // el resultado debe estar vacío
+}
+
+func TestGetAdoptionPostById_NotFound(t *testing.T) {
+	mockClient := new(mockAdoptionPostClient)
+	clients.AdoptionPostClient = mockClient
+
+	mockClient.On("GetAdoptionPostById", 0).Return(model.AdoptionPost{})
+
+	response, err := services.AdoptionService.GetAdoptionPostById(0)
+
+	assert.NotNil(t, err)
+	assert.Equal(t, "Adoption post not found", err.Message())
+	assert.Equal(t, 0, response.AdoptionPostId)
+
+	mockClient.AssertExpectations(t)
+}
+
+func TestDeleteAdoptionPost_NotFound(t *testing.T) {
+	mockClient := new(mockAdoptionPostClient)
+	clients.AdoptionPostClient = mockClient
+
+	id := 999
+	//simula que el adoptionPost no existe
+	mockClient.On("GetAdoptionPostById", id).Return(model.AdoptionPost{})
+
+	err := services.AdoptionService.DeleteAdoptionPost(id)
+
+	assert.NotNil(t, err)
+	assert.Equal(t, "adoption Post not found", err.Error())
+
+	mockClient.AssertExpectations(t)
 }
