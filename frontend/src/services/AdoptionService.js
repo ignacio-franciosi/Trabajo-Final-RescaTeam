@@ -1,30 +1,55 @@
-const API_URL = "http://localhost:8080"; // Cambialo si tu backend usa otro puerto
+import apiAdoption from './axiosConfigAdoption';
 
-export const getAllPosts = async () => {
-  const res = await fetch(`${API_URL}/adoptionPost`);
-  if (!res.ok) throw new Error("Error al obtener las publicaciones");
-  return await res.json();
+export const createAdoptionPost = async (formData) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await apiAdoption.post('/adoptionPost', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return { success: true, data: res.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.error || 'Error al publicar la mascota',
+    };
+  }
 };
 
-export const getUserPosts = async (token) => {
-  const res = await fetch(`${API_URL}/adoptionPost/mis-publicaciones`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (!res.ok) throw new Error("Error al obtener tus publicaciones");
-  return await res.json();
+export const getAdoptionPostById = async (id) => {
+  try {
+    const res = await apiAdoption.get(`/adoptionPost/${id}`);
+    return { success: true, data: res.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Error al obtener publicación',
+    };
+  }
 };
 
-export const updatePost = async (id, data, token) => {
-  const res = await fetch(`${API_URL}/adoptionPost/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error("Error al actualizar publicación");
-  return await res.json();
+export const getAllAdoptionPosts = async () => {
+  try {
+    const res = await apiAdoption.get('/adoptionPost');
+    return { success: true, data: res.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.error || 'Error al obtener publicaciones',
+    };
+  }
+};
+
+export const getImagesByAdoptionPostId = async (postId) => {
+  try {
+    const res = await apiAdoption.get(`/adoptionPost/images/${postId}`);
+    return { success: true, data: res.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Error al obtener imágenes',
+    };
+  }
 };

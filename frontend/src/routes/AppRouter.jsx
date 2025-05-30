@@ -7,6 +7,7 @@ import Header from "../components/layout/Header";
 // Vistas públicas
 import LoginForm from "../components/auth/LoginForm";
 import RegisterForm from "../components/auth/RegisterForm";
+import PetDetailPage from '../pages/PetDetailPage';
 
 // Vista principal
 import Home from "../pages/Home";
@@ -17,6 +18,8 @@ import UserProfilePage from '../pages/UserProfilePage';
 import ChangePasswordPage from '../pages/ChangePasswordPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
+import PublicPetPage from '../pages/PublicPetPage'; 
+
 
 // Vistas compartidas
 import PetList from "../components/pets/PetList";
@@ -64,6 +67,15 @@ const AppRouter = () => {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/publicar"
+            element={
+              <PrivateRoute>
+                <PublicPetPage />
+              </PrivateRoute>
+            }     
+          />
+          <Route path="/mascota/:id" element={<PetDetailPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
