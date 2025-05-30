@@ -1,9 +1,25 @@
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+
 import HeroSection from "../components/home/HeroSection";
 import AboutSection from "../components/home/AboutSection";
 import FilterPanel from "../components/pets/FilterPanel";
 import PetList from "../components/pets/PetList";
 
 const Home = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash === "#pets-list") {
+      const section = document.getElementById("pets-list");
+      if (section) {
+        setTimeout(() => {
+          section.scrollIntoView({ behavior: "smooth" });
+        }, 100); // Espera breve para asegurar render
+      }
+    }
+  }, [location]);
+
   const scrollToPets = () => {
     const petsList = document.getElementById("pets-list");
     if (petsList) {
@@ -22,7 +38,7 @@ const Home = () => {
             <FilterPanel onFilterChange={() => {}} />
           </div>
           <div className="md:col-span-3">
-            <PetList pets={[]} onPetClick={() => {}} />
+            <PetList />
           </div>
         </div>
       </section>
