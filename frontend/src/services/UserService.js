@@ -1,4 +1,4 @@
-import api from './axiosConfig';
+import api from './axiosConfigUsers';
 
 export const getUserById = async (id) => {
   try {
