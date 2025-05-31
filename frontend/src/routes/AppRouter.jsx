@@ -13,7 +13,7 @@ import PetDetailPage from '../pages/PetDetailPage';
 import Home from "../pages/Home";
 
 // Vistas privadas
-import MyPets from "../components/profile/MyPets";
+import MyPetsPage from "../pages/MyPetsPage";
 import UserProfilePage from '../pages/UserProfilePage';
 import ChangePasswordPage from '../pages/ChangePasswordPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
@@ -47,7 +47,7 @@ const AppRouter = () => {
             path="/mis-publicaciones"
             element={
               <PrivateRoute>
-                <MyPets />
+                <MyPetsPage />
               </PrivateRoute>
             }
           />

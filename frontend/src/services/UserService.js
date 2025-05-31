@@ -1,13 +1,26 @@
+// UserService.js
 import api from './axiosConfigUsers';
 
 export const getUserById = async (id) => {
   try {
-    const res = await api.get(`/user/${id}`);
+    const token = localStorage.getItem('token');
+
+    const res = await api.get(`/user/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`, // <-- ¡IMPORTANTE!
+      },
+    });
+
     return { success: true, data: res.data };
   } catch (err) {
-    return { success: false, message: err.response?.data?.message || 'Error al obtener usuario' };
+    console.error('Error en getUserById:', err);
+    return {
+      success: false,
+      message: err.response?.data?.message || 'Error al obtener usuario',
+    };
   }
 };
+
 
 export const updateUser = async (id, data) => {
   try {
