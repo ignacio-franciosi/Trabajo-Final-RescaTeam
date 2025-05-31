@@ -1,0 +1,2 @@
+docker build -t rescateam-adoption .
+docker run -d --network=rescateam --name rescateam-adoption -p 8090:8090  rescateam-adoption
