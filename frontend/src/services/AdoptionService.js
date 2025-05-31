@@ -53,3 +53,25 @@ export const getImagesByAdoptionPostId = async (postId) => {
     };
   }
 };
+
+export const getAdoptionPostsByUserId = async (userId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await apiAdoption.get(`/adoptionPost/user/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (res.data.message === 'Aún no hay publicaciones.') {
+      return { success: true, data: [] };
+    }
+
+    return { success: true, data: res.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.error || 'Error al obtener tus publicaciones.',
+    };
+  }
+};
