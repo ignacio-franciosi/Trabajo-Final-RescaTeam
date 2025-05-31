@@ -30,6 +30,7 @@ type userServiceInterface interface {
 	SendPasswordResetEmail(email string) error
 	ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error
 	DeleteUser(id int) error
+	GetPhoneByUserId(id int) (dto.PublicUserDto, error) //TO DELETE SOON
 }
 
 var (
@@ -361,4 +362,19 @@ func (s *userService) DeleteUser(id int) error {
 	err := userClient.UserClient.DeleteUser(user)
 
 	return err
+}
+
+// TO DELETE SOON
+
+func (s *userService) GetPhoneByUserId(id int) (dto.PublicUserDto, error) {
+
+	var user model.User = userClient.UserClient.GetPhoneByUserId(id)
+	var userDto dto.PublicUserDto
+
+	if user.Phone == "0" {
+		return userDto, errors.New("user phone not found")
+	}
+	userDto.Phone = user.Phone
+
+	return userDto, nil
 }

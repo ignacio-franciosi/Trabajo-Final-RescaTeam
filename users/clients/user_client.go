@@ -17,6 +17,7 @@ type userClientInterface interface {
 	UpdateUser(user model.User) (model.User, error)
 	ChangePassword(userId int, hashedPassword string) error
 	DeleteUser(user model.User) error
+	GetPhoneByUserId(id int) model.User // TO DELETE SOON
 }
 
 var UserClient userClientInterface
@@ -105,4 +106,12 @@ func (c *userClient) DeleteUser(user model.User) error {
 		log.Debug("User deleted: ", user.UserId)
 	}
 	return err
+}
+
+func (c *userClient) GetPhoneByUserId(id int) model.User {
+	var user model.User
+	Db.Where("user_id = ?", id).First(&user)
+	log.Debug("User: ", user)
+
+	return user
 }

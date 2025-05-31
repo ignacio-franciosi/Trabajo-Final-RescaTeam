@@ -12,6 +12,7 @@ func mapUrls() {
 	router.POST("/login", userController.Login)
 	router.POST("/forgot-password", userController.ForgotPassword)
 	router.PATCH("/reset-password", userController.ResetPassword)
+	router.GET("/user/phone/:id", userController.GetPhoneByUserId)
 
 	// can access: Only if user is account OWNER (and authenticated)
 	router.GET("/user/email/:email", userController.GetUserByEmail)
