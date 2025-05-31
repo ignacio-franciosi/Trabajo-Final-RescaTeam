@@ -48,6 +48,11 @@ func (m *mockUserClient) DeleteUser(user model.User) error {
 	return args.Error(0)
 }
 
+func (m *mockUserClient) GetPhoneByUserId(id int) model.User {
+	args := m.Called(id)
+	return args.Get(0).(model.User)
+}
+
 // --- TESTS ---
 
 // TESTS GetUserById
