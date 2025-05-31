@@ -10,7 +10,7 @@ const RegisterForm = () => {
     dni: '',
     email: '',
     password: '',
-    phone: ''
+    telefono: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -25,7 +25,6 @@ const RegisterForm = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    // Limpiar error individual
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -49,14 +48,13 @@ const RegisterForm = () => {
     setBackendError('');
 
     if (Object.keys(fieldErrors).length === 0) {
-      // Transformar datos para el backend
       const userPayload = {
         name: formData.nombre,
         surname: formData.apellido,
         dni: parseInt(formData.dni),
         email: formData.email,
         password: formData.password,
-        phone: formData.telefono, // si tu backend lo acepta
+        phone: formData.telefono,
         type: false,
         suspended: false
       };
@@ -64,7 +62,13 @@ const RegisterForm = () => {
       const result = await register(userPayload);
 
       if (result.success) {
-        navigate('/');
+        const redirectUrl = localStorage.getItem('redirectAfterLogin');
+        if (redirectUrl) {
+          localStorage.removeItem('redirectAfterLogin');
+          setTimeout(() => navigate(redirectUrl), 500);
+        } else {
+          setTimeout(() => navigate('/'), 500);
+        }
       } else {
         setBackendError(result.message || 'Error al registrarse');
       }
@@ -77,20 +81,26 @@ const RegisterForm = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         {requiredFields.map((field) => (
           <div key={field}>
-            <label className="block text-sm font-medium text-gray-700 capitalize">{field}</label>
+            <label className="block text-sm font-medium text-gray-700 capitalize">
+              {field === 'telefono' ? 'Teléfono' : field}
+            </label>
             <input
               type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
               name={field}
               value={formData[field]}
               onChange={handleChange}
-              className={`w-full mt-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${errors[field] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
+              className={`w-full mt-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                errors[field] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+              }`}
             />
             {errors[field] && <p className="text-red-500 text-xs mt-1">{errors[field]}</p>}
           </div>
         ))}
+
         {backendError && (
           <p className="text-red-500 text-sm text-center">{backendError}</p>
         )}
+
         <button
           type="submit"
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"

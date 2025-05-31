@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom'; // ✅ Link estaba faltando
+import { useNavigate, Link } from 'react-router-dom';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -13,15 +13,17 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const credentials = {
-      email,
-      password
-    };
-
+    const credentials = { email, password };
     const result = await login(credentials);
 
     if (result.success) {
-      navigate('/');
+      const redirectPath = localStorage.getItem('redirectAfterLogin');
+      if (redirectPath) {
+        localStorage.removeItem('redirectAfterLogin');
+        navigate(redirectPath);
+      } else {
+        navigate('/');
+      }
     } else {
       setErrorMsg(result.message || 'Credenciales inválidas');
     }
