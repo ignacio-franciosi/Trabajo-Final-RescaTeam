@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // --- Mock que implementa la interfaz del client ---
@@ -32,7 +33,6 @@ func (m *mockUserClient) InsertUser(user model.User) model.User {
 	return args.Get(0).(model.User)
 }
 
-// --------------------------------
 func (m *mockUserClient) UpdateUser(user model.User) (model.User, error) {
 	args := m.Called(user)
 	return args.Get(0).(model.User), args.Error(1)
@@ -48,6 +48,111 @@ func (m *mockUserClient) DeleteUser(user model.User) error {
 	return args.Error(0)
 }
 
+// --- TESTS ---
+
+// TESTS GetUserById
+func TestGetUserById_Success(t *testing.T) {
+	mockClient := new(mockUserClient)
+	clients.UserClient = mockClient
+
+	expectedUser := model.User{
+		UserId:    42,
+		Name:      "Ada",
+		Surname:   "Lovelace",
+		Dni:       12345678,
+		Email:     "ada@gmail.com",
+		Phone:     "1234567890",
+		Password:  "Securepass6",
+		Type:      false,
+		Suspended: false,
+	}
+
+	mockClient.On("GetUserById", 42).Return(expectedUser)
+
+	result, err := services.UserService.GetUserById(42)
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedUser.UserId, result.UserId)
+	assert.Equal(t, expectedUser.Email, result.Email)
+	assert.Equal(t, expectedUser.Name, result.Name)
+	assert.Equal(t, expectedUser.Suspended, result.Suspended)
+
+	mockClient.AssertExpectations(t)
+}
+
+func TestGetUserById_Error_NotFound(t *testing.T) {
+	mockClient := new(mockUserClient)
+	clients.UserClient = mockClient
+
+	mockClient.On("GetUserById", 999).Return(model.User{})
+
+	result, err := services.UserService.GetUserById(999)
+
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "user not found")
+	assert.Equal(t, 0, result.UserId)
+
+	mockClient.AssertExpectations(t)
+}
+
+// TESTS Login
+func TestLogin_Success(t *testing.T) {
+	mockClient := new(mockUserClient)
+	clients.UserClient = mockClient
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("Password123"), bcrypt.DefaultCost)
+
+	user := model.User{
+		UserId:    1,
+		Email:     "user@example.com",
+		Password:  string(hashedPassword),
+		Type:      true,
+		Suspended: false,
+	}
+
+	mockClient.On("GetUserByEmail", "user@example.com").Return(user)
+
+	input := dto.LoginDto{
+		Email:    "user@example.com",
+		Password: "Password123",
+	}
+
+	result, err := services.UserService.Login(input)
+
+	assert.Nil(t, err)
+	assert.Equal(t, user.UserId, result.UserId)
+	assert.Equal(t, user.Type, result.Type)
+	assert.Equal(t, user.Suspended, result.Suspended)
+	assert.NotEmpty(t, result.Token)
+	mockClient.AssertExpectations(t)
+}
+
+func TestLogin_WrongPassword(t *testing.T) {
+	mockClient := new(mockUserClient)
+	clients.UserClient = mockClient
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("correctPassword123"), bcrypt.DefaultCost)
+
+	user := model.User{
+		UserId:   1,
+		Email:    "user@example.com",
+		Password: string(hashedPassword),
+	}
+
+	mockClient.On("GetUserByEmail", "user@example.com").Return(user)
+
+	input := dto.LoginDto{
+		Email:    "user@example.com",
+		Password: "wrongPassword1",
+	}
+
+	_, err := services.UserService.Login(input)
+
+	assert.EqualError(t, err, "invalid credentials")
+	mockClient.AssertExpectations(t)
+}
+
+// TESTS InsertUser
 func TestInsertUser_Success(t *testing.T) {
 	mockClient := new(mockUserClient)
 	clients.UserClient = mockClient
@@ -105,50 +210,136 @@ func TestInsertUser_Error_MissingFields(t *testing.T) {
 	assert.Equal(t, "todos los campos son obligatorios", err.Error())
 }
 
-func TestGetUserById_Success(t *testing.T) {
+// TESTS UpdateUser
+func TestUpdateUser_Success(t *testing.T) {
 	mockClient := new(mockUserClient)
 	clients.UserClient = mockClient
 
-	expectedUser := model.User{
-		UserId:    42,
-		Name:      "Ada",
-		Surname:   "Lovelace",
+	existingUser := model.User{
+		UserId:    1,
+		Name:      "Old",
+		Surname:   "User",
 		Dni:       12345678,
-		Email:     "ada@gmail.com",
-		Phone:     "1234567890",
-		Password:  "Securepass6",
+		Email:     "old@example.com",
+		Phone:     "123456",
 		Type:      false,
 		Suspended: false,
 	}
 
-	mockClient.On("GetUserById", 42).Return(expectedUser)
+	updatedUser := existingUser
+	updatedUser.Name = "New"
+	updatedUser.Email = "new@example.com"
 
-	result, err := services.UserService.GetUserById(42)
+	input := dto.UpdateUserDto{
+		UserId: 1,
+		Name:   "New",
+		Email:  "new@example.com",
+	}
+
+	mockClient.On("GetUserById", 1).Return(existingUser)
+	mockClient.On("GetUserByEmail", "new@example.com").Return(model.User{})
+	mockClient.On("UpdateUser", mock.MatchedBy(func(u model.User) bool {
+		return u.Name == "New" && u.Email == "new@example.com"
+	})).Return(updatedUser, nil)
+
+	result, err := services.UserService.UpdateUser(input)
 
 	assert.Nil(t, err)
-	assert.Equal(t, expectedUser.UserId, result.UserId)
-	assert.Equal(t, expectedUser.Email, result.Email)
-	assert.Equal(t, expectedUser.Name, result.Name)
-	assert.Equal(t, expectedUser.Suspended, result.Suspended)
-
+	assert.Equal(t, "New", result.Name)
+	assert.Equal(t, "new@example.com", result.Email)
 	mockClient.AssertExpectations(t)
 }
 
-func TestGetUserById_Error_NotFound(t *testing.T) {
+func TestUpdateUser_Error_EmailAlreadyExists(t *testing.T) {
 	mockClient := new(mockUserClient)
 	clients.UserClient = mockClient
 
-	mockClient.On("GetUserById", 999).Return(model.User{})
+	existingUser := model.User{UserId: 1, Email: "old@example.com"}
 
-	result, err := services.UserService.GetUserById(999)
+	mockClient.On("GetUserById", 1).Return(existingUser)
+	mockClient.On("GetUserByEmail", "new@example.com").Return(model.User{UserId: 2})
 
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, "user not found")
-	assert.Equal(t, 0, result.UserId)
+	input := dto.UpdateUserDto{
+		UserId: 1,
+		Email:  "new@example.com",
+	}
 
+	_, err := services.UserService.UpdateUser(input)
+
+	assert.EqualError(t, err, "ya existe otro usuario con ese email")
 	mockClient.AssertExpectations(t)
 }
 
+// TESTS ChangePassword
+func TestChangePassword_Success(t *testing.T) {
+	mockClient := new(mockUserClient)
+	clients.UserClient = mockClient
+
+	oldPassword := "OldPass123"
+	hashed, _ := bcrypt.GenerateFromPassword([]byte(oldPassword), bcrypt.DefaultCost)
+
+	mockUser := model.User{
+		UserId:    1,
+		Name:      "Lord",
+		Surname:   "Byron",
+		Dni:       17628787,
+		Email:     "lordbyron@gmail.com",
+		Phone:     "351678936",
+		Password:  string(hashed),
+		Type:      false,
+		Suspended: false,
+	}
+
+	dto := dto.ChangePasswordDto{
+		UserId:       1,
+		OldPassword:  oldPassword,
+		NewPassword1: "NewPass123",
+		NewPassword2: "NewPass123",
+	}
+
+	mockClient.On("GetUserById", dto.UserId).Return(mockUser)
+	mockClient.On("ChangePassword", dto.UserId, mock.Anything).Return(nil)
+
+	err := services.UserService.ChangePassword(dto)
+
+	assert.Nil(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestChangePassword_Error_InvalidOldPassword(t *testing.T) {
+	mockClient := new(mockUserClient)
+	clients.UserClient = mockClient
+
+	correctPassword := "CorrectPassword1"
+	hashed, _ := bcrypt.GenerateFromPassword([]byte(correctPassword), bcrypt.DefaultCost)
+
+	mockUser := model.User{
+		UserId:    1,
+		Name:      "Lord",
+		Surname:   "Byron",
+		Dni:       17628787,
+		Email:     "lordbyron@gmail.com",
+		Phone:     "351678936",
+		Password:  string(hashed),
+		Type:      false,
+		Suspended: false,
+	}
+
+	dto := dto.ChangePasswordDto{
+		UserId:       1,
+		OldPassword:  "WrongPassword1",
+		NewPassword1: "NewPass123",
+		NewPassword2: "NewPass123",
+	}
+
+	mockClient.On("GetUserById", dto.UserId).Return(mockUser)
+
+	err := services.UserService.ChangePassword(dto)
+
+	assert.EqualError(t, err, "invalid credentials")
+}
+
+// TESTS DeleteUser
 func TestDeleteUser_Success(t *testing.T) {
 	mockClient := new(mockUserClient)
 	clients.UserClient = mockClient
@@ -160,6 +351,7 @@ func TestDeleteUser_Success(t *testing.T) {
 		Dni:       17628787,
 		Email:     "lordbyron@gmail.com",
 		Phone:     "351678936",
+		Password:  "Securepass6",
 		Type:      false,
 		Suspended: false,
 	}
