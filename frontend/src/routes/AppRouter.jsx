@@ -19,6 +19,7 @@ import ChangePasswordPage from '../pages/ChangePasswordPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
 import PublicPetPage from '../pages/PublicPetPage'; 
+import EditPetPage from '../pages/EditPetPage';
 
 
 // Vistas compartidas
@@ -74,6 +75,14 @@ const AppRouter = () => {
                 <PublicPetPage />
               </PrivateRoute>
             }     
+          />
+          <Route
+            path="/editar-publicacion/:id"
+            element={
+              <PrivateRoute>
+                <EditPetPage />
+              </PrivateRoute>
+            }
           />
           <Route path="/mascota/:id" element={<PetDetailPage />} />
           <Route path="*" element={<Navigate to="/" />} />

@@ -75,3 +75,49 @@ export const getAdoptionPostsByUserId = async (userId) => {
     };
   }
 };
+
+export const updateAdoptionPost = async (id, data) => {
+  try {
+    const res = await apiAdoption.put(`/adoptionPost/${id}`, data);
+    return { success: true, data: res.data };
+  } catch (err) {
+    return {
+      success: false,
+      message: err.response?.data?.error || 'Error al actualizar la publicación'
+    };
+  }
+};
+
+export const uploadAdoptionImage = async (postId, imageFile) => {
+  try {
+    const formData = new FormData();
+    formData.append('adoption_post_id', postId);
+    formData.append('image', imageFile);
+
+    const res = await apiAdoption.post('/adoptionPost/images/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+        // Authorization ya se incluye automáticamente desde axiosConfigAdoption
+      }
+    });
+
+    return { success: true, data: res.data };
+  } catch (err) {
+    return {
+      success: false,
+      message: err.response?.data?.error || 'Error al subir la imagen'
+    };
+  }
+};
+
+export const deleteImageById = async (imageId) => {
+  try {
+    const res = await apiAdoption.delete(`/adoptionPost/images/${imageId}`);
+    return { success: true, data: res.data };
+  } catch (err) {
+    return {
+      success: false,
+      message: err.response?.data?.error || 'Error al eliminar la imagen'
+    };
+  }
+};
