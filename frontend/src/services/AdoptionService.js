@@ -165,3 +165,22 @@ export const markAsAdopted = async (postId) => {
     return { success: false, message: err.response?.data?.error || 'Error al marcar como adoptada' };
   }
 };
+
+export const getFilteredAdoptionPosts = async (filters) => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    if (filters.especie) queryParams.append('species', filters.especie);
+    if (filters.edad) queryParams.append('age', filters.edad);
+    if (filters.tamaño) queryParams.append('size', filters.tamaño);
+    if (filters.sexo) queryParams.append('sex', filters.sexo);
+    if (filters.castrado) queryParams.append('neutered', filters.castrado);
+    if (filters.vacunas) queryParams.append('complete_vaccines', filters.vacunas);
+    if (filters.zona) queryParams.append('zone', filters.zona.replace(/\s/g, '%'));
+
+    const res = await apiAdoption.get(`/adoptionPost/filter?${queryParams.toString()}`);
+    return { success: true, data: res.data };
+  } catch (err) {
+    return { success: false, message: err.response?.data?.error || 'Error al filtrar mascotas' };
+  }
+};
