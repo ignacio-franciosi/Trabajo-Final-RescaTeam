@@ -5,6 +5,7 @@ import {
   getAdoptionPostById,
   getImagesByAdoptionPostId,
 } from '../services/AdoptionService';
+import { getPhoneByUserId } from '../services/UserService';
 
 const PetDetailPage = () => {
   const { id } = useParams();
@@ -18,12 +19,14 @@ const PetDetailPage = () => {
         const petRes = await getAdoptionPostById(id);
         const imagesRes = await getImagesByAdoptionPostId(id);
 
-        if (!petRes.success) {
-          throw new Error('No se encontró la publicación');
-        }
+        if (!petRes.success) throw new Error('No se encontró la publicación');
+
+        // Obtener teléfono público del usuario que hizo la publicación
+        const phoneRes = await getPhoneByUserId(petRes.data.id_user);
 
         const petData = {
           ...petRes.data,
+          phone: phoneRes.success ? phoneRes.data.phone : null,
           imagenes: imagesRes.success ? imagesRes.data : [],
         };
 

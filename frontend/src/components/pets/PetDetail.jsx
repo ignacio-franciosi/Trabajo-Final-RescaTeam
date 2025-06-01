@@ -1,10 +1,26 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { getUserById } from '../../services/UserService';
 
 const PetDetail = ({ pet }) => {
   const navigate = useNavigate();
+  const { user, token } = useAuth();
   const [currentImage, setCurrentImage] = useState(0);
+  const [phone, setPhone] = useState('');
   const hasImages = pet.imagenes && pet.imagenes.length > 0;
+
+  useEffect(() => {
+    const fetchPhone = async () => {
+      if (pet?.id_user && token) {
+        const res = await getUserById(pet.id_user);
+        if (res.success && res.data?.phone) {
+          setPhone(res.data.phone);
+        }
+      }
+    };
+    fetchPhone();
+  }, [pet, token]);
 
   const handleVolver = () => {
     navigate('/#pets-list');
@@ -22,9 +38,13 @@ const PetDetail = ({ pet }) => {
     );
   };
 
+  const handleContactar = () => {
+    localStorage.setItem('redirectAfterLogin', `/mascota/${pet.id_adoption_post}`);
+    navigate('/register');
+  };
+
   return (
     <div className="relative max-w-5xl mx-auto p-4">
-      {/* Botón Volver */}
       <button
         onClick={handleVolver}
         className="absolute top-2 left-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
@@ -34,7 +54,7 @@ const PetDetail = ({ pet }) => {
 
       <div className="mt-12 p-6 bg-white rounded-lg shadow-md">
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Galería de imágenes */}
+          {/* Imágenes */}
           <div className="md:w-1/2 relative">
             {hasImages ? (
               <>
@@ -43,8 +63,6 @@ const PetDetail = ({ pet }) => {
                   alt={`Mascota ${currentImage + 1}`}
                   className="w-full rounded-lg object-cover h-64"
                 />
-
-                {/* Flechas */}
                 {pet.imagenes.length > 1 && (
                   <>
                     <button
@@ -59,23 +77,17 @@ const PetDetail = ({ pet }) => {
                     >
                       ▶
                     </button>
+                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2">
+                      {pet.imagenes.map((_, i) => (
+                        <span
+                          key={i}
+                          className={`w-2 h-2 rounded-full ${
+                            i === currentImage ? 'bg-blue-600' : 'bg-gray-300'
+                          }`}
+                        ></span>
+                      ))}
+                    </div>
                   </>
-                )}
-
-                {/* Indicadores (puntos) */}
-                {pet.imagenes.length > 1 && (
-                  <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2">
-                    {pet.imagenes.map((_, i) => (
-                      <span
-                        key={i}
-                        className={`w-2 h-2 rounded-full ${
-                          i === currentImage
-                            ? 'bg-blue-600'
-                            : 'bg-gray-300'
-                        }`}
-                      ></span>
-                    ))}
-                  </div>
                 )}
               </>
             ) : (
@@ -87,7 +99,7 @@ const PetDetail = ({ pet }) => {
             )}
           </div>
 
-          {/* Información de la mascota */}
+          {/* Info */}
           <div className="md:w-1/2 space-y-4">
             <h2 className="text-3xl font-bold">{pet.name || 'Sin nombre'}</h2>
             <div className="grid grid-cols-2 gap-4">
@@ -98,16 +110,24 @@ const PetDetail = ({ pet }) => {
               <DetailItem label="Sexo" value={pet.sex} />
               <DetailItem label="Color" value={pet.color} />
               <DetailItem label="Castrado" value={pet.neutered ? 'Sí' : 'No'} />
-              <DetailItem
-                label="Vacunas"
-                value={pet.completeVaccines ? 'Completas' : 'Incompletas'}
-              />
+              <DetailItem label="Vacunas" value={pet.completeVaccines ? 'Completas' : 'Incompletas'} />
             </div>
             <DetailItem label="Zona" value={pet.zone} />
-            <DetailItem
-              label="Teléfono de contacto"
-              value={pet.phone || 'No disponible'}
-            />
+
+            <div>
+              <p className="text-sm text-gray-500">Teléfono de contacto</p>
+              {user && phone ? (
+                <p className="capitalize">{phone}</p>
+              ) : (
+                <button
+                  onClick={handleContactar}
+                  className="mt-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Contactar
+                </button>
+              )}
+            </div>
+
             <DetailItem label="Descripción" value={pet.description} />
           </div>
         </div>
