@@ -70,7 +70,8 @@ func VerifyQueryToken(c *gin.Context) bool {
 }
 
 func verifyTokenExternally(token string) (*TokenVerificationResponse, error) {
-	url := "http://localhost:8082/verify" // o http://auth:8082/verify en Docker
+	url := "http://localhost:8082/verify"
+	//url := "http://rescateam-auth:8082/verify" // Docker
 
 	payload, _ := json.Marshal(map[string]string{
 		"token": token,

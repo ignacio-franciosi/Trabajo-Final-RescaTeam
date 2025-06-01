@@ -1,0 +1,2 @@
+docker build -t rescateam-db-users .
+docker run -d --network=rescateam --name rescateam-db-users -p 3309:3309 rescateam-db-users
