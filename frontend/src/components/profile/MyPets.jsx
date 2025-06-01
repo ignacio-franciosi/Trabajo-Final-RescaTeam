@@ -16,8 +16,8 @@ const MyPets = ({ pets, onDelete, onMarkAdopted }) => {
         <p className="text-center text-gray-600">Aún no has publicado ninguna mascota.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {pets.map(pet => (
-            <div key={pet.id} className="border rounded-lg overflow-hidden">
+          {pets.map((pet, index) => (
+            <div key={pet.id_adoption_post || index} className="border rounded-lg overflow-hidden">
               <PetCard pet={pet} onClick={() => {}} />
               <div className="p-4 bg-gray-50 flex justify-around space-x-2">
                 <button

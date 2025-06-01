@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getAdoptionPostsByUserId, getImagesByAdoptionPostId } from '../services/AdoptionService';
+import { getAllAdoptionPostsByUserId } from '../services/AdoptionService';
 import MyPets from '../components/profile/MyPets';
 
 const MyPetsPage = () => {
@@ -16,31 +17,40 @@ const MyPetsPage = () => {
       try {
         const res = await getAdoptionPostsByUserId(user.userId);
 
-        if (!res.success) {
-          throw new Error(res.message);
+        if (!res.success || !Array.isArray(res.data)) {
+          throw new Error(res.message || 'Error al obtener publicaciones.');
         }
 
-        // Agregar imágenes a cada mascota
+        // Carga imágenes asociadas
         const postsWithImages = await Promise.all(
           res.data.map(async (post) => {
-            const imageRes = await getImagesByAdoptionPostId(post.id_adoption_post);
-            const imageUrl =
-              imageRes.success && imageRes.data.length > 0
-                ? `http://localhost:8090${imageRes.data[0].file_path}`
-                : '/no-image.png';
+            try {
+              const imageRes = await getImagesByAdoptionPostId(post.id_adoption_post);
+              const imageUrl =
+                imageRes.success && Array.isArray(imageRes.data) && imageRes.data.length > 0
+                  ? `http://localhost:8090${imageRes.data[0].file_path}`
+                  : '/no-image.png';
 
-            return {
-              ...post,
-              foto: imageUrl,
-              adopted: post.adoptionStatus,
-            };
+              return {
+                ...post,
+                foto: imageUrl,
+                adopted: post.adoptionStatus,
+              };
+            } catch {
+              return {
+                ...post,
+                foto: '/no-image.png',
+                adopted: post.adoptionStatus,
+              };
+            }
           })
         );
 
         setPets(postsWithImages);
       } catch (err) {
         console.error('Error cargando mis mascotas:', err.message);
-        setError(err.message);
+        setError(err.message || 'Ocurrió un error inesperado.');
+        setPets([]); // prevenir render con null
       } finally {
         setLoading(false);
       }
