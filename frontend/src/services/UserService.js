@@ -16,43 +16,11 @@ export const getPhoneByUserId = async (id) => {
   } catch (err) {
     return {
       success: false,
-      message: err.response?.data?.message || 'Error al obtener teléfono público'
+      message: err.response?.data?.message || 'Error al obtener el teléfono público'
     };
   }
 };
 
-/*
-import api from './axiosConfigUsers';
-
-export const getUserById = async (id) => {
-  try {
-    const token = localStorage.getItem('token');
-
-    const res = await api.get(`/user/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`, // <-- ¡IMPORTANTE!
-      },
-    });
-
-    return { success: true, data: res.data };
-  } catch (err) {
-    console.error('Error en getUserById:', err);
-    return {
-      success: false,
-      message: err.response?.data?.message || 'Error al obtener usuario',
-    };
-  }
-};
-
-export const getPublicPhoneByUserId = async (id) => {
-  try {
-    const res = await api.get(`/user/phone/${id}`);
-    return { success: true, data: res.data.phone };
-  } catch (err) {
-    return { success: false, message: err.response?.data?.message || 'No se pudo obtener el teléfono' };
-  }
-};
-*/
 export const updateUser = async (id, data) => {
   try {
     const res = await api.patch(`/user/${id}`, data);

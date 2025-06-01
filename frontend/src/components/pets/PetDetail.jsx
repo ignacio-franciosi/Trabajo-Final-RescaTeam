@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getUserById } from '../../services/UserService';
+//import { getUserById } from '../../services/UserService';
 
 const PetDetail = ({ pet }) => {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ const PetDetail = ({ pet }) => {
   const [currentImage, setCurrentImage] = useState(0);
   const [phone, setPhone] = useState('');
   const hasImages = pet.imagenes && pet.imagenes.length > 0;
-
+/*
   useEffect(() => {
     const fetchPhone = async () => {
       if (pet?.id_user && token) {
@@ -21,7 +21,7 @@ const PetDetail = ({ pet }) => {
     };
     fetchPhone();
   }, [pet, token]);
-
+*/
   const handleVolver = () => {
     navigate('/#pets-list');
   };
@@ -116,8 +116,12 @@ const PetDetail = ({ pet }) => {
 
             <div>
               <p className="text-sm text-gray-500">Teléfono de contacto</p>
-              {user && phone ? (
-                <p className="capitalize">{phone}</p>
+              {user? (
+                <p className="capitalize">
+                  {pet.phone?.trim()
+                    ? pet.phone
+                    : 'No disponible'}
+                </p>
               ) : (
                 <button
                   onClick={handleContactar}
