@@ -76,6 +76,23 @@ export const getAdoptionPostsByUserId = async (userId) => {
   }
 };
 
+export const getAllAdoptionPostsByUserId = async (userId) => {
+  try {
+    const res = await apiAdoption.get(`/adoptionPost/user/${userId}`);
+    
+    // Manejo seguro de estructura de datos
+    const data = Array.isArray(res.data) ? res.data : [];
+
+    return { success: true, data };
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err.response?.data?.error || 'Error al obtener publicaciones del usuario.',
+    };
+  }
+};
+
 export const updateAdoptionPost = async (id, data) => {
   try {
     const res = await apiAdoption.put(`/adoptionPost/${id}`, data);

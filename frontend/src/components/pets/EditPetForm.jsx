@@ -24,6 +24,7 @@ const EditPetForm = () => {
     const fetchPost = async () => {
       const res = await getAdoptionPostById(id);
       const imgRes = await getImagesByAdoptionPostId(id);
+      setExistingImages(Array.isArray(imgRes.data) ? imgRes.data : []);
       if (res.success) {
         setFormData({
           ...res.data,
@@ -231,7 +232,7 @@ const EditPetForm = () => {
         </div>
 
         <div className="flex gap-4 flex-wrap">
-          {existingImages.map(img => (
+          {Array.isArray(existingImages) && existingImages.map(img => (
             <div key={img.image_id} className="relative">
               <img src={`http://localhost:8090${img.file_path}`} alt="img" className="w-24 h-24 object-cover rounded" />
               <button
