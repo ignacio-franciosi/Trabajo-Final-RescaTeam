@@ -1,0 +1,9 @@
+FROM mysql:latest
+
+# Copia el script de inicialización a la carpeta especial de MySQL
+COPY ./init.sql /docker-entrypoint-initdb.d/
+
+# Variables de entorno para configurar la base de datos
+ENV MYSQL_ROOT_PASSWORD=root
+ENV MYSQL_DATABASE=usersDB
+
