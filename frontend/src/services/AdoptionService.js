@@ -156,3 +156,12 @@ export const deleteAllImagesByPostId = async (postId) => {
     return { success: false, message: err.response?.data?.error || 'Error al eliminar imágenes' };
   }
 };
+
+export const markAsAdopted = async (postId) => {
+  try {
+    const res = await apiAdoption.put(`/adoptionPost/adopted/${postId}`);
+    return { success: true, data: res.data };
+  } catch (err) {
+    return { success: false, message: err.response?.data?.error || 'Error al marcar como adoptada' };
+  }
+};
