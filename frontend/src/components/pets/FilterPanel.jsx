@@ -50,8 +50,9 @@ const FilterPanel = ({ onFilterChange }) => {
         <select name="edad" value={filters.edad} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
           <option value="">Cualquiera</option>
           <option value="0-1">0-1 año</option>
-          <option value="1-5">1-5 años</option>
-          <option value="5+">5+ años</option>
+          <option value="2-3">2-3 años</option>
+          <option value="4-7">4-7 años</option>
+          <option value="8+">8+ años</option>
         </select>
       </div>
       <div>

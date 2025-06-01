@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import HeroSection from "../components/home/HeroSection";
@@ -8,6 +8,7 @@ import PetList from "../components/pets/PetList";
 
 const Home = () => {
   const location = useLocation();
+  const [filters, setFilters] = useState({});
 
   useEffect(() => {
     if (location.hash === "#pets-list") {
@@ -15,7 +16,7 @@ const Home = () => {
       if (section) {
         setTimeout(() => {
           section.scrollIntoView({ behavior: "smooth" });
-        }, 100); // Espera breve para asegurar render
+        }, 100);
       }
     }
   }, [location]);
@@ -27,6 +28,10 @@ const Home = () => {
     }
   };
 
+  const handleFilterChange = (updatedFilters) => {
+    setFilters(updatedFilters);
+  };
+
   return (
     <>
       <HeroSection onScrollToPets={scrollToPets} />
@@ -35,10 +40,10 @@ const Home = () => {
         <h2 className="text-3xl font-bold mb-6 text-center">Mascotas en Adopción</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-1">
-            <FilterPanel onFilterChange={() => {}} />
+            <FilterPanel onFilterChange={handleFilterChange} />
           </div>
           <div className="md:col-span-3">
-            <PetList />
+            <PetList filters={filters} />
           </div>
         </div>
       </section>
