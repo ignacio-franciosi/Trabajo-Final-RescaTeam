@@ -1,4 +1,27 @@
-// UserService.js
+import api from './axiosConfigUsers';
+
+export const getUserById = async (id) => {
+  try {
+    const res = await api.get(`/user/${id}`);
+    return { success: true, data: res.data };
+  } catch (err) {
+    return { success: false, message: err.response?.data?.message || 'Error al obtener usuario' };
+  }
+};
+
+export const getPhoneByUserId = async (id) => {
+  try {
+    const res = await api.get(`/user/phone/${id}`);
+    return { success: true, data: res.data };
+  } catch (err) {
+    return {
+      success: false,
+      message: err.response?.data?.message || 'Error al obtener teléfono público'
+    };
+  }
+};
+
+/*
 import api from './axiosConfigUsers';
 
 export const getUserById = async (id) => {
@@ -21,7 +44,15 @@ export const getUserById = async (id) => {
   }
 };
 
-
+export const getPublicPhoneByUserId = async (id) => {
+  try {
+    const res = await api.get(`/user/phone/${id}`);
+    return { success: true, data: res.data.phone };
+  } catch (err) {
+    return { success: false, message: err.response?.data?.message || 'No se pudo obtener el teléfono' };
+  }
+};
+*/
 export const updateUser = async (id, data) => {
   try {
     const res = await api.patch(`/user/${id}`, data);
