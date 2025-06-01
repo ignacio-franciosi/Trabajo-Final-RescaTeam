@@ -37,7 +37,7 @@ const MyPets = ({ pets, onDelete, onMarkAdopted }) => {
                     onClick={() => onMarkAdopted(pet)}
                     className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md text-sm hover:bg-green-700 transition-colors"
                   >
-                    Marcar Adoptado
+                    Marcar Adoptada
                   </button>
                 )}
               </div>

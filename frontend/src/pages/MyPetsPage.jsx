@@ -4,10 +4,13 @@ import {
   getAdoptionPostsByUserId,
   getImagesByAdoptionPostId,
   deleteAdoptionPost,
-  deleteAllImagesByPostId
+  deleteAllImagesByPostId,
+  markAsAdopted
 } from '../services/AdoptionService';
 import MyPets from '../components/profile/MyPets';
 import ConfirmDeleteModal from '../components/pets/ConfirmDeleteModal';
+import ConfirmAdoptedModal from '../components/pets/ConfirmAdoptedModal';
+
 
 const MyPetsPage = () => {
   const { user } = useAuth();
@@ -15,7 +18,8 @@ const MyPetsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [petToDelete, setPetToDelete] = useState(null);
+  const [modalAction, setModalAction] = useState('delete'); // 'delete' o 'adopt'
+  const [petSelected, setPetSelected] = useState(null);
 
   const fetchMyPets = async () => {
     if (!user) return;
@@ -67,22 +71,37 @@ const MyPetsPage = () => {
   }, [user]);
 
   const handleDeleteClick = (pet) => {
-    setPetToDelete(pet);
+    setModalAction('delete');
+    setPetSelected(pet);
     setShowModal(true);
   };
 
-  const handleConfirmDelete = async () => {
-    if (!petToDelete) return;
+  const handleMarkAdoptedClick = (pet) => {
+    setModalAction('adopt');
+    setPetSelected(pet);
+    setShowModal(true);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!petSelected) return;
 
     try {
-      await deleteAllImagesByPostId(petToDelete.id_adoption_post);
-      await deleteAdoptionPost(petToDelete.id_adoption_post);
-      setPets(prev => prev.filter(p => p.id_adoption_post !== petToDelete.id_adoption_post));
+      if (modalAction === 'delete') {
+        await deleteAllImagesByPostId(petSelected.id_adoption_post);
+        await deleteAdoptionPost(petSelected.id_adoption_post);
+      } else if (modalAction === 'adopt') {
+        const res = await markAsAdopted(petSelected.id_adoption_post);
+        if (!res.success) throw new Error(res.message);
+        await deleteAllImagesByPostId(petSelected.id_adoption_post);
+        await deleteAdoptionPost(petSelected.id_adoption_post);
+      }
+
+      setPets(prev => prev.filter(p => p.id_adoption_post !== petSelected.id_adoption_post));
     } catch (err) {
-      alert('Error al eliminar la publicación.');
+      alert('Error al realizar la acción.');
     } finally {
       setShowModal(false);
-      setPetToDelete(null);
+      setPetSelected(null);
     }
   };
 
@@ -96,12 +115,24 @@ const MyPetsPage = () => {
         pets={pets}
         onEdit={(pet) => (window.location.href = `/editar-publicacion/${pet.id_adoption_post}`)}
         onDelete={handleDeleteClick}
-        onMarkAdopted={() => {}}
+        onMarkAdopted={handleMarkAdoptedClick}
       />
+
       <ConfirmDeleteModal
         isOpen={showModal}
         onCancel={() => setShowModal(false)}
-        onConfirm={handleConfirmDelete}
+        onConfirm={handleConfirmAction}
+        message={
+          modalAction === 'adopt'
+            ? 'Al marcar como adoptada se eliminará la publicación. ¿Estás seguro?'
+            : '¿Estás seguro de que deseas eliminar esta publicación?'
+        }
+      />
+
+      <ConfirmAdoptedModal
+        isOpen={modalAction === 'adopt' && showModal}
+        onCancel={() => setShowModal(false)}
+        onConfirm={handleConfirmAction}
       />
     </>
   );
