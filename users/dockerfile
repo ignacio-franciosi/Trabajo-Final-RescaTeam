@@ -1,0 +1,18 @@
+FROM golang:latest
+
+COPY . /users
+
+WORKDIR /users
+RUN go mod init users
+RUN go mod tidy
+RUN go build -o users .
+
+ENV DB_USERNAME=root
+ENV DB_PASSWORD=root
+ENV DB_HOST=rescateam-db-users
+ENV DB_PORT=3306
+ENV DB_DATABASE=U
+
+EXPOSE 8090
+
+CMD ["/users/users"]
