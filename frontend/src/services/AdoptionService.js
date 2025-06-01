@@ -138,3 +138,21 @@ export const deleteImageById = async (imageId) => {
     };
   }
 };
+
+export const deleteAdoptionPost = async (id) => {
+  try {
+    const res = await apiAdoption.delete(`/adoptionPost/${id}`);
+    return { success: true, data: res.data };
+  } catch (err) {
+    return { success: false, message: err.response?.data?.error || 'Error al eliminar publicación' };
+  }
+};
+
+export const deleteAllImagesByPostId = async (postId) => {
+  try {
+    const res = await apiAdoption.delete(`/adoptionPost/images/deleteall/${postId}`);
+    return { success: true, data: res.data };
+  } catch (err) {
+    return { success: false, message: err.response?.data?.error || 'Error al eliminar imágenes' };
+  }
+};
