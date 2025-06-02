@@ -42,18 +42,3 @@ const EditPetPage = () => {
 };
 
 export default EditPetPage;
-
-/*
-import React from 'react';
-import EditPetForm from '../components/pets/EditPetForm';
-
-const EditPetPage = () => {
-  return (
-    <div className="min-h-screen py-10 px-4 bg-gray-50">
-      <EditPetForm />
-    </div>
-  );
-};
-
-export default EditPetPage;
-*/

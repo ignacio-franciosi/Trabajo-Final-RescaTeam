@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-//import { getUserById } from '../../services/UserService';
 
 const PetDetail = ({ pet }) => {
   const navigate = useNavigate();
@@ -9,19 +8,7 @@ const PetDetail = ({ pet }) => {
   const [currentImage, setCurrentImage] = useState(0);
   const [phone, setPhone] = useState('');
   const hasImages = pet.imagenes && pet.imagenes.length > 0;
-/*
-  useEffect(() => {
-    const fetchPhone = async () => {
-      if (pet?.id_user && token) {
-        const res = await getUserById(pet.id_user);
-        if (res.success && res.data?.phone) {
-          setPhone(res.data.phone);
-        }
-      }
-    };
-    fetchPhone();
-  }, [pet, token]);
-*/
+
   const handleVolver = () => {
     navigate('/#pets-list');
   };
@@ -125,7 +112,7 @@ const PetDetail = ({ pet }) => {
               ) : (
                 <button
                   onClick={handleContactar}
-                  className="mt-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  className="mt-1 px-4 py-2 bg-rose-600 text-white rounded hover:bg-blue-700"
                 >
                   Contactar
                 </button>

@@ -23,13 +23,13 @@ const UserProfile = ({ user, onEdit, onChangePassword, onDelete }) => {
         </button>
         <button
           onClick={onChangePassword}
-          className="w-full bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600 transition-colors"
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-yellow-600 transition-colors"
         >
           Cambiar Contraseña
         </button>
         <button
           onClick={onDelete}
-          className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
         >
           Eliminar Cuenta
         </button>
