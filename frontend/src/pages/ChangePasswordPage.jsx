@@ -85,16 +85,21 @@ const ChangePasswordPage = () => {
             required
             className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md"
           />
-          {formData.new_password_1 && (
-            <ul className="text-sm text-gray-600 mt-1">
-              <li className={formData.new_password_1.length >= 8 ? "text-green-600" : "text-red-600"}>• Mínimo 8 caracteres</li>
-              <li className={/[A-Z]/.test(formData.new_password_1) ? "text-green-600" : "text-red-600"}>• Al menos una mayúscula</li>
-              <li className={/[a-z]/.test(formData.new_password_1) ? "text-green-600" : "text-red-600"}>• Al menos una minúscula</li>
-              <li className={/\d/.test(formData.new_password_1) ? "text-green-600" : "text-red-600"}>• Al menos un número</li>
-            </ul>
-          )}
+          <ul className="text-sm mt-2 space-y-1">
+            <li className={pwd.length >= 8 ? "text-green-600" : "text-red-600"}>
+              {pwd.length >= 8 ? '✅' : '❌'} Mínimo 8 caracteres
+            </li>
+            <li className={/[A-Z]/.test(pwd) ? "text-green-600" : "text-red-600"}>
+              {/[A-Z]/.test(pwd) ? '✅' : '❌'} Al menos una mayúscula
+            </li>
+            <li className={/[a-z]/.test(pwd) ? "text-green-600" : "text-red-600"}>
+              {/[a-z]/.test(pwd) ? '✅' : '❌'} Al menos una minúscula
+            </li>
+            <li className={/\d/.test(pwd) ? "text-green-600" : "text-red-600"}>
+              {/\d/.test(pwd) ? '✅' : '❌'} Al menos un número
+            </li>
+          </ul>
         </div>
-
         <div>
           <label className="block text-sm font-medium text-gray-700">Repetir Nueva Contraseña</label>
           <input
