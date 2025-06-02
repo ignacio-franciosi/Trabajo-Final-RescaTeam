@@ -23,7 +23,7 @@ const Header = () => {
   const handleProfileSelect = (action) => {
     if (action === 'logout') {
       logout();
-      navigate('/');
+      setTimeout(() => navigate('/'), 100);
     } else {
       navigate(`/${action}`);
     }
