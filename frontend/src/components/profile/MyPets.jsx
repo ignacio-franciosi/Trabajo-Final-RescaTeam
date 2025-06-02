@@ -22,20 +22,20 @@ const MyPets = ({ pets, onDelete, onMarkAdopted }) => {
               <div className="p-4 bg-gray-50 flex justify-around space-x-2">
                 <button
                   onClick={() => handleEdit(pet)}
-                  className="flex-1 bg-yellow-500 text-white py-2 px-4 rounded-md text-sm hover:bg-yellow-600 transition-colors"
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm hover:bg-yellow-600 transition-colors"
                 >
                   Editar
                 </button>
                 <button
                   onClick={() => onDelete(pet)}
-                  className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md text-sm hover:bg-red-700 transition-colors"
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm hover:bg-red-700 transition-colors"
                 >
                   Eliminar
                 </button>
                 {!pet.adopted && (
                   <button
                     onClick={() => onMarkAdopted(pet)}
-                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md text-sm hover:bg-green-700 transition-colors"
+                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm hover:bg-green-700 transition-colors"
                   >
                     Marcar Adoptada
                   </button>

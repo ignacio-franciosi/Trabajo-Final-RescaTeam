@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DropdownMenu from './DropdownMenu';
 import { useAuth } from '../../context/AuthContext';
+import logo1 from '../../assets/logo1.png';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -38,16 +39,17 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-40">
+    <header className="bg-neutral-800 shadow-sm sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <Link to="/" className="text-2xl font-bold text-blue-600 cursor-pointer">
+          <Link to="/" className="text-2xl font-bold text-white cursor-pointer">
             RescaTeam
           </Link>
+          <img src={logo1} alt="RescaTeam Logo" className="h-12" />
         </div>
 
         <nav className="hidden md:flex space-x-4">
-          <Link to="/" className="text-gray-700 hover:text-blue-600">
+          <Link to="/" className="text-white hover:text-blue-600">
             Home
           </Link>
           <button
@@ -57,13 +59,13 @@ const Header = () => {
                 aboutSection.scrollIntoView({ behavior: 'smooth' });
               }
             }}
-            className="text-gray-700 hover:text-blue-600"
+            className="text-white hover:text-blue-600"
           >
             About
           </button>
           <button
             onClick={() => handleProtectedAction('publicar')}
-            className="text-gray-700 hover:text-blue-600"
+            className="text-white hover:text-blue-600"
           >
             Publicar Mascota
           </button>

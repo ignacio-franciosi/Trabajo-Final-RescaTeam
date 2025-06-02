@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 
 // Layout
 import Header from "../components/layout/Header";
+import Footer from '../components/layout/Footer';
 
 // Vistas públicas
 import LoginForm from "../components/auth/LoginForm";
@@ -87,6 +88,7 @@ const AppRouter = () => {
           <Route path="/mascota/:id" element={<PetDetailPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
+        <Footer />
       </main>
     </Router>
   );

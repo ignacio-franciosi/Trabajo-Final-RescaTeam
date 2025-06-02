@@ -1,12 +1,13 @@
 import React from 'react';
+import logo from '../../assets/logo.png';
 
 const AboutSection = () => {
   return (
-    <section id="about" className="py-16 bg-gray-100">
+    <section id="about" className="py-16 bg-stone-200">
       <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
         <div className="md:w-1/2">
           <img 
-            src="https://images.unsplash.com/photo-1598875980000-800520000000?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80" 
+            src={logo}
             alt="Equipo RescaTeam" 
             className="rounded-lg shadow-md"
           />

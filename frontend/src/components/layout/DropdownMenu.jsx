@@ -12,7 +12,7 @@ const DropdownMenu = ({ options, onSelect }) => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="text-gray-700 hover:text-blue-600 focus:outline-none"
+        className="text-white hover:text-blue-600 focus:outline-none"
       >
         Perfil
       </button>
