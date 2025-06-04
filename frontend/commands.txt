@@ -1,0 +1,2 @@
+docker build -t rescateam-frontend .
+docker run -d --network=rescateam --name rescateam-frontend -p 5173:5173  rescateam-frontend
