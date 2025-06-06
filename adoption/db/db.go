@@ -1,9 +1,10 @@
 package db
 
 import (
-	"adoption/clients"
-	model "adoption/model"
 	"os"
+
+	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/clients"
+	model "github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/model"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"

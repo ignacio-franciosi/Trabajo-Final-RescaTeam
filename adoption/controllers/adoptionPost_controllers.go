@@ -1,13 +1,14 @@
 package controllers
 
 import (
-	"adoption/dto"
-	"adoption/services"
-	authhelper "adoption/utils/auth"
 	"fmt"
 	"net/http"
 	"path/filepath"
 	"strconv"
+
+	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/dto"
+	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/services"
+	authhelper "github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/utils/auth"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

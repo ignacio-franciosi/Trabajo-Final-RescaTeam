@@ -1,14 +1,15 @@
 package services
 
 import (
-	adoptionPostClient "adoption/clients"
-	"adoption/dto"
-	"adoption/model"
-	e "adoption/utils/errors"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
+
+	adoptionPostClient "github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/clients"
+	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/dto"
+	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/model"
+	e "github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/utils/errors"
 )
 
 type adoptionService struct{}
