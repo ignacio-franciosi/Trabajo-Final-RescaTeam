@@ -1,8 +1,9 @@
 package clients
 
 import (
-	"adoption/model"
 	"errors"
+
+	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/model"
 
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
