@@ -25,7 +25,7 @@ func init() {
 	}
 
 	// Obtenemos la cadena de conexión de la variable de entorno
-	dbConnString := os.Getenv("DBCONNSTRING")
+	dbConnString := os.Getenv("DBCONNSTRING_DEPLOY")
 
 	// Abrimos la conexión a la base de datos utilizando la variable
 	db, err = gorm.Open(mysql.Open(dbConnString), &gorm.Config{})
