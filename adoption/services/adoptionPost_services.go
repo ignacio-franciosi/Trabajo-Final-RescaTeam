@@ -3,13 +3,15 @@ package services
 import (
 	"errors"
 	"fmt"
-	"os"
+	"mime/multipart"
+	"path/filepath"
 	"strings"
 
-	adoptionPostClient "github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/clients"
-	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/dto"
-	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/model"
-	e "github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/utils/errors"
+	adoptionPostClient "adoption/clients"
+	"adoption/dto"
+	"adoption/model"
+	e "adoption/utils/errors"
+	s3client "adoption/utils/s3"
 )
 
 type adoptionService struct{}
@@ -23,7 +25,7 @@ type adoptionServiceInterface interface {
 	GetFilteredAdoptionPosts(filters map[string]string) ([]dto.AdoptionPostDto, e.ApiError)
 	MarkAdoptionPostAsAdopted(id int, userId int) error
 	GetAllAdoptionPostsByUserId(userId int) (dto.AdoptionPostsDto, error)
-	UploadImage(postId int, filename string) (dto.AdoptionImageDto, e.ApiError)
+	UploadImage(postId int, file multipart.File, filename string) (dto.AdoptionImageDto, e.ApiError)
 	GetImagesByAdoptionPostId(postId int) ([]dto.AdoptionImageDto, e.ApiError)
 	GetImageById(id int) (dto.AdoptionImageDto, e.ApiError)
 	DeleteImageById(imageId int) error
@@ -265,14 +267,40 @@ func (s *adoptionService) GetAllAdoptionPostsByUserId(userId int) (dto.AdoptionP
 	return postsDto, nil
 }
 
-func (s adoptionService) UploadImage(postId int, filename string) (dto.AdoptionImageDto, e.ApiError) {
+func (s adoptionService) UploadImage(postId int, file multipart.File, filename string) (dto.AdoptionImageDto, e.ApiError) {
+	// Determinar el tipo de contenido basado en la extensión
+	ext := strings.ToLower(filepath.Ext(filename))
+	var contentType string
+	switch ext {
+	case ".jpg", ".jpeg":
+		contentType = "image/jpeg"
+	case ".png":
+		contentType = "image/png"
+	case ".gif":
+		contentType = "image/gif"
+	case ".webp":
+		contentType = "image/webp"
+	default:
+		contentType = "application/octet-stream"
+	}
+
+	// Subir archivo a S3
+	fileURL, err := s3client.S3ClientInstance.UploadFile(file, filename, contentType)
+	if err != nil {
+		return dto.AdoptionImageDto{}, e.NewInternalServerApiError("Cannot upload image to S3", err)
+	}
+
+	// Guardar en base de datos
 	image := model.AdoptionImage{
 		AdoptionPostId: postId,
-		FilePath:       "/images/adoption_posts/" + filename,
+		FilePath:       fileURL, // Ahora guardamos la URL completa de S3
 	}
-	savedImage, err := adoptionPostClient.AdoptionPostClient.UploadAdoptionImage(image)
-	if err != nil {
-		return dto.AdoptionImageDto{}, e.NewInternalServerApiError("Cannot save image", err)
+
+	savedImage, dbErr := adoptionPostClient.AdoptionPostClient.UploadAdoptionImage(image)
+	if dbErr != nil {
+		// Si falla la BD, intentar eliminar el archivo de S3
+		s3client.S3ClientInstance.DeleteFile(fileURL)
+		return dto.AdoptionImageDto{}, e.NewInternalServerApiError("Cannot save image to database", dbErr)
 	}
 
 	return dto.AdoptionImageDto{
@@ -293,7 +321,7 @@ func (s adoptionService) GetImagesByAdoptionPostId(postId int) ([]dto.AdoptionIm
 		dtos = append(dtos, dto.AdoptionImageDto{
 			ImageId:        img.ImageId,
 			AdoptionPostId: img.AdoptionPostId,
-			FilePath:       img.FilePath,
+			FilePath:       img.FilePath, // Ya contiene la URL completa de S3
 		})
 	}
 	return dtos, nil
@@ -309,33 +337,29 @@ func (s *adoptionService) GetImageById(id int) (dto.AdoptionImageDto, e.ApiError
 
 	imageDto.ImageId = image.ImageId
 	imageDto.AdoptionPostId = image.AdoptionPostId
-	imageDto.FilePath = image.FilePath
+	imageDto.FilePath = image.FilePath // URL completa de S3
 
 	return imageDto, nil
-
 }
 
 func (s *adoptionService) DeleteImageById(imageId int) error {
-	//Obtener imagen desde BD
+	// Obtener imagen desde BD
 	image := adoptionPostClient.AdoptionPostClient.GetImageById(imageId)
 	if image.ImageId == 0 {
 		return errors.New("imagen no encontrada")
 	}
 
-	//Eliminar físicamente la imagen del sistema de archivos
-	//El FilePath es "/images/adoption_posts/xxx.jpg"
-	filePath := strings.TrimPrefix(image.FilePath, "/")
-	//se borra
-	if err := os.Remove(filePath); err != nil {
-		return fmt.Errorf("error al eliminar archivo: %v", err)
+	// Eliminar archivo de S3
+	if err := s3client.S3ClientInstance.DeleteFile(image.FilePath); err != nil {
+		return fmt.Errorf("error al eliminar archivo de S3: %v", err)
 	}
 
-	//Eliminar desde la BD
+	// Eliminar desde la BD
 	return adoptionPostClient.AdoptionPostClient.DeleteImageById(imageId)
 }
 
 func (s *adoptionService) DeleteAllImagesByAdoptionPostId(postId int) error {
-	//Obtener todas las imágenes asociadas al post
+	// Obtener todas las imágenes asociadas al post
 	images, err := adoptionPostClient.AdoptionPostClient.GetImagesByAdoptionPostId(postId)
 	if err != nil {
 		return fmt.Errorf("error al obtener imágenes: %v", err)
@@ -345,15 +369,14 @@ func (s *adoptionService) DeleteAllImagesByAdoptionPostId(postId int) error {
 		return nil
 	}
 
-	//Iterar y eliminar archivos uno por uno
+	// Iterar y eliminar archivos de S3 uno por uno
 	for _, img := range images {
-		filePath := strings.TrimPrefix(img.FilePath, "/") //"images/adoption_posts/xxx.jpg"
-		if err := os.Remove(filePath); err != nil {
-			return fmt.Errorf("error al eliminar archivo %s: %v", filePath, err)
+		if err := s3client.S3ClientInstance.DeleteFile(img.FilePath); err != nil {
+			return fmt.Errorf("error al eliminar archivo de S3 %s: %v", img.FilePath, err)
 		}
 	}
 
-	//Eliminar los registros de la base de datos
+	// Eliminar los registros de la base de datos
 	if err := adoptionPostClient.AdoptionPostClient.DeleteAllImagesByAdoptionPostId(postId); err != nil {
 		return fmt.Errorf("error al eliminar imágenes en la base de datos: %v", err)
 	}

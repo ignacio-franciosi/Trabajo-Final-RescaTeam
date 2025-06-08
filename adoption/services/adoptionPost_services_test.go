@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/clients"
-	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/dto"
-	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/model"
-	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/services"
+	"adoption/clients"
+	"adoption/dto"
+	"adoption/model"
+	"adoption/services"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

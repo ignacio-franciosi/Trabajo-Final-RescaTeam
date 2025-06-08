@@ -3,7 +3,7 @@ package clients
 import (
 	"errors"
 
-	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/model"
+	"adoption/model"
 
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"

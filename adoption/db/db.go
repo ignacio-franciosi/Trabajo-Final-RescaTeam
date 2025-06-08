@@ -3,8 +3,8 @@ package db
 import (
 	"os"
 
-	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/clients"
-	model "github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/model"
+	"adoption/clients"
+	model "adoption/model"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"

@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/controllers"
+	"adoption/controllers"
 
 	log "github.com/sirupsen/logrus"
 )

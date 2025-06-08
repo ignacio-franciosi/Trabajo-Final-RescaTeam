@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/dto"
-	"github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/services"
-	authhelper "github.com/ignacio-franciosi/Trabajo-Final-RescaTeam/adoption/utils/auth"
+	"adoption/dto"
+	"adoption/services"
+	authhelper "adoption/utils/auth"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -63,7 +63,6 @@ func InsertAdoptionPost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid adoption_status"})
 		return
 	}
-	//si lo que viene es true, compara con true y guarda true. Si lo que viene es false, compara con true y guarda false
 	adoptionPostDto.AdoptionStatus = adoptionStatus == "true"
 
 	// Insertar el post
@@ -73,7 +72,7 @@ func InsertAdoptionPost(c *gin.Context) {
 		return
 	}
 
-	// Procesar imágenes
+	// Procesar imágenes - MODIFICADO PARA S3
 	form, err := c.MultipartForm()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Could not parse multipart form"})
@@ -81,18 +80,22 @@ func InsertAdoptionPost(c *gin.Context) {
 	}
 
 	files := form.File["images"]
-	for _, file := range files {
-		uniqueID := uuid.New().String()
-		ext := filepath.Ext(file.Filename)
-		filename := fmt.Sprintf("%d_%s%s", createdPost.AdoptionPostId, uniqueID, ext)
-		savePath := filepath.Join("images", "adoption_posts", filename)
-
-		if err := c.SaveUploadedFile(file, savePath); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save image"})
+	for _, fileHeader := range files {
+		// Abrir el archivo
+		file, err := fileHeader.Open()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not open uploaded file"})
 			return
 		}
+		defer file.Close()
 
-		_, apiErr := services.AdoptionService.UploadImage(createdPost.AdoptionPostId, filename)
+		// Generar nombre único
+		uniqueID := uuid.New().String()
+		ext := filepath.Ext(fileHeader.Filename)
+		filename := fmt.Sprintf("%d_%s%s", createdPost.AdoptionPostId, uniqueID, ext)
+
+		// Subir a S3
+		_, apiErr := services.AdoptionService.UploadImage(createdPost.AdoptionPostId, file, filename)
 		if apiErr != nil {
 			c.JSON(apiErr.Status(), apiErr)
 			return
@@ -317,13 +320,13 @@ func GetAllAdoptionPostsByUserId(c *gin.Context) {
 }
 
 func UploadAdoptionImage(c *gin.Context) {
-	//Verifico token y extraigo userId/isAdmin
+	// Verifico token y extraigo userId/isAdmin
 	authorized, tokenUserId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, false)
 	if !authorized {
 		return
 	}
 
-	//Parseo postId de la request
+	// Parseo postId de la request
 	postIdStr := c.PostForm("adoption_post_id")
 	postId, err := strconv.Atoi(postIdStr)
 	if err != nil {
@@ -331,39 +334,41 @@ func UploadAdoptionImage(c *gin.Context) {
 		return
 	}
 
-	//Traigo el adoption post
+	// Traigo el adoption post
 	postDto, apiErr := services.AdoptionService.GetAdoptionPostById(postId)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
 
-	//Hago que solo el dueño o admin puede subir imágenes
+	// Hago que solo el dueño o admin puede subir imágenes
 	if !isAdmin && postDto.UserId != tokenUserId {
 		c.JSON(http.StatusForbidden, gin.H{"error": "No autorizado para subir imagen a este post"})
 		return
 	}
 
-	//Recibo del archivo
-	file, err := c.FormFile("image")
+	// Recibo el archivo - MODIFICADO PARA S3
+	fileHeader, err := c.FormFile("image")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Image not provided"})
 		return
 	}
 
-	//Generar nombre aleatorio y guardo la img localmente
-	uniqueID := uuid.New().String()
-	ext := filepath.Ext(file.Filename)
-	filename := fmt.Sprintf("%d_%s%s", postId, uniqueID, ext)
-	savePath := filepath.Join("images", "adoption_posts", filename)
-
-	if err := c.SaveUploadedFile(file, savePath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save image"})
+	// Abrir el archivo
+	file, err := fileHeader.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not open uploaded file"})
 		return
 	}
+	defer file.Close()
 
-	//Guardo el path/url en BD
-	imageDto, apiErr := services.AdoptionService.UploadImage(postId, filename)
+	// Generar nombre único
+	uniqueID := uuid.New().String()
+	ext := filepath.Ext(fileHeader.Filename)
+	filename := fmt.Sprintf("%d_%s%s", postId, uniqueID, ext)
+
+	// Subir a S3 y guardar en BD
+	imageDto, apiErr := services.AdoptionService.UploadImage(postId, file, filename)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
 		return
@@ -424,7 +429,7 @@ func DeleteImageById(c *gin.Context) {
 		return
 	}
 
-	// Llama al service para eliminar
+	// Llama al service para eliminar (ahora elimina de S3)
 	err := services.AdoptionService.DeleteImageById(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al eliminar la imagen"})
@@ -439,6 +444,7 @@ func DeleteAllImagesByAdoptionPostId(c *gin.Context) {
 	if !authorized {
 		return
 	}
+
 	// Convierte el parámetro postId
 	postIdParam := c.Param("idAdPost")
 	postId, err := strconv.Atoi(postIdParam)
@@ -460,7 +466,7 @@ func DeleteAllImagesByAdoptionPostId(c *gin.Context) {
 		return
 	}
 
-	// Llama al service
+	// Llama al service (ahora elimina de S3)
 	err = services.AdoptionService.DeleteAllImagesByAdoptionPostId(postId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al eliminar las imágenes"})
