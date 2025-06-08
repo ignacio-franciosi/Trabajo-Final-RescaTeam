@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080', // Reemplazá PORT con el puerto real de tu API users
+  baseURL: 'https://users-production-6ead.up.railway.app',
+  //baseURL: 'http://localhost:8080', // Reemplazá PORT con el puerto real de tu API users
 });
 
 // Agregar token a todas las requests (si existe)
