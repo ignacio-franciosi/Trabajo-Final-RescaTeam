@@ -1,30 +1,9 @@
-# Etapa 1: Build de la aplicación
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY package*.json ./
+FROM node
+WORKDIR /frontend
+COPY package.json .
+COPY package-lock.json ./
+COPY ./ ./
+RUN npm i
 COPY . .
-RUN npm install
-RUN npm run build
-
-# Etapa 2: Servir el contenido estático con `serve`
-FROM node:20-alpine
-WORKDIR /app
-RUN npm install -g serve
-COPY --from=build /app/dist ./dist
-
-# Railway asigna el puerto en la variable de entorno $PORT
-ENV PORT 8080
-EXPOSE 8080
-
-CMD ["serve", "-s", "dist", "-l", "8080"]
-
-
-#FROM node
-#WORKDIR /frontend
-#COPY package.json .
-#COPY package-lock.json ./
-#COPY ./ ./
-#RUN npm i
-#COPY . .
-#EXPOSE 5173
-#CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+EXPOSE 5173
+CMD ["npm", "run", "dev"]
