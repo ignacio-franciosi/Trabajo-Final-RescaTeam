@@ -38,7 +38,7 @@ const MyPetsPage = () => {
             const imageRes = await getImagesByAdoptionPostId(post.id_adoption_post);
             const imageUrl =
               imageRes.success && Array.isArray(imageRes.data) && imageRes.data.length > 0
-                ? `http://localhost:8090${imageRes.data[0].file_path}`
+                ? imageRes.data[0].file_path
                 : '/no-image.png';
 
             return {
