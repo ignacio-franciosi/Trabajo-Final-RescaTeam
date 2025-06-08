@@ -32,7 +32,7 @@ const PetList = ({ filters = {} }) => {
 
             if (imageRes.success && Array.isArray(imageRes.data) && imageRes.data.length > 0) {
               const rawPath = imageRes.data[0].file_path;
-              const imageUrl = `http://localhost:8090${rawPath.startsWith('/') ? '' : '/'}${rawPath}`;
+              const imageUrl = rawPath;
               post.foto = imageUrl;
             } else {
               post.foto = '/no-image.png'; // imagen por defecto
