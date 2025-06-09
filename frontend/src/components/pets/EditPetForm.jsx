@@ -234,7 +234,7 @@ const EditPetForm = () => {
         <div className="flex gap-4 flex-wrap">
           {Array.isArray(existingImages) && existingImages.map(img => (
             <div key={img.image_id} className="relative">
-              <img src={`http://localhost:8090${img.file_path}`} alt="img" className="w-24 h-24 object-cover rounded" />
+              <img src={img.file_path} alt="img" className="w-24 h-24 object-cover rounded" />
               <button
                 type="button"
                 onClick={() => handleDeleteImage(img.image_id)}
