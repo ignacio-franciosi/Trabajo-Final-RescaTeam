@@ -4,16 +4,30 @@ const UserProfile = ({ user, onEdit, onChangePassword, onDelete }) => {
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-center">Mi Perfil</h2>
+
       <div className="space-y-4">
-        {Object.entries(user).map(([key, value]) => (
-          key !== 'password' && key !== 'id' && (
-            <div key={key}>
-              <span className="text-sm font-medium text-gray-700 capitalize">{key}: </span>
-              <span className="text-gray-900">{value}</span>
-            </div>
-          )
-        ))}
+        <div>
+          <span className="text-sm font-medium text-gray-700">Nombre: </span>
+          <span className="text-gray-900">{user.name}</span>
+        </div>
+        <div>
+          <span className="text-sm font-medium text-gray-700">Apellido: </span>
+          <span className="text-gray-900">{user.surname}</span>
+        </div>
+        <div>
+          <span className="text-sm font-medium text-gray-700">DNI: </span>
+          <span className="text-gray-900">{user.dni}</span>
+        </div>
+        <div>
+          <span className="text-sm font-medium text-gray-700">Email: </span>
+          <span className="text-gray-900">{user.email}</span>
+        </div>
+        <div>
+          <span className="text-sm font-medium text-gray-700">Teléfono: </span>
+          <span className="text-gray-900">{user.phone}</span>
+        </div>
       </div>
+
       <div className="mt-6 space-y-2">
         <button
           onClick={onEdit}
