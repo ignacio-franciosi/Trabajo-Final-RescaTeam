@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { changePassword } from '../services/UserService';
@@ -58,6 +59,9 @@ const ChangePasswordPage = () => {
       setError(res.message || 'Error al cambiar la contraseña.');
     }
   };
+
+  const pwd = formData.new_password_1;
+
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md mt-10">
