@@ -1,7 +1,6 @@
 package clients
 
 import (
-	"errors"
 	"users/model"
 
 	log "github.com/sirupsen/logrus"
@@ -68,10 +67,6 @@ func (c *userClient) UpdateUser(user model.User) (model.User, error) {
 
 	if result.Error != nil {
 		return model.User{}, result.Error
-	}
-
-	if result.RowsAffected == 0 {
-		return model.User{}, errors.New("los datos ingresados son iguales a los preexistentes")
 	}
 
 	var updatedUser model.User
