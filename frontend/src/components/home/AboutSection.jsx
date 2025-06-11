@@ -13,11 +13,11 @@ const AboutSection = () => {
           />
         </div>
         <div className="md:w-1/2 space-y-4">
-          <h2 className="text-3xl font-bold text-gray-800">Sobre RescaTeam</h2>
-          <p className="text-gray-600">
+          <h2 className="text-3xl font-bold text-gray-800 text-center">Sobre RescaTeam</h2>
+          <p className="text-gray-600 text-justify">
             Somos un equipo apasionado por el bienestar animal, dedicados a conectar mascotas sin hogar con familias amorosas. Creemos que cada animal merece una segunda oportunidad y un hogar para siempre.
           </p>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-justify">
             Nuestra plataforma facilita el proceso de adopción, permitiendo a refugios y particulares publicar mascotas disponibles y a futuros adoptantes encontrar a su compañero ideal de forma sencilla y segura.
           </p>
         </div>
