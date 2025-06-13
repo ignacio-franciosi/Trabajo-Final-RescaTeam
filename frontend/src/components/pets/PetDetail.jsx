@@ -46,7 +46,7 @@ const PetDetail = ({ pet }) => {
             {hasImages ? (
               <>
                 <img
-                  src={`http://localhost:8090${pet.imagenes[currentImage].file_path}`}
+                  src={pet.imagenes[currentImage].file_path}
                   alt={`Mascota ${currentImage + 1}`}
                   className="w-full rounded-lg object-cover h-64"
                 />
