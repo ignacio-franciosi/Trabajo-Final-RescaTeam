@@ -56,7 +56,7 @@ const UserProfilePage = () => {
 
 
   return (
-    <div className="min-h-screen py-10 px-4 bg-stone-200">
+    <div className="min-h-screen py-10 px-4 bg-white">
       {error && <p className="text-red-600">{error}</p>}
       {editing ? (
         <EditUserForm

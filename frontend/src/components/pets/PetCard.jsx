@@ -19,7 +19,7 @@ const PetCard = ({ pet }) => {
       />
       <div className="p-4">
         <h3 className="font-bold text-lg">{pet.name || 'Sin nombre'}</h3>
-        <p className="text-gray-600">{pet.age} años - {pet.species}</p>
+        <p className="text-gray-600">{pet.age} años - {pet.species?.charAt(0).toUpperCase() + pet.species?.slice(1).toLowerCase()}</p>
         <p className="text-gray-500 text-sm">{pet.zone}</p>
       </div>
     </div>

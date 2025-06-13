@@ -46,11 +46,10 @@ const PetDetail = ({ pet }) => {
             {hasImages ? (
               <>
                 <img
-                  src={pet.imagenes[currentImage].file_path}
+                  src={`http://localhost:8090${pet.imagenes[currentImage].file_path}`}
                   alt={`Mascota ${currentImage + 1}`}
                   className="w-full rounded-lg object-cover h-64"
                 />
-
                 {pet.imagenes.length > 1 && (
                   <>
                     <button
@@ -69,8 +68,9 @@ const PetDetail = ({ pet }) => {
                       {pet.imagenes.map((_, i) => (
                         <span
                           key={i}
-                          className={`w-2 h-2 rounded-full ${i === currentImage ? 'bg-blue-600' : 'bg-gray-300'
-                            }`}
+                          className={`w-2 h-2 rounded-full ${
+                            i === currentImage ? 'bg-blue-600' : 'bg-gray-300'
+                          }`}
                         ></span>
                       ))}
                     </div>
@@ -103,7 +103,7 @@ const PetDetail = ({ pet }) => {
 
             <div>
               <p className="text-sm text-gray-500">Teléfono de contacto</p>
-              {user ? (
+              {user? (
                 <p className="capitalize">
                   {pet.phone?.trim()
                     ? pet.phone
@@ -119,7 +119,8 @@ const PetDetail = ({ pet }) => {
               )}
             </div>
 
-            <DetailItem label="Descripción" value={pet.description} />
+            <p className="text-sm text-gray-500">Descripción</p>
+            <p className="whitespace-pre-line">{pet.description}</p>
           </div>
         </div>
       </div>
