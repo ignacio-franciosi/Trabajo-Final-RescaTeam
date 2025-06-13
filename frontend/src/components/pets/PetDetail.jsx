@@ -119,7 +119,8 @@ const PetDetail = ({ pet }) => {
               )}
             </div>
 
-            <DetailItem label="Descripción" value={pet.description} />
+            <p className="text-sm text-gray-500">Descripción</p>
+            <p className="whitespace-pre-line">{pet.description}</p>
           </div>
         </div>
       </div>
