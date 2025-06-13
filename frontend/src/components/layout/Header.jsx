@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DropdownMenu from './DropdownMenu';
 import { useAuth } from '../../context/AuthContext';
-import logo1 from '../../assets/logo1.png';
+import favicon from '../../assets/favicon.png';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ const Header = () => {
           <Link to="/" className="text-2xl font-bold text-white cursor-pointer">
             RescaTeam
           </Link>
-          <img src={logo1} alt="RescaTeam Logo" className="h-12" />
+          <img src={favicon} alt="RescaTeam Logo" className="h-12" />
         </div>
 
         <nav className="hidden md:flex space-x-4">
