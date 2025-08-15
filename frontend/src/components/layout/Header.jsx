@@ -45,7 +45,7 @@ const Header = () => {
           <Link to="/" className="text-2xl font-bold text-white cursor-pointer">
             RescaTeam
           </Link>
-          <img src={favicon} alt="RescaTeam Logo" className="h-12" />
+          <img src={favicon} alt="RescaTeam Logo" className="h-12 rounded-full" />
         </div>
 
         <nav className="hidden md:flex space-x-4">
