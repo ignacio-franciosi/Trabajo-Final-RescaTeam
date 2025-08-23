@@ -70,8 +70,9 @@ func VerifyQueryToken(c *gin.Context) bool {
 }
 
 func verifyTokenExternally(token string) (*TokenVerificationResponse, error) {
-	url := "https://auth-production-1ceb.up.railway.app/verify"
+	//url := "https://auth-production-1ceb.up.railway.app/verify"
 	//url := "http://rescateam-auth:8082/verify" // Docker
+	url := "http://loaclhost:8082/verify"
 
 	payload, _ := json.Marshal(map[string]string{
 		"token": token,
