@@ -1,0 +1,68 @@
+package dto
+
+import (
+	"chat/model"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+type StartChatRequest struct {
+	ReceiverID string `json:"receiverId" binding:"required"`
+	PostID     string `json:"postId" binding:"required"`
+}
+
+type SendMessageRequest struct {
+	Content string `json:"content" binding:"required,min=1,max=2000"`
+}
+
+// ========== RESPONSES ==========
+
+// ChatResponse: lo que se devuelve al crear/listar chats
+type ChatResponse struct {
+	ChatID       string    `json:"chatId"`
+	Participants [2]string `json:"participants"`
+	PostID       string    `json:"postId"`
+	LastUpdate   time.Time `json:"lastUpdate"`
+	LastMessage  string    `json:"lastMessage,omitempty"`
+	LastSenderID string    `json:"lastSenderId,omitempty"`
+}
+
+// MessageResponse: lo que se devuelve al enviar/recibir mensajes
+type MessageResponse struct {
+	MessageID string    `json:"messageId"`
+	ChatID    string    `json:"chatId"`
+	SenderID  string    `json:"senderId"`
+	Content   string    `json:"content"`
+	Timestamp time.Time `json:"timestamp"`
+	Viewed    bool      `json:"viewed"`
+}
+
+// ========== MAPPERS ==========
+
+func ToChatResponse(chat *model.Chat) ChatResponse {
+	return ChatResponse{
+		ChatID:       chat.ID.Hex(),
+		Participants: chat.Participants,
+		PostID:       chat.PostID,
+		LastUpdate:   chat.LastUpdate,
+		LastMessage:  chat.LastMessage,
+		LastSenderID: chat.LastSenderID,
+	}
+}
+
+func ToMessageResponse(msg *model.Message) MessageResponse {
+	return MessageResponse{
+		MessageID: msg.ID.Hex(),
+		ChatID:    msg.ChatID.Hex(),
+		SenderID:  msg.SenderID,
+		Content:   msg.Content,
+		Timestamp: msg.Timestamp,
+		Viewed:    msg.Viewed,
+	}
+}
+
+// Helper inverso: de string a ObjectID (para buscar en Mongo)
+func ParseObjectID(id string) (primitive.ObjectID, error) {
+	return primitive.ObjectIDFromHex(id)
+}
