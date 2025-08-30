@@ -1,11 +1,10 @@
-// chat/app/router.go
 package app
 
 import (
-	"chat/controllers"
-	"net/http"
 	"sync"
 	"time"
+
+	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -13,7 +12,6 @@ import (
 )
 
 var (
-	// Mapa de limitadores por IP
 	limiters = make(map[string]*rate.Limiter)
 	mu       sync.Mutex
 )
@@ -25,7 +23,7 @@ func getLimiter(ip string) *rate.Limiter {
 
 	limiter, exists := limiters[ip]
 	if !exists {
-		limiter = rate.NewLimiter(1, 50) // 1 request cada 1s, burst de 50
+		limiter = rate.NewLimiter(1, 50) // 1 request/segundo, burst de 50
 		limiters[ip] = limiter
 	}
 	return limiter
@@ -53,7 +51,7 @@ func SetupRouter() *gin.Engine {
 
 	// Configuración de CORS
 	config := cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // Vite
+		AllowOrigins:     []string{"http://localhost:5173"}, // frontend Vite
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -62,20 +60,8 @@ func SetupRouter() *gin.Engine {
 	}
 	router.Use(cors.New(config))
 
-	// Middleware de rate limit
+	// Middleware global
 	router.Use(RateLimitMiddleware())
-
-	// Rutas de prueba
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
-	})
-
-	// Rutas del chat
-	api := router.Group("/api")
-	{
-		api.GET("/ws", controllers.HandleWebSocket) // conexión websocket
-		api.POST("/message", controllers.SendMessage)
-	}
 
 	return router
 }
