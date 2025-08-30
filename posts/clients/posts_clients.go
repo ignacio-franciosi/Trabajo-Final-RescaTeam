@@ -27,6 +27,9 @@ type postClientInterface interface {
 	GetImageById(id string) (model.Image, error)
 	DeleteImageById(imageId string) error
 	DeleteAllImagesByPostId(postId string) error
+	DeleteAllPostsByUserId(userId int) error
+	DeleteAllImagesByUserId(userId int) error
+	GetAllImagesByUserId(userId int) ([]model.Image, error)
 }
 
 var PostClient postClientInterface
@@ -299,4 +302,37 @@ func (c *postClient) DeleteAllImagesByPostId(postId string) error {
 
 	_, err := collection.DeleteMany(context.Background(), bson.M{"postId": postId})
 	return err
+}
+
+func (c *postClient) DeleteAllPostsByUserId(userId int) error {
+	collection:= db.PostsCollection
+	_, err := collection.DeleteMany(context.Background(),bson.M{"userId": userId})
+	return err
+}
+
+func (c *postClient) DeleteAllImagesByUserId(userId int) error {
+	collection:= db.ImagesCollection
+	_, err := collection.DeleteMany(context.Background(),bson.M{"userId": userId})
+	return err
+}
+
+func (c *postClient) GetAllImagesByUserId(userId int) ([]model.Image, error) {
+	collection := db.ImagesCollection
+
+	filter := bson.M{"userId": userId}
+
+	cursor, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		log.Error("Error fetching images by postId: ", err)
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	var images []model.Image
+	if err := cursor.All(context.Background(), &images); err != nil {
+		log.Error("Error decoding images: ", err)
+		return nil, err
+	}
+
+	return images, nil
 }

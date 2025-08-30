@@ -10,9 +10,9 @@ import (
 	userClient "users/clients"
 	dto "users/dto"
 	"users/model"
-
+	"encoding/json"
 	"golang.org/x/crypto/bcrypt"
-
+	"users/utils/queue"
 	"github.com/golang-jwt/jwt/v4"
 
 	log "github.com/sirupsen/logrus"
@@ -352,17 +352,39 @@ func (s *userService) ResetPassword(tokenUserId int, resetPasswordDto dto.ResetP
 	return nil
 }
 
+
 func (s *userService) DeleteUser(id int) error {
-	user := userClient.UserClient.GetUserById(id)
+    user := userClient.UserClient.GetUserById(id)
 
-	if user.UserId == 0 {
-		return errors.New("user not found")
-	}
+    if user.UserId == 0 {
+        return errors.New("user not found")
+    }
 
-	err := userClient.UserClient.DeleteUser(user)
+    err := userClient.UserClient.DeleteUser(user)
+    if err != nil {
+        return err
+    }
 
-	return err
+    // Armo el mensaje de cola
+    msg := dto.QueueMessageDto{
+        Id:      user.UserId,
+        Message: "delete",
+    }
+
+    body, err := json.Marshal(msg)
+    if err != nil {
+        return err
+    }
+
+    // Publico en la cola
+    err = queue.QueueProducer.Publish(body)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
+
 
 // TO DELETE SOON
 

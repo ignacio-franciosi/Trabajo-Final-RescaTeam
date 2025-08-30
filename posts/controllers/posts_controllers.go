@@ -116,7 +116,7 @@ func InsertPost(c *gin.Context) {
 		return
 	}
 
-	// Procesar imágenes - MODIFICADO PARA S3
+	// Procesar imágenes - MODIFICADO PARA S3 Y userId
 	form, err := c.MultipartForm()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Could not parse multipart form"})
@@ -138,8 +138,8 @@ func InsertPost(c *gin.Context) {
 		ext := filepath.Ext(fileHeader.Filename)
 		filename := fmt.Sprintf("%s_%s%s", createdPost.PostId, uniqueID, ext)
 
-		// Subir a S3
-		_, apiErr := services.PostsService.UploadImage(createdPost.PostId, file, filename)
+		// Subir a S3 - AHORA INCLUYE userId
+		_, apiErr := services.PostsService.UploadImage(createdPost.PostId, userId, file, filename)
 		if apiErr != nil {
 			c.JSON(apiErr.Status(), apiErr)
 			return
@@ -409,8 +409,8 @@ func UploadImage(c *gin.Context) {
 	ext := filepath.Ext(fileHeader.Filename)
 	filename := fmt.Sprintf("%s_%s%s", postIdStr, uniqueID, ext)
 
-	// Subir a S3 y guardar en Mongo
-	imageDto, apiErr := services.PostsService.UploadImage(postIdStr, file, filename)
+	// Subir a S3 y guardar en Mongo - AHORA INCLUYE tokenUserId
+	imageDto, apiErr := services.PostsService.UploadImage(postIdStr, tokenUserId, file, filename)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
 		return
@@ -478,7 +478,6 @@ func DeleteAllImagesByPostId(c *gin.Context) {
 		return
 	}
 
-	// Obtiene el parámetro postId (string ahora, no se convierte a int)
 	postId := c.Param("postId")
 
 	// Obtiene el post
@@ -502,4 +501,38 @@ func DeleteAllImagesByPostId(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Todas las imágenes eliminadas exitosamente"})
+}
+
+func DeleteAllPostsByUserId(c *gin.Context) {
+	// Validar token y permisos
+	authorized, tokenUserId, isAdmin := authhelper.VerifyTokenAndAuthorize(c, true, true)
+	if !authorized {
+		return
+	}
+
+	// Obtener el userId de los parámetros de la URL
+	paramUserIdStr := c.Param("userId")
+	paramUserId, err := strconv.Atoi(paramUserIdStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId inválido"})
+		return
+	}
+
+	// Verificar permisos: el user solo puede borrar sus propios posts (o un admin cualquiera)
+	if !isAdmin && tokenUserId != paramUserId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No autorizado para eliminar los posts de este usuario"})
+		return
+	}
+
+	// Llamar al service para eliminar tanto posts como imágenes
+	if err := services.PostsService.DeleteAllPostsByUserId(paramUserId); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al eliminar posts del usuario %d: %v", paramUserId, err)})
+		return
+	}
+	if err := services.PostsService.DeleteAllImagesByUserId(paramUserId); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al eliminar imágenes del usuario %d: %v", paramUserId, err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Todos los posts del usuario %d eliminados exitosamente", paramUserId)})
 }

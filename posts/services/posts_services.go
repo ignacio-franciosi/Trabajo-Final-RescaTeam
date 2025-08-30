@@ -6,7 +6,7 @@ import (
 	"mime/multipart"
 	"path/filepath"
 	"strings"
-
+	"log"
 	postsClient "posts/clients"
 	"posts/dto"
 	"posts/model"
@@ -23,14 +23,16 @@ type postsServiceInterface interface {
 	GetAllPosts(postType string) (dto.PostsDto, error)
 	UpdatePost(postDto dto.PostDto) (dto.PostDto, error)
 	GetFilteredPosts(filters map[string]string) ([]dto.PostDto, e.ApiError)
-	//GetFilteredLostFoundPosts
 	MarkPostAsResolved(id string) error
 	GetAllPostsByUserId(userId int) ([]dto.PostDto, error)
-	UploadImage(postId string, file multipart.File, filename string) (dto.ImageDto, e.ApiError)
+	UploadImage(postId string, userId int, file multipart.File, filename string) (dto.ImageDto, e.ApiError)
 	GetImagesByPostId(postId string) ([]dto.ImageDto, e.ApiError)
 	GetImageById(id string) (dto.ImageDto, e.ApiError)
 	DeleteImageById(imageId string) error
 	DeleteAllImagesByPostId(postId string) error
+	DeleteAllPostsByUserId(userId int) error
+	DeleteAllImagesByUserId(userId int) error
+	GetAllImagesByUserId(userId int) ([]dto.ImageDto, e.ApiError)
 }
 
 var (
@@ -289,7 +291,7 @@ func (s *postsService) GetAllPostsByUserId(userId int) ([]dto.PostDto, error) {
 	return postsDto, nil
 }
 
-func (s postsService) UploadImage(postId string, file multipart.File, filename string) (dto.ImageDto, e.ApiError) {
+func (s postsService) UploadImage(postId string, userId int, file multipart.File, filename string) (dto.ImageDto, e.ApiError) {
 	// Determinar el tipo de contenido basado en la extensión
 	ext := strings.ToLower(filepath.Ext(filename))
 	var contentType string
@@ -310,9 +312,10 @@ func (s postsService) UploadImage(postId string, file multipart.File, filename s
 		return dto.ImageDto{}, e.NewInternalServerApiError("Cannot upload image to S3", err)
 	}
 
-	// Guardar en base de datos - use string postId directly
+	// Guardar en base de datos - AHORA INCLUYE userId
 	image := model.Image{
 		PostId:   postId,  // Keep as string if that's what the model expects
+		UserId:   userId,  // NUEVO: agregar userId al modelo
 		Filepath: fileURL, // guardamos la URL completa de S3
 	}
 
@@ -326,6 +329,7 @@ func (s postsService) UploadImage(postId string, file multipart.File, filename s
 	return dto.ImageDto{
 		ImageId:  savedImage.ImageId.Hex(), // Convert ObjectID to string
 		PostId:   savedImage.PostId,
+		UserId:   savedImage.UserId,        // NUEVO: incluir userId en la respuesta
 		Filepath: savedImage.Filepath,
 	}, nil
 }
@@ -341,7 +345,8 @@ func (s postsService) GetImagesByPostId(postId string) ([]dto.ImageDto, e.ApiErr
 		dtos = append(dtos, dto.ImageDto{
 			ImageId:  img.ImageId.Hex(), // Convert ObjectID to string
 			PostId:   img.PostId,
-			Filepath: img.Filepath, // Ya contiene la URL completa de S3
+			UserId:   img.UserId,        // NUEVO: incluir userId en la respuesta
+			Filepath: img.Filepath,     // Ya contiene la URL completa de S3
 		})
 	}
 	return dtos, nil
@@ -354,9 +359,10 @@ func (s *postsService) GetImageById(id string) (dto.ImageDto, e.ApiError) {
 	}
 
 	imageDto := dto.ImageDto{
-		ImageId:  image.ImageId.Hex(), // Convert ObjectID to string
+		ImageId:  image.ImageId.Hex(), 
 		PostId:   image.PostId,
-		Filepath: image.Filepath, // URL completa de S3
+		UserId:   image.UserId,      
+		Filepath: image.Filepath,     
 	}
 
 	return imageDto, nil
@@ -402,4 +408,59 @@ func (s *postsService) DeleteAllImagesByPostId(postId string) error {
 	}
 
 	return nil
+}
+
+func (s *postsService) DeleteAllPostsByUserId(userId int) error {
+	err := postsClient.PostClient.DeleteAllPostsByUserId(userId)
+	if err != nil {
+		return fmt.Errorf("error al eliminar posts del usuario %d: %w", userId, err)
+	}
+	return nil
+}
+
+func (s *postsService) DeleteAllImagesByUserId(userId int) error {
+	// Primero obtener todas las URLs/nombres de archivos de las imágenes del usuario
+	// Asumiendo que tienes un método para obtener las imágenes antes de eliminarlas
+	images, err := postsClient.PostClient.GetAllImagesByUserId(userId)
+	if err != nil {
+		return fmt.Errorf("error al obtener imagenes del usuario %d: %w", userId, err)
+	}
+
+	// Eliminar cada imagen de S3
+	for _, image := range images {
+		// Si tienes la URL completa de la imagen
+		if image.Filepath != "" {
+			err :=s3client.S3ClientInstance.DeleteFile(image.Filepath)
+			if err != nil {
+				// Log del error pero continuar con las demás imágenes
+				log.Printf("Error al eliminar imagen de S3: %s, error: %v", image.Filepath, err)
+			}
+		}
+	}
+
+	// Finalmente eliminar de la base de datos
+	err = postsClient.PostClient.DeleteAllImagesByUserId(userId)
+	if err != nil {
+		return fmt.Errorf("error al eliminar imagenes del usuario %d: %w", userId, err)
+	}
+	
+	return nil
+}
+
+func (s postsService) GetAllImagesByUserId(userId int) ([]dto.ImageDto, e.ApiError) {
+	images, err := postsClient.PostClient.GetAllImagesByUserId(userId)
+	if err != nil {
+		return nil, e.NewInternalServerApiError("No se pudieron obtener imagenes", err)
+	}
+
+	var dtos []dto.ImageDto
+	for _, img := range images {
+		dtos = append(dtos, dto.ImageDto{
+			ImageId:  img.ImageId.Hex(), 
+			PostId:   img.PostId,
+			UserId:   img.UserId,        
+			Filepath: img.Filepath,     
+		})
+	}
+	return dtos, nil
 }

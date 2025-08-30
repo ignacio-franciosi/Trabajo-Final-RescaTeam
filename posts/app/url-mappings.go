@@ -30,6 +30,7 @@ func mapUrls() {
 	router.DELETE("post/images/deleteall/:postId", controllers.DeleteAllImagesByPostId)
 	router.PUT("/post/resolved/:id", controllers.MarkPostAsResolved)
 	router.GET("/post/user/:userId", controllers.GetAllPostsByUserId) //mis publicaciones
+	router.DELETE("/post/user/:userId", controllers.DeleteAllPostsByUserId) // eliminar cuenta
 
 	log.Info("Url mapping ready")
 }
