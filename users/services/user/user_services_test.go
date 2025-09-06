@@ -2,10 +2,10 @@ package services_test
 
 import (
 	"testing"
-	"users/clients"
+	clients "users/clients/user"
 	"users/dto"
 	"users/model"
-	"users/services"
+	services "users/services/user"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -37,6 +37,14 @@ func (m *mockUserClient) UpdateUser(user model.User) (model.User, error) {
 	args := m.Called(user)
 	return args.Get(0).(model.User), args.Error(1)
 }
+func (m *mockUserClient) SuspendUser(user int) (model.User, error) {
+	args := m.Called(user)
+	return args.Get(0).(model.User), args.Error(1)
+}
+func (m *mockUserClient) ReactivateUser(user int) (model.User, error) {
+	args := m.Called(user)
+	return args.Get(0).(model.User), args.Error(1)
+}
 
 func (m *mockUserClient) ChangePassword(userId int, hashedPassword string) error {
 	args := m.Called(userId, hashedPassword)
@@ -48,10 +56,7 @@ func (m *mockUserClient) DeleteUser(user model.User) error {
 	return args.Error(0)
 }
 
-func (m *mockUserClient) GetPhoneByUserId(id int) model.User {
-	args := m.Called(id)
-	return args.Get(0).(model.User)
-}
+
 
 // --- TESTS ---
 
@@ -66,7 +71,6 @@ func TestGetUserById_Success(t *testing.T) {
 		Surname:   "Lovelace",
 		Dni:       12345678,
 		Email:     "ada@gmail.com",
-		Phone:     "1234567890",
 		Password:  "Securepass6",
 		Type:      false,
 		Suspended: false,
@@ -167,7 +171,6 @@ func TestInsertUser_Success(t *testing.T) {
 		Surname:   "Johnson",
 		Dni:       17628787,
 		Email:     "bananapancakes@gmail.com",
-		Phone:     "351678936",
 		Password:  "Sunsets4somebodyelse",
 		Type:      false,
 		Suspended: false,
@@ -181,7 +184,6 @@ func TestInsertUser_Success(t *testing.T) {
 		Surname:   "Johnson",
 		Dni:       17628787,
 		Email:     "bananapancakes@gmail.com",
-		Phone:     "351678936",
 		Type:      false,
 		Suspended: false,
 	})
@@ -226,7 +228,6 @@ func TestUpdateUser_Success(t *testing.T) {
 		Surname:   "User",
 		Dni:       12345678,
 		Email:     "old@example.com",
-		Phone:     "123456",
 		Type:      false,
 		Suspended: false,
 	}
@@ -289,7 +290,6 @@ func TestChangePassword_Success(t *testing.T) {
 		Surname:   "Byron",
 		Dni:       17628787,
 		Email:     "lordbyron@gmail.com",
-		Phone:     "351678936",
 		Password:  string(hashed),
 		Type:      false,
 		Suspended: false,
@@ -324,7 +324,6 @@ func TestChangePassword_Error_InvalidOldPassword(t *testing.T) {
 		Surname:   "Byron",
 		Dni:       17628787,
 		Email:     "lordbyron@gmail.com",
-		Phone:     "351678936",
 		Password:  string(hashed),
 		Type:      false,
 		Suspended: false,
@@ -355,7 +354,6 @@ func TestDeleteUser_Success(t *testing.T) {
 		Surname:   "Byron",
 		Dni:       17628787,
 		Email:     "lordbyron@gmail.com",
-		Phone:     "351678936",
 		Password:  "Securepass6",
 		Type:      false,
 		Suspended: false,

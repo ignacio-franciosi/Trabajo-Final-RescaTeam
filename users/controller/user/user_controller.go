@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	dto "users/dto"
-	service "users/services"
+	service "users/services/user"
 	authhelper "users/utils/auth"
 
 	"github.com/gin-gonic/gin"
@@ -246,16 +246,52 @@ func DeleteUser(c *gin.Context) {
 
 }
 
-// TO DELETE SOON
-func GetPhoneByUserId(c *gin.Context) {
+func SuspendUser(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
 		return
 	}
-	userDto, err := service.UserService.GetPhoneByUserId(id)
+
+	// Solo admin puede suspender
+	if !authhelper.VerifyTokenAndAuthorize(c, true, false, id) {
+		return
+	}
+
+	userDto, err := service.UserService.SuspendUser(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		switch err.Error() {
+		case "usuario no encontrado":
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, userDto)
+}
+
+func ReactivateUser(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+
+	// Solo admin puede reactivar
+	if !authhelper.VerifyTokenAndAuthorize(c, true, false, id) {
+		return
+	}
+
+	userDto, err := service.UserService.ReactivateUser(id)
+	if err != nil {
+		switch err.Error() {
+		case "usuario no encontrado":
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 

@@ -16,6 +16,7 @@ type TokenVerificationResponse struct {
 	Suspended bool `json:"suspended"`
 }
 
+
 func VerifyTokenAndAuthorize(c *gin.Context, allowAdmin bool, allowOwner bool, reqUserId int) bool {
 
 	authHeader := c.GetHeader("Authorization")
@@ -67,6 +68,29 @@ func VerifyQueryToken(c *gin.Context) bool {
 	c.Set("userId", claims.UserID)
 	return true
 
+}
+
+// Función para solo verificar que el usuario esté autenticado
+func VerifyAuthentication(c *gin.Context) bool {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Falta el token de autorización"})
+		c.Abort()
+		return false
+	}
+
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	claims, err := verifyTokenExternally(tokenString)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.Abort()
+		return false
+	}
+
+	c.Set("userId", claims.UserID)
+	c.Set("isAdmin", claims.IsAdmin)
+	return true
 }
 
 func verifyTokenExternally(token string) (*TokenVerificationResponse, error) {

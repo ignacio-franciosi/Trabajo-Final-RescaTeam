@@ -1,3 +1,4 @@
+
 package services
 
 import (
@@ -7,7 +8,7 @@ import (
 	"os"
 	"regexp"
 	"time"
-	userClient "users/clients"
+	userClient "users/clients/user"
 	dto "users/dto"
 	"users/model"
 	"encoding/json"
@@ -30,7 +31,8 @@ type userServiceInterface interface {
 	SendPasswordResetEmail(email string) error
 	ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error
 	DeleteUser(id int) error
-	GetPhoneByUserId(id int) (dto.PublicUserDto, error) //TO DELETE SOON
+	SuspendUser(userId int) (bool, error)
+	ReactivateUser(userId int) (bool, error)
 }
 
 var (
@@ -54,7 +56,6 @@ func (s *userService) GetUserById(id int) (dto.UserDto, error) {
 	userDto.Surname = user.Surname
 	userDto.Dni = user.Dni
 	userDto.Email = user.Email
-	userDto.Phone = user.Phone
 	userDto.Password = user.Password
 	userDto.Type = user.Type
 	userDto.Suspended = user.Suspended
@@ -75,7 +76,6 @@ func (s *userService) GetUserByEmail(email string) (dto.UserDto, error) {
 	userDto.Surname = user.Surname
 	userDto.Dni = user.Dni
 	userDto.Email = user.Email
-	userDto.Phone = user.Phone
 	userDto.Password = user.Password
 	userDto.Type = user.Type
 	userDto.Suspended = user.Suspended
@@ -155,7 +155,6 @@ func (s *userService) InsertUser(userDto dto.UserDto) (dto.TokenDto, error) {
 	user.Surname = userDto.Surname
 	user.Dni = userDto.Dni
 	user.Email = userDto.Email
-	user.Phone = userDto.Phone
 	user.Password = string(hashedPassword)
 	user.Type = userDto.Type
 	user.Suspended = userDto.Suspended
@@ -195,10 +194,6 @@ func (s *userService) UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, 
 
 	if updateUserDto.Surname != "" {
 		existingUser.Surname = updateUserDto.Surname
-	}
-
-	if updateUserDto.Phone != "" {
-		existingUser.Phone = updateUserDto.Phone
 	}
 
 	if updateUserDto.Dni != 0 {
@@ -386,17 +381,18 @@ func (s *userService) DeleteUser(id int) error {
 }
 
 
-// TO DELETE SOON
-
-func (s *userService) GetPhoneByUserId(id int) (dto.PublicUserDto, error) {
-
-	var user model.User = userClient.UserClient.GetPhoneByUserId(id)
-	var userDto dto.PublicUserDto
-
-	if user.Phone == "0" {
-		return userDto, errors.New("user phone not found")
+func (s *userService) SuspendUser(userId int) (bool, error) {
+	updatedUser, err := userClient.UserClient.SuspendUser(userId)
+	if err != nil {
+		return false, err
 	}
-	userDto.Phone = user.Phone
+	return updatedUser.Suspended, nil
+}
 
-	return userDto, nil
+func (s *userService) ReactivateUser(userId int) (bool, error) {
+	updatedUser, err := userClient.UserClient.ReactivateUser(userId)
+	if err != nil {
+		return false, err
+	}
+	return updatedUser.Suspended, nil
 }
