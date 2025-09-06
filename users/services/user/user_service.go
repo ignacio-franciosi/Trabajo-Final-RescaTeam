@@ -1,9 +1,11 @@
-
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
+	"golang.org/x/crypto/bcrypt"
 	"net/smtp"
 	"os"
 	"regexp"
@@ -11,10 +13,7 @@ import (
 	userClient "users/clients/user"
 	dto "users/dto"
 	"users/model"
-	"encoding/json"
-	"golang.org/x/crypto/bcrypt"
 	"users/utils/queue"
-	"github.com/golang-jwt/jwt/v4"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -31,8 +30,8 @@ type userServiceInterface interface {
 	SendPasswordResetEmail(email string) error
 	ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error
 	DeleteUser(id int) error
-	SuspendUser(userId int) (string, error)
-	ReactivateUser(userId int) (string, error)
+	SuspendUser(userId int) (dto.TokenDto, error)
+	ReactivateUser(userId int) (dto.TokenDto, error)
 	SendSuspensionNotificationEmail(userId int, reason string) error
 	SendReactivationNotificationEmail(userId int) error
 }
@@ -349,44 +348,44 @@ func (s *userService) ResetPassword(tokenUserId int, resetPasswordDto dto.ResetP
 	return nil
 }
 
-
 func (s *userService) DeleteUser(id int) error {
-    user := userClient.UserClient.GetUserById(id)
+	user := userClient.UserClient.GetUserById(id)
 
-    if user.UserId == 0 {
-        return errors.New("user not found")
-    }
+	if user.UserId == 0 {
+		return errors.New("user not found")
+	}
 
-    err := userClient.UserClient.DeleteUser(user)
-    if err != nil {
-        return err
-    }
+	err := userClient.UserClient.DeleteUser(user)
+	if err != nil {
+		return err
+	}
 
-    // Armo el mensaje de cola
-    msg := dto.QueueMessageDto{
-        Id:      user.UserId,
-        Message: "delete",
-    }
+	// Armo el mensaje de cola
+	msg := dto.QueueMessageDto{
+		Id:      user.UserId,
+		Message: "delete",
+	}
 
-    body, err := json.Marshal(msg)
-    if err != nil {
-        return err
-    }
+	body, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
 
-    // Publico en la cola
-    err = queue.QueueProducer.Publish(body)
-    if err != nil {
-        return err
-    }
+	// Publico en la cola
+	err = queue.QueueProducer.Publish(body)
+	if err != nil {
+		return err
+	}
 
-    return nil
+	return nil
 }
 
+func (s *userService) SuspendUser(userId int) (dto.TokenDto, error) {
+	var tokenDto dto.TokenDto
 
-func (s *userService) SuspendUser(userId int) (string, error) {
 	updatedUser, err := userClient.UserClient.SuspendUser(userId)
 	if err != nil {
-		return "", err
+		return tokenDto, err
 	}
 
 	reason := "Violación de los términos de servicio"
@@ -395,17 +394,28 @@ func (s *userService) SuspendUser(userId int) (string, error) {
 		log.Error("Error al enviar notificación de suspensión:", err)
 	}
 
-	if updatedUser.Suspended {
-		return fmt.Sprintf("El usuario con ID %d fue suspendido correctamente.", userId), nil
-	}
+	// Generar nuevo token con el estado actualizado
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id_user":   updatedUser.UserId,
+		"type":      updatedUser.Type,
+		"suspended": updatedUser.Suspended,
+	})
+	tokenString, _ := token.SignedString(jwtKey)
 
-	return fmt.Sprintf("No se pudo suspender al usuario con ID %d.", userId), nil
+	tokenDto.Token = tokenString
+	tokenDto.UserId = updatedUser.UserId
+	tokenDto.Type = updatedUser.Type
+	tokenDto.Suspended = updatedUser.Suspended
+
+	return tokenDto, nil
 }
 
-func (s *userService) ReactivateUser(userId int) (string, error) {
+func (s *userService) ReactivateUser(userId int) (dto.TokenDto, error) {
+	var tokenDto dto.TokenDto
+
 	updatedUser, err := userClient.UserClient.ReactivateUser(userId)
 	if err != nil {
-		return "", err
+		return tokenDto, err
 	}
 
 	err = s.SendReactivationNotificationEmail(userId)
@@ -413,11 +423,20 @@ func (s *userService) ReactivateUser(userId int) (string, error) {
 		log.Error("Error al enviar notificación de reactivación:", err)
 	}
 
-	if !updatedUser.Suspended {
-		return fmt.Sprintf("El usuario con ID %d fue reactivado correctamente.", userId), nil
-	}
+	// Generar nuevo token con el estado actualizado
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id_user":   updatedUser.UserId,
+		"type":      updatedUser.Type,
+		"suspended": updatedUser.Suspended,
+	})
+	tokenString, _ := token.SignedString(jwtKey)
 
-	return fmt.Sprintf("No se pudo reactivar al usuario con ID %d.", userId), nil
+	tokenDto.Token = tokenString
+	tokenDto.UserId = updatedUser.UserId
+	tokenDto.Type = updatedUser.Type
+	tokenDto.Suspended = updatedUser.Suspended
+
+	return tokenDto, nil
 }
 
 
@@ -444,7 +463,6 @@ func (s *userService) SendSuspensionNotificationEmail(userId int, reason string)
 
 	return nil
 }
-
 
 func (s *userService) SendReactivationNotificationEmail(userId int) error {
 	user := userClient.UserClient.GetUserById(userId)

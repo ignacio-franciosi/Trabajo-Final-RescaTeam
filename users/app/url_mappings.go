@@ -27,8 +27,8 @@ func mapUrls() {
 	router.DELETE("/user/:id", userController.DeleteUser)
 
 	// can access: Only admin
-	router.PATCH("user/suspend/:id", userController.SuspendUser)
-	router.PATCH("user/reactivate/:id", userController.ReactivateUser)
+	router.PATCH("user/suspend/:id", userController.SuspendUser) //hace nuevo token con suspended true
+	router.PATCH("user/reactivate/:id", userController.ReactivateUser) //hace nuevo token con suspended false
 	//router.GET("/reports", userController.ViewReports)
 
 	/*
