@@ -31,8 +31,10 @@ type userServiceInterface interface {
 	SendPasswordResetEmail(email string) error
 	ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error
 	DeleteUser(id int) error
-	SuspendUser(userId int) (bool, error)
-	ReactivateUser(userId int) (bool, error)
+	SuspendUser(userId int) (string, error)
+	ReactivateUser(userId int) (string, error)
+	SendSuspensionNotificationEmail(userId int, reason string) error
+	SendReactivationNotificationEmail(userId int) error
 }
 
 var (
@@ -381,18 +383,89 @@ func (s *userService) DeleteUser(id int) error {
 }
 
 
-func (s *userService) SuspendUser(userId int) (bool, error) {
+func (s *userService) SuspendUser(userId int) (string, error) {
 	updatedUser, err := userClient.UserClient.SuspendUser(userId)
 	if err != nil {
-		return false, err
+		return "", err
 	}
-	return updatedUser.Suspended, nil
+
+	reason := "Violación de los términos de servicio"
+	err = s.SendSuspensionNotificationEmail(userId, reason)
+	if err != nil {
+		log.Error("Error al enviar notificación de suspensión:", err)
+	}
+
+	if updatedUser.Suspended {
+		return fmt.Sprintf("El usuario con ID %d fue suspendido correctamente.", userId), nil
+	}
+
+	return fmt.Sprintf("No se pudo suspender al usuario con ID %d.", userId), nil
 }
 
-func (s *userService) ReactivateUser(userId int) (bool, error) {
+func (s *userService) ReactivateUser(userId int) (string, error) {
 	updatedUser, err := userClient.UserClient.ReactivateUser(userId)
 	if err != nil {
-		return false, err
+		return "", err
 	}
-	return updatedUser.Suspended, nil
+
+	err = s.SendReactivationNotificationEmail(userId)
+	if err != nil {
+		log.Error("Error al enviar notificación de reactivación:", err)
+	}
+
+	if !updatedUser.Suspended {
+		return fmt.Sprintf("El usuario con ID %d fue reactivado correctamente.", userId), nil
+	}
+
+	return fmt.Sprintf("No se pudo reactivar al usuario con ID %d.", userId), nil
+}
+
+
+func (s *userService) SendSuspensionNotificationEmail(userId int, reason string) error {
+	user := userClient.UserClient.GetUserById(userId)
+	if user.UserId == 0 {
+		return errors.New("user not found")
+	}
+
+	// Email de suspensión
+	subject := "Subject: Rescateam - Cuenta suspendida\n"
+	body := fmt.Sprintf("Hola %s,\n\nTu cuenta ha sido suspendida por el siguiente motivo:\n%s\n\nSi consideras que esto es un error, puedes contactar con nuestro equipo de soporte.\n\nSaludos,\nEquipo de RescaTeam", user.Name, reason)
+	msg := []byte(subject + "\n" + body)
+
+	from := os.Getenv("MAIL_USER")
+	pass := os.Getenv("MAIL_PASS")
+
+	auth := smtp.PlainAuth("", from, pass, smtpServer)
+	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{user.Email}, msg)
+	if err != nil {
+		log.Println("Error al enviar mail de suspensión:", err)
+		return err
+	}
+
+	return nil
+}
+
+
+func (s *userService) SendReactivationNotificationEmail(userId int) error {
+	user := userClient.UserClient.GetUserById(userId)
+	if user.UserId == 0 {
+		return errors.New("user not found")
+	}
+
+	// Email de reactivación
+	subject := "Subject: Rescateam - Cuenta reactivada\n"
+	body := fmt.Sprintf("Hola %s,\n\n¡Buenas noticias! Tu cuenta ha sido reactivada y ya puedes volver a utilizar todos los servicios de RescaTeam. Te pedimos que a partir de ahora respetes las normas del sitio. \n\nGracias por tu paciencia.\n\nSaludos,\nEquipo de RescaTeam", user.Name)
+	msg := []byte(subject + "\n" + body)
+
+	from := os.Getenv("MAIL_USER")
+	pass := os.Getenv("MAIL_PASS")
+
+	auth := smtp.PlainAuth("", from, pass, smtpServer)
+	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{user.Email}, msg)
+	if err != nil {
+		log.Println("Error al enviar mail de reactivación:", err)
+		return err
+	}
+
+	return nil
 }

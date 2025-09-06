@@ -20,12 +20,10 @@ func InsertReport(c *gin.Context) {
 		return
 	}
 
-	// Verificar que el usuario esté autenticado (cualquier usuario puede crear reportes)
 	if !authhelper.VerifyAuthentication(c) {
 		return
 	}
 
-	// Ahora sí podemos obtener el userId del contexto
 	userIdFromToken, exists := c.Get("userId")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
@@ -43,7 +41,7 @@ func InsertReport(c *gin.Context) {
 }
 
 
-// ✅ GetReportById - Admin y user owner (NO CAMBIOS - está correcto)
+
 func GetReportById(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -64,9 +62,9 @@ func GetReportById(c *gin.Context) {
 	c.JSON(http.StatusOK, report)
 }
 
-// ❌ GetAllReports - Solo admin (CAMBIO NECESARIO)
+
 func GetAllReports(c *gin.Context) {
-	// Cambiar: allowOwner debe ser false, y reqUserId debe ser un valor que nunca coincida
+
 	if !authhelper.VerifyTokenAndAuthorize(c, true, false, -1) {
 		return
 	}
@@ -80,7 +78,7 @@ func GetAllReports(c *gin.Context) {
 	c.JSON(http.StatusOK, reports)
 }
 
-// ✅ GetReportsByUserId - Owner y admin (NO CAMBIOS - está correcto)
+
 func GetReportsByUserId(c *gin.Context) {
 	userId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -101,7 +99,7 @@ func GetReportsByUserId(c *gin.Context) {
 	c.JSON(http.StatusOK, reports)
 }
 
-// ❌ GetReportsByComplainingUserId - Solo admin (CAMBIO NECESARIO)
+
 func GetReportsByComplainingUserId(c *gin.Context) {
 	complainingUserId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -109,7 +107,7 @@ func GetReportsByComplainingUserId(c *gin.Context) {
 		return
 	}
 
-	// Cambiar: reqUserId debe ser un valor que nunca coincida
+
 	if !authhelper.VerifyTokenAndAuthorize(c, true, false, -1) {
 		return
 	}
@@ -123,7 +121,7 @@ func GetReportsByComplainingUserId(c *gin.Context) {
 	c.JSON(http.StatusOK, reports)
 }
 
-// ❌ UpdateReport - Solo admin (CAMBIO NECESARIO)
+
 func UpdateReport(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -137,7 +135,6 @@ func UpdateReport(c *gin.Context) {
 		return
 	}
 
-	// Cambiar: Solo admin puede actualizar, reqUserId debe ser un valor que nunca coincida
 	if !authhelper.VerifyTokenAndAuthorize(c, true, false, -1) {
 		return
 	}
@@ -152,7 +149,7 @@ func UpdateReport(c *gin.Context) {
 	c.JSON(http.StatusOK, updated)
 }
 
-// ✅ DeleteReport - Admin o dueño (NO CAMBIOS - está correcto)
+
 func DeleteReport(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
