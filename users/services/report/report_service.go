@@ -16,6 +16,7 @@ type reportServiceInterface interface {
 	GetAllReports() ([]dto.ReportDto, error)
 	GetReportsByUserId(userId int) ([]dto.ReportDto, error)
 	GetReportsByComplainingUserId(complainingUserId int) ([]dto.ReportDto, error)
+	GetAllReportsByStatus(status string) ([]dto.ReportDto, error)
 	UpdateReport(updateDto dto.ReportDto) (dto.ReportDto, error)
 	DeleteReport(reportId int) error
 }
@@ -123,6 +124,29 @@ func (s *reportService) GetReportsByUserId(userId int) ([]dto.ReportDto, error) 
 
 func (s *reportService) GetReportsByComplainingUserId(complainingUserId int) ([]dto.ReportDto, error) {
 	reports, err := report.ReportClient.GetReportsByComplainingUserId(complainingUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	var reportsDto []dto.ReportDto
+	for _, r := range reports {
+		reportsDto = append(reportsDto, dto.ReportDto{
+			ReportId:          r.ReportId,
+			UserId:            r.UserId,
+			PostId:            r.PostId,
+			ComplainingUserId: r.ComplainingUserId,
+			Reason:            r.Reason,
+			Comment:           r.Comment,
+			AdminComment:      r.AdminComment,
+			ReportStatus:      r.ReportStatus,
+			Date:              r.Date,
+		})
+	}
+	return reportsDto, nil
+}
+
+func (s *reportService) GetAllReportsByStatus(status string) ([]dto.ReportDto, error) {
+	reports, err := report.ReportClient.GetAllReportsByStatus(status)
 	if err != nil {
 		return nil, err
 	}

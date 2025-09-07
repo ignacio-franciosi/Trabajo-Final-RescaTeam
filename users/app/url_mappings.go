@@ -31,10 +31,10 @@ func mapUrls() {
 	router.PATCH("user/reactivate/:id", userController.ReactivateUser) //hace nuevo token con suspended false
 	//router.GET("/reports", userController.ViewReports)
 
+
 	/*
 	   Report Routes
 	*/
-
 	// can access: if user is account OWNER or ADMIN (both autenticated)
 	router.POST("/report", reportController.InsertReport)
 	router.GET("/report/:id", reportController.GetReportById)
@@ -43,8 +43,9 @@ func mapUrls() {
 
 	// can access: Only admin
 	router.GET("/report/complainingUser/:id", reportController.GetReportsByComplainingUserId)
-	router.PATCH("/report/:id", reportController.UpdateReport) //pasar por body solo adminComment: "xxxx" y reportStatus: "resolved"
+	router.PATCH("/report/:id", reportController.UpdateReport) //pasar por body solo adminComment: "xxxx" y reportStatus: "revised"
 	router.GET("/report/all", reportController.GetAllReports)
+	router.GET("/report/all/:reportStatus", reportController.GetAllReportsByStatus) // /report/all/pending o revised
 
 	log.Info("Url Mapping ready")
 }

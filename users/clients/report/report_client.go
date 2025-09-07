@@ -15,6 +15,7 @@ type reportClientInterface interface {
 	GetAllReports() (model.Reports, error)
 	GetReportsByUserId(userid int) (model.Reports, error)
 	GetReportsByComplainingUserId(complainingUserId int) (model.Reports, error)
+	GetAllReportsByStatus(status string) (model.Reports, error)
 	UpdateReport(report model.Report) (model.Report, error)
 	DeleteReport(report model.Report) error
 	
@@ -74,6 +75,16 @@ func (c *reportClient) GetReportsByComplainingUserId(complainingUserId int) (mod
 	}
 	return reports, nil
 }
+
+func (c *reportClient) GetAllReportsByStatus(status string) (model.Reports, error) {
+	var reports model.Reports
+	result := Db.Where("report_status = ?", status).Find(&reports)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return reports, nil
+}
+
 
 func (c *reportClient) UpdateReport(report model.Report) (model.Report, error) {
 	result := Db.Model(&model.Report{}).

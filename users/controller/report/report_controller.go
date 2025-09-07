@@ -11,7 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-
 func InsertReport(c *gin.Context) {
 	var reportDto dto.ReportDto
 	if err := c.BindJSON(&reportDto); err != nil {
@@ -40,8 +39,6 @@ func InsertReport(c *gin.Context) {
 	c.JSON(http.StatusCreated, created)
 }
 
-
-
 func GetReportById(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -62,7 +59,6 @@ func GetReportById(c *gin.Context) {
 	c.JSON(http.StatusOK, report)
 }
 
-
 func GetAllReports(c *gin.Context) {
 
 	if !authhelper.VerifyTokenAndAuthorize(c, true, false, -1) {
@@ -77,7 +73,6 @@ func GetAllReports(c *gin.Context) {
 
 	c.JSON(http.StatusOK, reports)
 }
-
 
 func GetReportsByUserId(c *gin.Context) {
 	userId, err := strconv.Atoi(c.Param("id"))
@@ -99,14 +94,12 @@ func GetReportsByUserId(c *gin.Context) {
 	c.JSON(http.StatusOK, reports)
 }
 
-
 func GetReportsByComplainingUserId(c *gin.Context) {
 	complainingUserId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
 		return
 	}
-
 
 	if !authhelper.VerifyTokenAndAuthorize(c, true, false, -1) {
 		return
@@ -121,7 +114,37 @@ func GetReportsByComplainingUserId(c *gin.Context) {
 	c.JSON(http.StatusOK, reports)
 }
 
+func GetAllReportsByStatus(c *gin.Context) {
+	// Solo admin puede hacer esta petición
+	if !authhelper.VerifyTokenAndAuthorize(c, true, false, -1) {
+		return
+	}
 
+	reportStatus := c.Param("reportStatus")
+	if reportStatus == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Parámetro reportStatus requerido"})
+		return
+	}
+
+	// Validar que el status sea válido (opcional)
+	validStatuses := map[string]bool{
+		"pending": true,
+		"revised": true,
+	}
+
+	if !validStatuses[reportStatus] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Status de reporte inválido"})
+		return
+	}
+
+	reports, err := service.ReportService.GetAllReportsByStatus(reportStatus)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, reports)
+}
 func UpdateReport(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -148,7 +171,6 @@ func UpdateReport(c *gin.Context) {
 
 	c.JSON(http.StatusOK, updated)
 }
-
 
 func DeleteReport(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
