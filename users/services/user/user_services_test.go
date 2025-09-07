@@ -10,12 +10,26 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/crypto/bcrypt"
+	"users/utils/queue"
 )
 
 // --- Mock que implementa la interfaz del client ---
 
 type mockUserClient struct {
 	mock.Mock
+}
+
+type mockQueueProducer struct {
+	mock.Mock
+}
+
+func (m *mockQueueProducer) Publish(body []byte) error {
+	args := m.Called(body)
+	return args.Error(0)
+}
+
+func (m *mockQueueProducer) InitQueue() {
+	m.Called()
 }
 
 func (m *mockUserClient) GetUserById(id int) model.User {
@@ -347,7 +361,9 @@ func TestChangePassword_Error_InvalidOldPassword(t *testing.T) {
 
 func TestDeleteUser_Success(t *testing.T) {
 	mockClient := new(mockUserClient)
+	mockQueue := new(mockQueueProducer)
 	clients.UserClient = mockClient
+	queue.QueueProducer = mockQueue
 
 	user := model.User{
 		UserId:    1,
@@ -362,11 +378,13 @@ func TestDeleteUser_Success(t *testing.T) {
 
 	mockClient.On("GetUserById", 1).Return(user)
 	mockClient.On("DeleteUser", user).Return(nil)
+	mockQueue.On("Publish", mock.Anything).Return(nil)
 
 	err := services.UserService.DeleteUser(1, 1, false)
 
 	assert.Nil(t, err)
 	mockClient.AssertExpectations(t)
+	mockQueue.AssertExpectations(t)
 }
 
 func TestDeleteUser_Error_UserNotFound(t *testing.T) {
