@@ -29,11 +29,12 @@ type userServiceInterface interface {
 	ChangePassword(changePasswordDto dto.ChangePasswordDto) error
 	SendPasswordResetEmail(email string) error
 	ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error
-	DeleteUser(id int) error
+	DeleteUser(id int, requestUserId int, isAdmin bool) error
 	SuspendUser(userId int) (dto.TokenDto, error)
 	ReactivateUser(userId int) (dto.TokenDto, error)
 	SendSuspensionNotificationEmail(userId int, reason string) error
 	SendReactivationNotificationEmail(userId int) error
+	SendAccountDeletionEmailWithUserData(user model.User, admin model.User) error
 }
 
 var (
@@ -348,16 +349,37 @@ func (s *userService) ResetPassword(tokenUserId int, resetPasswordDto dto.ResetP
 	return nil
 }
 
-func (s *userService) DeleteUser(id int) error {
+func (s *userService) DeleteUser(id int, requestUserId int, isAdmin bool) error {
 	user := userClient.UserClient.GetUserById(id)
 
 	if user.UserId == 0 {
 		return errors.New("user not found")
 	}
 
+	// Obtener datos del admin si es necesario (antes de eliminar el usuario)
+	var admin model.User
+	shouldSendEmail := isAdmin && requestUserId != id
+	if shouldSendEmail {
+		admin = userClient.UserClient.GetUserById(requestUserId)
+		if admin.UserId == 0 {
+			log.Error("Admin no encontrado para envío de notificación")
+			shouldSendEmail = false
+		}
+	}
+
+	// Eliminar el usuario
 	err := userClient.UserClient.DeleteUser(user)
 	if err != nil {
 		return err
+	}
+
+	// Si es admin quien elimina y no se está eliminando a sí mismo, enviar email
+	if shouldSendEmail {
+		err = s.SendAccountDeletionEmailWithUserData(user, admin)
+		if err != nil {
+			log.Error("Error al enviar notificación de eliminación de cuenta por admin:", err)
+			// No retornamos error porque la eliminación ya se completó
+		}
 	}
 
 	// Armo el mensaje de cola
@@ -485,5 +507,25 @@ func (s *userService) SendReactivationNotificationEmail(userId int) error {
 		return err
 	}
 
+	return nil
+}
+
+func (s *userService) SendAccountDeletionEmailWithUserData(user model.User, admin model.User) error {
+	// Email de notificación de eliminación de cuenta por admin
+	subject := "Subject: RescaTeam - Cuenta eliminada por administrador\n"
+	body := fmt.Sprintf("Hola %s,\n\nTu cuenta en RescaTeam ha sido eliminada por un administrador debido a violaciones de nuestros términos de servicio.\n\nSi consideras que esto es un error, puedes contactar con nuestro equipo de soporte.\n\nSaludos,\nEquipo de RescaTeam", user.Name)
+	msg := []byte(subject + "\n" + body)
+
+	from := os.Getenv("MAIL_USER")
+	pass := os.Getenv("MAIL_PASS")
+
+	auth := smtp.PlainAuth("", from, pass, smtpServer)
+	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{user.Email}, msg)
+	if err != nil {
+		log.Println("Error al enviar mail de eliminación de cuenta por admin:", err)
+		return err
+	}
+
+	log.Printf("Email de eliminación de cuenta enviado a %s por acción del admin %s", user.Email, admin.Email)
 	return nil
 }

@@ -344,6 +344,7 @@ func TestChangePassword_Error_InvalidOldPassword(t *testing.T) {
 }
 
 // TESTS DeleteUser
+
 func TestDeleteUser_Success(t *testing.T) {
 	mockClient := new(mockUserClient)
 	clients.UserClient = mockClient
@@ -362,7 +363,7 @@ func TestDeleteUser_Success(t *testing.T) {
 	mockClient.On("GetUserById", 1).Return(user)
 	mockClient.On("DeleteUser", user).Return(nil)
 
-	err := services.UserService.DeleteUser(1)
+	err := services.UserService.DeleteUser(1, 1, false)
 
 	assert.Nil(t, err)
 	mockClient.AssertExpectations(t)
@@ -374,7 +375,7 @@ func TestDeleteUser_Error_UserNotFound(t *testing.T) {
 
 	mockClient.On("GetUserById", 99).Return(model.User{})
 
-	err := services.UserService.DeleteUser(99)
+	err := services.UserService.DeleteUser(99, 1, false)
 
 	assert.EqualError(t, err, "user not found")
 	mockClient.AssertExpectations(t)

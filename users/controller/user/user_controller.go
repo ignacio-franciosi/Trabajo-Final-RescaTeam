@@ -235,15 +235,18 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	err = service.UserService.DeleteUser(id)
+	// Obtener información del usuario que realiza la acción
+	requestUserId, _ := c.Get("userId")
+	isAdmin, _ := c.Get("isAdmin")
+	
+	// Pasar toda la información al servicio para que maneje internamente el envío de email
+	err = service.UserService.DeleteUser(id, requestUserId.(int), isAdmin.(bool))
 	if err != nil {
-		// manage different errors
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Cuenta eliminada con éxito"})
-
 }
 
 func SuspendUser(c *gin.Context) {
