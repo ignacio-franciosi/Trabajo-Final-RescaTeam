@@ -2,13 +2,15 @@ package app
 
 import (
 	"chat/controllers"
+	"chat/repositories"
 	"chat/services"
 	"chat/utils"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func RegisterRoutes(r *gin.Engine, svc *services.ChatService, hub *services.Hub, jwtSecret string) {
+func RegisterRoutes(r *gin.Engine, db *mongo.Database, svc *services.ChatService, hub *services.Hub, jwtSecret string) {
 	auth := utils.JWT(jwtSecret)
 
 	// Rutas públicas
@@ -20,13 +22,29 @@ func RegisterRoutes(r *gin.Engine, svc *services.ChatService, hub *services.Hub,
 	r.GET("/ws", auth, wsCtl.Upgrade)
 
 	// Rutas REST del chat (todas requieren auth)
-	ctl := controllers.NewChatController(svc)
-	grp := r.Group("/api/chat", auth)
+	chatCtl := controllers.NewChatController(svc)
+	grpChat := r.Group("/api/chat", auth)
 	{
-		grp.POST("/start", ctl.StartChat)
-		grp.GET("/list", ctl.ListChats)
-		grp.GET("/:chatId/messages", ctl.ListMessages)
-		grp.POST("/:chatId/read", ctl.MarkRead)
-		grp.POST("/:chatId/send", ctl.SendMessageHTTP) // fallback HTTP
+		grpChat.POST("/start", chatCtl.StartChat)
+		grpChat.GET("/list", chatCtl.ListChats)
+		grpChat.GET("/:chatId/messages", chatCtl.ListMessages)
+		grpChat.POST("/:chatId/read", chatCtl.MarkRead)
+		grpChat.POST("/:chatId/send", chatCtl.SendMessageHTTP) // fallback HTTP
+	}
+
+	// Rutas Push Notifications
+	pushRepo := repositories.NewPushRepository(db)
+	pushCtl := controllers.NewPushController(pushRepo)
+
+	// Ruta pública: clave VAPID
+	r.GET("/push/public-key", func(c *gin.Context) {
+		c.JSON(200, gin.H{"publicKey": svc.PushClientPublicKey()})
+	})
+
+	// Rutas protegidas: suscripción/unsub
+	grpPush := r.Group("/api/push", auth)
+	{
+		grpPush.POST("/subscribe", pushCtl.Subscribe)
+		grpPush.DELETE("/unsubscribe", pushCtl.Unsubscribe)
 	}
 }

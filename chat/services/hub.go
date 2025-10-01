@@ -1,11 +1,13 @@
 package services
 
 import (
+	"chat/model"
 	"encoding/json"
+	"log"
 	"sync"
 )
 
-// Conn sería tu wrapper de websocket.Conn (lo definiremos en la capa WS)
+// Conn es la interfaz que envuelve a *websocket.Conn
 type Conn interface {
 	WriteJSON(v interface{}) error
 	Close() error
@@ -29,6 +31,7 @@ func (h *Hub) AddConnection(userID string, c Conn) {
 		h.conns[userID] = make(map[Conn]struct{})
 	}
 	h.conns[userID][c] = struct{}{}
+	log.Printf("[Hub] conexión añadida para user=%s (total=%d)", userID, len(h.conns[userID]))
 }
 
 func (h *Hub) RemoveConnection(userID string, c Conn) {
@@ -40,16 +43,47 @@ func (h *Hub) RemoveConnection(userID string, c Conn) {
 			delete(h.conns, userID)
 		}
 	}
+	log.Printf("[Hub] conexión eliminada para user=%s", userID)
 }
 
 func (h *Hub) SendToUser(userID string, v interface{}) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	if conns, ok := h.conns[userID]; ok {
-		data, _ := json.Marshal(v)
-		for c := range conns {
-			_ = c.WriteJSON(json.RawMessage(data)) // mejor manejo de error luego
+	conns, ok := h.conns[userID]
+	if !ok {
+		return
+	}
+
+	data, err := json.Marshal(v)
+	if err != nil {
+		log.Printf("[Hub] error serializando mensaje: %v", err)
+		return
+	}
+
+	for c := range conns {
+		if err := c.WriteJSON(json.RawMessage(data)); err != nil {
+			log.Printf("[Hub] error enviando a user=%s: %v", userID, err)
+			_ = c.Close()
+			// Podríamos remover la conexión rota en un goroutine
+			go h.RemoveConnection(userID, c)
 		}
 	}
+}
+
+func (h *Hub) HasConnections(userID string) bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	conns, ok := h.conns[userID]
+	return ok && len(conns) > 0
+}
+
+// verificar si un user es parte de un chat
+func (h *Hub) IsUserInChat(userID string, chat model.Chat) bool {
+	for _, p := range chat.Participants {
+		if p == userID {
+			return true
+		}
+	}
+	return false
 }
