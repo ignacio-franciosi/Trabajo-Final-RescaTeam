@@ -7,6 +7,7 @@ import (
 type Image struct {
 	ImageId  primitive.ObjectID `bson:"_id"`
 	PostId   string             `bson:"postId"`
+	UserId   int 				`bson:"userId"`
 	Filepath string             `bson:"filepath"`
 }
 

@@ -2,7 +2,8 @@ package db
 
 import (
 	"os"
-	"users/clients"
+	userClient "users/clients/user"
+	reportClient "users/clients/report"
 	model "users/model"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -14,7 +15,6 @@ import (
 
 var (
 	db  *gorm.DB
-	err error
 )
 
 func init() {
@@ -40,13 +40,15 @@ func init() {
 
 	// Add all clients here
 
-	clients.Db = db
+	userClient.Db = db
+	reportClient.Db = db
 
 }
 
 func StartDbEngine() {
 	// We need to migrate all classes model.
 	db.AutoMigrate(&model.User{})
+	db.AutoMigrate(&model.Report{})
 
 	log.Info("Finishing Migration Database Tables :)")
 }

@@ -20,14 +20,6 @@ func stringPtr(s string) *string {
 	return &s
 }
 
-func intPtr(i int) *int {
-	return &i
-}
-
-func boolPtr(b bool) *bool {
-	return &b
-}
-
 // --- Mock que implementa la interfaz del PostClient ---
 type mockPostClient struct {
 	mock.Mock
@@ -83,6 +75,16 @@ func (m *mockPostClient) DeleteImageById(imageId string) error {
 	return args.Error(0)
 }
 
+func (m *mockPostClient) DeleteAllPostsByUserId(userId int) error {
+	args := m.Called(userId)
+	return args.Error(0)
+}
+
+func (m *mockPostClient) DeleteAllImagesByUserId(userId int) error {
+	args := m.Called(userId)
+	return args.Error(0)
+}
+
 func (m *mockPostClient) GetImageById(id string) (model.Image, error) {
 	args := m.Called(id)
 	return args.Get(0).(model.Image), args.Error(1)
@@ -90,6 +92,11 @@ func (m *mockPostClient) GetImageById(id string) (model.Image, error) {
 
 func (m *mockPostClient) GetImagesByPostId(postId string) ([]model.Image, error) {
 	args := m.Called(postId)
+	return args.Get(0).([]model.Image), args.Error(1)
+}
+
+func (m *mockPostClient) GetAllImagesByUserId(userId int) ([]model.Image, error) {
+	args := m.Called(userId)
 	return args.Get(0).([]model.Image), args.Error(1)
 }
 

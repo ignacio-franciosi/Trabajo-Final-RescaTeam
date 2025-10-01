@@ -1,19 +1,19 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
+	"golang.org/x/crypto/bcrypt"
 	"net/smtp"
 	"os"
 	"regexp"
 	"time"
-	userClient "users/clients"
+	userClient "users/clients/user"
 	dto "users/dto"
 	"users/model"
-
-	"golang.org/x/crypto/bcrypt"
-
-	"github.com/golang-jwt/jwt/v4"
+	"users/utils/queue"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -29,8 +29,12 @@ type userServiceInterface interface {
 	ChangePassword(changePasswordDto dto.ChangePasswordDto) error
 	SendPasswordResetEmail(email string) error
 	ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error
-	DeleteUser(id int) error
-	GetPhoneByUserId(id int) (dto.PublicUserDto, error) //TO DELETE SOON
+	DeleteUser(id int, requestUserId int, isAdmin bool) error
+	SuspendUser(userId int) (dto.TokenDto, error)
+	ReactivateUser(userId int) (dto.TokenDto, error)
+	SendSuspensionNotificationEmail(userId int, reason string) error
+	SendReactivationNotificationEmail(userId int) error
+	SendAccountDeletionEmailWithUserData(user model.User, admin model.User) error
 }
 
 var (
@@ -54,7 +58,6 @@ func (s *userService) GetUserById(id int) (dto.UserDto, error) {
 	userDto.Surname = user.Surname
 	userDto.Dni = user.Dni
 	userDto.Email = user.Email
-	userDto.Phone = user.Phone
 	userDto.Password = user.Password
 	userDto.Type = user.Type
 	userDto.Suspended = user.Suspended
@@ -75,7 +78,6 @@ func (s *userService) GetUserByEmail(email string) (dto.UserDto, error) {
 	userDto.Surname = user.Surname
 	userDto.Dni = user.Dni
 	userDto.Email = user.Email
-	userDto.Phone = user.Phone
 	userDto.Password = user.Password
 	userDto.Type = user.Type
 	userDto.Suspended = user.Suspended
@@ -155,7 +157,6 @@ func (s *userService) InsertUser(userDto dto.UserDto) (dto.TokenDto, error) {
 	user.Surname = userDto.Surname
 	user.Dni = userDto.Dni
 	user.Email = userDto.Email
-	user.Phone = userDto.Phone
 	user.Password = string(hashedPassword)
 	user.Type = userDto.Type
 	user.Suspended = userDto.Suspended
@@ -195,10 +196,6 @@ func (s *userService) UpdateUser(updateUserDto dto.UpdateUserDto) (dto.UserDto, 
 
 	if updateUserDto.Surname != "" {
 		existingUser.Surname = updateUserDto.Surname
-	}
-
-	if updateUserDto.Phone != "" {
-		existingUser.Phone = updateUserDto.Phone
 	}
 
 	if updateUserDto.Dni != 0 {
@@ -352,29 +349,183 @@ func (s *userService) ResetPassword(tokenUserId int, resetPasswordDto dto.ResetP
 	return nil
 }
 
-func (s *userService) DeleteUser(id int) error {
+func (s *userService) DeleteUser(id int, requestUserId int, isAdmin bool) error {
 	user := userClient.UserClient.GetUserById(id)
 
 	if user.UserId == 0 {
 		return errors.New("user not found")
 	}
 
-	err := userClient.UserClient.DeleteUser(user)
+	// Obtener datos del admin si es necesario (antes de eliminar el usuario)
+	var admin model.User
+	shouldSendEmail := isAdmin && requestUserId != id
+	if shouldSendEmail {
+		admin = userClient.UserClient.GetUserById(requestUserId)
+		if admin.UserId == 0 {
+			log.Error("Admin no encontrado para envío de notificación")
+			shouldSendEmail = false
+		}
+	}
 
-	return err
+	// Eliminar el usuario
+	err := userClient.UserClient.DeleteUser(user)
+	if err != nil {
+		return err
+	}
+
+	// Si es admin quien elimina y no se está eliminando a sí mismo, enviar email
+	if shouldSendEmail {
+		err = s.SendAccountDeletionEmailWithUserData(user, admin)
+		if err != nil {
+			log.Error("Error al enviar notificación de eliminación de cuenta por admin:", err)
+			// No retornamos error porque la eliminación ya se completó
+		}
+	}
+
+	// Armo el mensaje de cola
+	msg := dto.QueueMessageDto{
+		Id:      user.UserId,
+		Message: "delete",
+	}
+
+	body, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	// Publico en la cola
+	err = queue.QueueProducer.Publish(body)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// TO DELETE SOON
+func (s *userService) SuspendUser(userId int) (dto.TokenDto, error) {
+	var tokenDto dto.TokenDto
 
-func (s *userService) GetPhoneByUserId(id int) (dto.PublicUserDto, error) {
-
-	var user model.User = userClient.UserClient.GetPhoneByUserId(id)
-	var userDto dto.PublicUserDto
-
-	if user.Phone == "0" {
-		return userDto, errors.New("user phone not found")
+	updatedUser, err := userClient.UserClient.SuspendUser(userId)
+	if err != nil {
+		return tokenDto, err
 	}
-	userDto.Phone = user.Phone
 
-	return userDto, nil
+	reason := "Violación de los términos de servicio"
+	err = s.SendSuspensionNotificationEmail(userId, reason)
+	if err != nil {
+		log.Error("Error al enviar notificación de suspensión:", err)
+	}
+
+	// Generar nuevo token con el estado actualizado
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id_user":   updatedUser.UserId,
+		"type":      updatedUser.Type,
+		"suspended": updatedUser.Suspended,
+	})
+	tokenString, _ := token.SignedString(jwtKey)
+
+	tokenDto.Token = tokenString
+	tokenDto.UserId = updatedUser.UserId
+	tokenDto.Type = updatedUser.Type
+	tokenDto.Suspended = updatedUser.Suspended
+
+	return tokenDto, nil
+}
+
+func (s *userService) ReactivateUser(userId int) (dto.TokenDto, error) {
+	var tokenDto dto.TokenDto
+
+	updatedUser, err := userClient.UserClient.ReactivateUser(userId)
+	if err != nil {
+		return tokenDto, err
+	}
+
+	err = s.SendReactivationNotificationEmail(userId)
+	if err != nil {
+		log.Error("Error al enviar notificación de reactivación:", err)
+	}
+
+	// Generar nuevo token con el estado actualizado
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id_user":   updatedUser.UserId,
+		"type":      updatedUser.Type,
+		"suspended": updatedUser.Suspended,
+	})
+	tokenString, _ := token.SignedString(jwtKey)
+
+	tokenDto.Token = tokenString
+	tokenDto.UserId = updatedUser.UserId
+	tokenDto.Type = updatedUser.Type
+	tokenDto.Suspended = updatedUser.Suspended
+
+	return tokenDto, nil
+}
+
+
+func (s *userService) SendSuspensionNotificationEmail(userId int, reason string) error {
+	user := userClient.UserClient.GetUserById(userId)
+	if user.UserId == 0 {
+		return errors.New("user not found")
+	}
+
+	// Email de suspensión
+	subject := "Subject: Rescateam - Cuenta suspendida\n"
+	body := fmt.Sprintf("Hola %s,\n\nTu cuenta ha sido suspendida por el siguiente motivo:\n%s\n\nSi consideras que esto es un error, puedes contactar con nuestro equipo de soporte.\n\nSaludos,\nEquipo de RescaTeam", user.Name, reason)
+	msg := []byte(subject + "\n" + body)
+
+	from := os.Getenv("MAIL_USER")
+	pass := os.Getenv("MAIL_PASS")
+
+	auth := smtp.PlainAuth("", from, pass, smtpServer)
+	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{user.Email}, msg)
+	if err != nil {
+		log.Println("Error al enviar mail de suspensión:", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *userService) SendReactivationNotificationEmail(userId int) error {
+	user := userClient.UserClient.GetUserById(userId)
+	if user.UserId == 0 {
+		return errors.New("user not found")
+	}
+
+	// Email de reactivación
+	subject := "Subject: Rescateam - Cuenta reactivada\n"
+	body := fmt.Sprintf("Hola %s,\n\n¡Buenas noticias! Tu cuenta ha sido reactivada y ya puedes volver a utilizar todos los servicios de RescaTeam. Te pedimos que a partir de ahora respetes las normas del sitio. \n\nGracias por tu paciencia.\n\nSaludos,\nEquipo de RescaTeam", user.Name)
+	msg := []byte(subject + "\n" + body)
+
+	from := os.Getenv("MAIL_USER")
+	pass := os.Getenv("MAIL_PASS")
+
+	auth := smtp.PlainAuth("", from, pass, smtpServer)
+	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{user.Email}, msg)
+	if err != nil {
+		log.Println("Error al enviar mail de reactivación:", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *userService) SendAccountDeletionEmailWithUserData(user model.User, admin model.User) error {
+	// Email de notificación de eliminación de cuenta por admin
+	subject := "Subject: RescaTeam - Cuenta eliminada por administrador\n"
+	body := fmt.Sprintf("Hola %s,\n\nTu cuenta en RescaTeam ha sido eliminada por un administrador debido a violaciones de nuestros términos de servicio.\n\nSi consideras que esto es un error, puedes contactar con nuestro equipo de soporte.\n\nSaludos,\nEquipo de RescaTeam", user.Name)
+	msg := []byte(subject + "\n" + body)
+
+	from := os.Getenv("MAIL_USER")
+	pass := os.Getenv("MAIL_PASS")
+
+	auth := smtp.PlainAuth("", from, pass, smtpServer)
+	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{user.Email}, msg)
+	if err != nil {
+		log.Println("Error al enviar mail de eliminación de cuenta por admin:", err)
+		return err
+	}
+
+	log.Printf("Email de eliminación de cuenta enviado a %s por acción del admin %s", user.Email, admin.Email)
+	return nil
 }
