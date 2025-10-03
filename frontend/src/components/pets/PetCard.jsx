@@ -4,7 +4,10 @@ const PetCard = ({ pet }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/mascota/${pet.id_adoption_post}`);
+    const id = pet.postId || pet.id;
+    if (!id) return;
+    const currentPath = window.location.pathname;
+    navigate(`/mascota/${id}`, { state: { origin: currentPath } });
   };
 
   return (

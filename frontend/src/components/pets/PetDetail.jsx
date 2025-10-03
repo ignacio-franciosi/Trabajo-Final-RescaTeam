@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const PetDetail = ({ pet }) => {
@@ -8,9 +8,22 @@ const PetDetail = ({ pet }) => {
   const [currentImage, setCurrentImage] = useState(0);
   const [phone, setPhone] = useState('');
   const hasImages = pet.imagenes && pet.imagenes.length > 0;
+  const location = useLocation();
 
   const handleVolver = () => {
-    navigate('/#pets-list');
+    const origin = location.state?.origin;
+    if (origin) {
+      navigate(origin);
+      return;
+    }
+    const path = pet.postType === 'adoption'
+      ? '/adopcion'
+      : pet.postType === 'lost'
+      ? '/perdidos'
+      : pet.postType === 'found'
+      ? '/encontrados'
+      : '/';
+    navigate(path);
   };
 
   const handlePrev = () => {

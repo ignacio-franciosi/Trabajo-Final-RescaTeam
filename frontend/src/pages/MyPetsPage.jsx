@@ -9,7 +9,7 @@ import {
 } from '../services/PostService';
 import MyPets from '../components/profile/MyPets';
 import ConfirmDeleteModal from '../components/pets/ConfirmDeleteModal';
-import ConfirmAdoptedModal from '../components/pets/ConfirmAdoptedModal';
+import ConfirmResolvedModal from '../components/pets/ConfirmResolvedModal';
 
 
 const MyPetsPage = () => {
@@ -18,7 +18,7 @@ const MyPetsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [modalAction, setModalAction] = useState('delete'); // 'delete' o 'adopt'
+  const [modalAction, setModalAction] = useState('delete'); // 'delete' o 'resolve'
   const [petSelected, setPetSelected] = useState(null);
 
   const fetchMyPets = async () => {
@@ -82,7 +82,7 @@ const MyPetsPage = () => {
   };
 
   const handleMarkAdoptedClick = (pet) => {
-    setModalAction('adopt');
+    setModalAction('resolve');
     setPetSelected(pet);
     setShowModal(true);
   };
@@ -94,7 +94,7 @@ const MyPetsPage = () => {
       if (modalAction === 'delete') {
         await deleteAllImagesByPostId(petSelected.postId);
         await deletePost(petSelected.postId);
-      } else if (modalAction === 'adopt') {
+      } else if (modalAction === 'resolve') {
         const res = await markAsResolved(petSelected.postId);
         if (!res.success) throw new Error(res.message);
         await deleteAllImagesByPostId(petSelected.postId);
@@ -128,14 +128,14 @@ const MyPetsPage = () => {
         onCancel={() => setShowModal(false)}
         onConfirm={handleConfirmAction}
         message={
-          modalAction === 'adopt'
-            ? 'Al marcar como adoptada se eliminará la publicación. ¿Estás seguro?'
+          modalAction === 'resolve'
+            ? 'Al marcar como resuelto, se eliminará la publicación. ¿Estás seguro?'
             : '¿Estás seguro de que deseas eliminar esta publicación?'
         }
       />
 
-      <ConfirmAdoptedModal
-        isOpen={modalAction === 'adopt' && showModal}
+      <ConfirmResolvedModal
+  isOpen={modalAction === 'resolve' && showModal}
         onCancel={() => setShowModal(false)}
         onConfirm={handleConfirmAction}
       />
