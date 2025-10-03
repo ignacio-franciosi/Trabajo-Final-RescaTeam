@@ -4,53 +4,135 @@ import (
 	"chat/dto"
 	"chat/services"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Permite cualquier origen (ajustar en prod)
-	},
+type ChatController struct {
+	Service *services.ChatService
 }
 
-func HandleWebSocket(c *gin.Context) {
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al iniciar websocket"})
+func NewChatController(svc *services.ChatService) *ChatController {
+	return &ChatController{Service: svc}
+}
+
+// PublicKey devuelve la clave pública VAPID para que el frontend pueda suscribirse
+func (cc *ChatController) PublicKey(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"publicKey": cc.Service.PushClientPublicKey(),
+	})
+}
+
+// Endpoint para registrar suscripción Web Push
+func (cc *ChatController) Subscribe(c *gin.Context) {
+	var sub dto.PushSubscription
+	if err := c.ShouldBindJSON(&sub); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "json inválido"})
 		return
 	}
-	defer conn.Close()
 
-	for {
-		_, msg, err := conn.ReadMessage()
-		if err != nil {
-			break
-		}
-
-		message := dto.MessageDTO{
-			User:    "anon",
-			Content: string(msg),
-		}
-
-		// Guardar mensaje
-		services.SaveMessage(message)
-
-		// Responder eco
-		if err := conn.WriteMessage(websocket.TextMessage, []byte("Recibido: "+string(msg))); err != nil {
-			break
-		}
+	// Extraer userID desde contexto (ejemplo)
+	userID := c.GetString("userID")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
+		return
 	}
+
+	if err := cc.Service.SavePushSubscription(c.Request.Context(), userID, sub); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo guardar la suscripción"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "suscripción registrada"})
 }
 
-func SendMessage(c *gin.Context) {
-	var message dto.MessageDTO
-	if err := c.ShouldBindJSON(&message); err != nil {
+// StartChat crea o busca un chat entre dos usuarios respecto a un post
+func (cc *ChatController) StartChat(c *gin.Context) {
+	var req dto.StartChatRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
 		return
 	}
 
-	services.SaveMessage(message)
-	c.JSON(http.StatusOK, gin.H{"status": "mensaje guardado"})
+	chat, err := cc.Service.StartChat(c.Request.Context(), req.Me, req.Other, req.PostID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.FromChatModel(chat))
+}
+
+// ListChats devuelve los chats de un usuario
+func (cc *ChatController) ListChats(c *gin.Context) {
+	userID := c.Query("userId")
+	limitStr := c.DefaultQuery("limit", "20")
+	limit, _ := strconv.ParseInt(limitStr, 10, 64)
+
+	chats, err := cc.Service.ListChats(c.Request.Context(), userID, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var res []dto.ChatDTO
+	for _, ch := range chats {
+		res = append(res, dto.FromChatModel(ch))
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+// ListMessages devuelve los mensajes de un chat
+func (cc *ChatController) ListMessages(c *gin.Context) {
+	chatID := c.Param("chatId")
+	limitStr := c.DefaultQuery("limit", "50")
+	limit, _ := strconv.ParseInt(limitStr, 10, 64)
+
+	msgs, err := cc.Service.ListMessages(c.Request.Context(), chatID, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var res []dto.MessageDTO
+	for _, m := range msgs {
+		res = append(res, dto.FromMessageModel(m))
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+// SendMessageHTTP guarda un mensaje en un chat (fallback HTTP)
+func (cc *ChatController) SendMessageHTTP(c *gin.Context) {
+	var req dto.SendMessageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
+		return
+	}
+
+	msg, err := cc.Service.SendMessage(c.Request.Context(), req.ChatID, req.SenderID, req.Content)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.FromMessageModel(msg))
+}
+
+// MarkRead marca un chat como leído para un usuario
+func (cc *ChatController) MarkRead(c *gin.Context) {
+	var req dto.MarkReadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
+		return
+	}
+
+	if err := cc.Service.MarkRead(c.Request.Context(), req.ChatID, req.UserID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
