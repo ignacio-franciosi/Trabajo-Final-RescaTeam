@@ -30,7 +30,7 @@ const UserProfilePage = () => {
     const res = await deleteUser(user.userId);
     if (res.success) {
       logout();          
-      navigate('/');     
+      navigate('/login');     
     } else {
       alert(res.message); 
     }

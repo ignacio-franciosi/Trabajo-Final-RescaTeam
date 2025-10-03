@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import PetCard from './PetCard';
 import {
-  getAllAdoptionPosts,
-  getImagesByAdoptionPostId,
-  getFilteredAdoptionPosts
-} from '../../services/AdoptionService';
+  getAllPosts,
+  getImagesByPostId,
+  getFilteredPosts
+} from '../../services/PostService';
 
 const PetList = ({ filters = {} }) => {
   const [pets, setPets] = useState([]);
@@ -19,8 +19,8 @@ const PetList = ({ filters = {} }) => {
       try {
         // Elegir entre obtener todos o filtrados
         const res = Object.values(filters).some((val) => val)
-          ? await getFilteredAdoptionPosts(filters)
-          : await getAllAdoptionPosts();
+          ? await getFilteredPosts(filters)
+          : await getAllPosts();
 
         if (!res.success || !Array.isArray(res.data)) {
           throw new Error('No se pudieron obtener las publicaciones');
@@ -28,12 +28,17 @@ const PetList = ({ filters = {} }) => {
 
         const postsWithImages = await Promise.all(
           res.data.map(async (post) => {
-            const imageRes = await getImagesByAdoptionPostId(post.id_adoption_post);
+            const imageRes = await getImagesByPostId(post.postId || post.id);
 
             if (imageRes.success && Array.isArray(imageRes.data) && imageRes.data.length > 0) {
-              const rawPath = imageRes.data[0].file_path;
-              const imageUrl = `http://localhost:8090${rawPath.startsWith('/') ? '' : '/'}${rawPath}`;
-              post.foto = imageUrl;
+              const rawPath = imageRes.data[0].filepath;
+              if (rawPath && /^https?:\/\//i.test(rawPath)) {
+                post.foto = rawPath; // URL completa (S3)
+              } else if (rawPath) {
+                post.foto = `http://localhost:8090${rawPath.startsWith('/') ? '' : '/'}${rawPath}`; // ruta local
+              } else {
+                post.foto = '/no-image.png';
+              }
             } else {
               post.foto = '/no-image.png'; // imagen por defecto
             }
@@ -69,7 +74,7 @@ const PetList = ({ filters = {} }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {pets.map((pet) => (
-        <PetCard key={pet.id_adoption_post} pet={pet} onClick={() => {}} />
+        <PetCard key={pet.postId || pet.id} pet={pet} onClick={() => { }} />
       ))}
     </div>
   );

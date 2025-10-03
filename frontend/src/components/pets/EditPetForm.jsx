@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  getAdoptionPostById,
-  getImagesByAdoptionPostId,
-  updateAdoptionPost,
-  uploadAdoptionImage,
+  getPostById,
+  getImagesByPostId,
+  updatePost,
+  uploadImage,
   deleteImageById
-} from '../../services/AdoptionService';
+} from '../../services/PostService';
 
 const EditPetForm = () => {
   const { id } = useParams();
@@ -22,8 +22,8 @@ const EditPetForm = () => {
 
   useEffect(() => {
     const fetchPost = async () => {
-      const res = await getAdoptionPostById(id);
-      const imgRes = await getImagesByAdoptionPostId(id);
+      const res = await getPostById(id);
+      const imgRes = await getImagesByPostId(id);
       setExistingImages(Array.isArray(imgRes.data) ? imgRes.data : []);
       if (res.success) {
         setFormData({
@@ -88,7 +88,7 @@ const EditPetForm = () => {
 
     const res = await deleteImageById(imageId);
     if (res.success) {
-      setExistingImages(prev => prev.filter(img => img.image_id !== imageId));
+      setExistingImages(prev => prev.filter(img => img.imageId !== imageId));
     } else {
       setGeneralError(res.message);
     }
@@ -130,14 +130,14 @@ const EditPetForm = () => {
       age: parseInt(formData.age, 10),
     };
 
-    const res = await updateAdoptionPost(id, preparedData);
+    const res = await updatePost(id, preparedData);
     if (!res.success) {
       setGeneralError(res.message);
       return;
     }
 
     for (let img of newImages) {
-      await uploadAdoptionImage(id, img);
+      await uploadImage(id, img);
     }
 
     setSuccess('¡Publicación actualizada con éxito!');
@@ -147,8 +147,7 @@ const EditPetForm = () => {
   if (!formData) return <p className="text-center">Cargando publicación...</p>;
 
   const inputClass = (field) =>
-    `w-full mt-1 px-4 py-2 border rounded-md ${
-      errors[field] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+    `w-full mt-1 px-4 py-2 border rounded-md ${errors[field] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
     }`;
 
   return (
@@ -233,11 +232,11 @@ const EditPetForm = () => {
 
         <div className="flex gap-4 flex-wrap">
           {Array.isArray(existingImages) && existingImages.map(img => (
-            <div key={img.image_id} className="relative">
-              <img src={`http://localhost:8090${img.file_path}`} alt="img" className="w-24 h-24 object-cover rounded" />
+            <div key={img.imageId} className="relative">
+              <img src={`http://localhost:8090${img.filepath}`} alt="img" className="w-24 h-24 object-cover rounded" />
               <button
                 type="button"
-                onClick={() => handleDeleteImage(img.image_id)}
+                onClick={() => handleDeleteImage(img.imageId)}
                 className="absolute top-0 right-0 bg-red-500 text-white rounded-full px-1"
               >
                 ×

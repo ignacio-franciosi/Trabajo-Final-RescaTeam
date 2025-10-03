@@ -3,7 +3,9 @@ package db
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,26 +28,37 @@ func DisconnectDB() {
 }
 
 func InitDB() {
+	// Cargar variables de entorno
+	err := godotenv.Load()
+	if err != nil {
+		log.Warn("No .env file found, using system environment variables")
+	}
 
-	clientOpts := options.Client().ApplyURI("mongodb+srv://rescateam:rescateam@rescateam.gojuwbk.mongodb.net/")
+	// Leer valores de .env
+	mongoURI := os.Getenv("MONGO_URI")
+	dbName := os.Getenv("MONGO_DB")
 
+	if mongoURI == "" || dbName == "" {
+		log.Fatal("MONGO_URI or MONGO_DB not set in environment")
+	}
+
+	// Conexión
+	clientOpts := options.Client().ApplyURI(mongoURI)
 	cli, err := mongo.Connect(context.TODO(), clientOpts)
 	client = cli
 
 	if err != nil {
-		log.Info("Connection Failed to Open")
-		log.Fatal(err)
+		log.Fatal("Connection Failed to Open: ", err)
 	} else {
 		log.Info("Connection Established")
 	}
 
 	dbNames, err := client.ListDatabaseNames(context.TODO(), bson.M{})
 	if err != nil {
-		log.Info("Failed to get databases available")
-		log.Fatal(err)
+		log.Fatal("Failed to get databases available: ", err)
 	}
 
-	MongoDb = client.Database("posts")
+	MongoDb = client.Database(dbName)
 
 	fmt.Println("Available databases:")
 	fmt.Println(dbNames)
@@ -54,5 +67,5 @@ func InitDB() {
 	PostsCollection = MongoDb.Collection("posts")
 	ImagesCollection = MongoDb.Collection("images")
 
-	log.Info("Collections initialized: posts, images")
+	log.Infof("Collections initialized in DB '%s': posts, images", dbName)
 }

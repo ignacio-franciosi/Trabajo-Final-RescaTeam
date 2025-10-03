@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
-  getAdoptionPostsByUserId,
-  getImagesByAdoptionPostId,
-  deleteAdoptionPost,
+  getPostsByUserId,
+  getImagesByPostId,
+  deletePost,
   deleteAllImagesByPostId,
-  markAsAdopted
-} from '../services/AdoptionService';
+  markAsResolved
+} from '../services/PostService';
 import MyPets from '../components/profile/MyPets';
 import ConfirmDeleteModal from '../components/pets/ConfirmDeleteModal';
 import ConfirmAdoptedModal from '../components/pets/ConfirmAdoptedModal';
@@ -26,7 +26,7 @@ const MyPetsPage = () => {
 
     setLoading(true);
     try {
-      const res = await getAdoptionPostsByUserId(user.userId);
+      const res = await getPostsByUserId(user.userId);
 
       if (!res.success || !Array.isArray(res.data)) {
         throw new Error(res.message || 'Error al obtener publicaciones.');
@@ -35,11 +35,16 @@ const MyPetsPage = () => {
       const postsWithImages = await Promise.all(
         res.data.map(async (post) => {
           try {
-            const imageRes = await getImagesByAdoptionPostId(post.id_adoption_post);
-            const imageUrl =
-              imageRes.success && Array.isArray(imageRes.data) && imageRes.data.length > 0
-                ? `http://localhost:8090${imageRes.data[0].file_path}`
-                : '/no-image.png';
+            const imageRes = await getImagesByPostId(post.postId || post.id);
+            let imageUrl = '/no-image.png';
+            if (imageRes.success && Array.isArray(imageRes.data) && imageRes.data.length > 0) {
+              const rawPath = imageRes.data[0].filepath;
+              if (rawPath && /^https?:\/\//i.test(rawPath)) {
+                imageUrl = rawPath;
+              } else if (rawPath) {
+                imageUrl = `http://localhost:8090${rawPath.startsWith('/') ? '' : '/'}${rawPath}`;
+              }
+            }
 
             return {
               ...post,
@@ -87,16 +92,16 @@ const MyPetsPage = () => {
 
     try {
       if (modalAction === 'delete') {
-        await deleteAllImagesByPostId(petSelected.id_adoption_post);
-        await deleteAdoptionPost(petSelected.id_adoption_post);
+        await deleteAllImagesByPostId(petSelected.postId);
+        await deletePost(petSelected.postId);
       } else if (modalAction === 'adopt') {
-        const res = await markAsAdopted(petSelected.id_adoption_post);
+        const res = await markAsResolved(petSelected.postId);
         if (!res.success) throw new Error(res.message);
-        await deleteAllImagesByPostId(petSelected.id_adoption_post);
-        await deleteAdoptionPost(petSelected.id_adoption_post);
+        await deleteAllImagesByPostId(petSelected.postId);
+        await deletePost(petSelected.postId);
       }
 
-      setPets(prev => prev.filter(p => p.id_adoption_post !== petSelected.id_adoption_post));
+      setPets(prev => prev.filter(p => p.postId !== petSelected.postId));
     } catch (err) {
       alert('Error al realizar la acción.');
     } finally {
@@ -113,7 +118,7 @@ const MyPetsPage = () => {
     <>
       <MyPets
         pets={pets}
-        onEdit={(pet) => (window.location.href = `/editar-publicacion/${pet.id_adoption_post}`)}
+        onEdit={(pet) => (window.location.href = `/editar-publicacion/${pet.postId}`)}
         onDelete={handleDeleteClick}
         onMarkAdopted={handleMarkAdoptedClick}
       />

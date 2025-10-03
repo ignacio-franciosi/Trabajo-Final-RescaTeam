@@ -21,6 +21,7 @@ import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
 import PublicPetPage from '../pages/PublicPetPage'; 
 import EditPetPage from '../pages/EditPetPage';
+import AdminReportsPage from '../pages/AdminReportsPage';
 
 
 // Vistas compartidas
@@ -81,6 +82,14 @@ const AppRouter = () => {
             element={
               <PrivateRoute>
                 <EditPetPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/reportes"
+            element={
+              <PrivateRoute>
+                <AdminReportsPage />
               </PrivateRoute>
             }
           />

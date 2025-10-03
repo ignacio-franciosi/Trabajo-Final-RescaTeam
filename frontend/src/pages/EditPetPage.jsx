@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import EditPetForm from '../components/pets/EditPetForm';
-import { getAdoptionPostById, getImagesByAdoptionPostId } from '../services/AdoptionService';
+import { getPostById, getImagesByPostId } from '../services/PostService';
 
 const EditPetPage = () => {
   const { id } = useParams();
@@ -12,8 +12,8 @@ const EditPetPage = () => {
   useEffect(() => {
     const fetchPet = async () => {
       try {
-        const petRes = await getAdoptionPostById(id);
-        const imgRes = await getImagesByAdoptionPostId(id);
+  const petRes = await getPostById(id);
+  const imgRes = await getImagesByPostId(id);
 
         if (!petRes.success) throw new Error('No se encontró la publicación');
 

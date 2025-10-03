@@ -1,17 +1,23 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import DropdownMenu from './DropdownMenu';
 import { useAuth } from '../../context/AuthContext';
 import favicon from '../../assets/favicon.png';
+import { getUserById } from '../../services/UserService';
 
 const Header = () => {
   const navigate = useNavigate();
   const { user, logout, token } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const location = useLocation();
+  const timeoutRef = useRef(null);
+  const [displayName, setDisplayName] = useState('Perfil');
   const isLoggedIn = !!token;
 
   const profileOptions = [
     { label: 'Ver mi perfil', action: 'profile' },
     { label: 'Mis publicaciones', action: 'mis-publicaciones' },
+    ...(user?.type ? [{ label: 'Ver reportes', action: 'admin/reportes' }] : []),
     { label: 'Cerrar Sesión', action: 'logout' },
   ];
 
@@ -22,12 +28,59 @@ const Header = () => {
 
   const handleProfileSelect = (action) => {
     if (action === 'logout') {
+      setIsLoggingOut(true);
+      // realizar logout inmediato y mostrar un spinner breve antes de redirigir a login
       logout();
-      setTimeout(() => navigate('/'), 100);
-    } else {
-      navigate(`/${action}`);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => navigate('/login'), 300);
+      return;
     }
+    navigate(`/${action}`);
   };
+
+  // Si el token desaparece (logout completado), ocultar spinner
+  useEffect(() => {
+    if (!token) {
+      setIsLoggingOut(false);
+    }
+  }, [token]);
+
+  // Al llegar a /login, asegurarse de ocultar spinner
+  useEffect(() => {
+    if (location.pathname === '/login') {
+      setIsLoggingOut(false);
+    }
+  }, [location.pathname]);
+
+  // Limpiar timeout al desmontar
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  // Obtener y mostrar el nombre del usuario cuando hay sesión
+  useEffect(() => {
+    const fetchName = async () => {
+      try {
+        if (token && user?.userId) {
+          const res = await getUserById(user.userId);
+          if (res.success) {
+            const u = res.data;
+            const name = [u.name, u.surname].filter(Boolean).join(' ').trim();
+            setDisplayName(name || 'Mi cuenta');
+          } else {
+            setDisplayName('Mi cuenta');
+          }
+        } else {
+          setDisplayName('Perfil');
+        }
+      } catch {
+        setDisplayName('Mi cuenta');
+      }
+    };
+    fetchName();
+  }, [token, user?.userId]);
 
   const handleProtectedAction = (action) => {
     if (isLoggedIn) {
@@ -72,10 +125,21 @@ const Header = () => {
         </nav>
 
         <div className="hidden md:block">
-          <DropdownMenu
-            options={isLoggedIn ? profileOptions : guestOptions}
-            onSelect={handleProfileSelect}
-          />
+          {isLoggingOut ? (
+            <div className="flex items-center text-white">
+              <svg className="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+              <span>Cerrando sesión…</span>
+            </div>
+          ) : (
+            <DropdownMenu
+              options={isLoggedIn ? profileOptions : guestOptions}
+              onSelect={handleProfileSelect}
+              label={isLoggedIn ? displayName : 'Perfil'}
+            />
+          )}
         </div>
 
         {/* Botón para menú móvil (pendiente) */}

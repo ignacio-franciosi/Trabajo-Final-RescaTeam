@@ -26,7 +26,7 @@ const PetDetail = ({ pet }) => {
   };
 
   const handleContactar = () => {
-    localStorage.setItem('redirectAfterLogin', `/mascota/${pet.id_adoption_post}`);
+    localStorage.setItem('redirectAfterLogin', `/mascota/${pet.postId}`);
     navigate('/register');
   };
 
@@ -46,7 +46,11 @@ const PetDetail = ({ pet }) => {
             {hasImages ? (
               <>
                 <img
-                  src={`http://localhost:8090${pet.imagenes[currentImage].file_path}`}
+                  src={
+                    pet.imagenes[currentImage].filepath && /^https?:\/\//i.test(pet.imagenes[currentImage].filepath)
+                      ? pet.imagenes[currentImage].filepath
+                      : `http://localhost:8090${(pet.imagenes[currentImage].filepath || '').startsWith('/') ? '' : '/'}${pet.imagenes[currentImage].filepath || ''}`
+                  }
                   alt={`Mascota ${currentImage + 1}`}
                   className="w-full rounded-lg object-cover h-64"
                 />
@@ -68,9 +72,8 @@ const PetDetail = ({ pet }) => {
                       {pet.imagenes.map((_, i) => (
                         <span
                           key={i}
-                          className={`w-2 h-2 rounded-full ${
-                            i === currentImage ? 'bg-blue-600' : 'bg-gray-300'
-                          }`}
+                          className={`w-2 h-2 rounded-full ${i === currentImage ? 'bg-blue-600' : 'bg-gray-300'
+                            }`}
                         ></span>
                       ))}
                     </div>
@@ -101,23 +104,7 @@ const PetDetail = ({ pet }) => {
             </div>
             <DetailItem label="Zona" value={pet.zone} />
 
-            <div>
-              <p className="text-sm text-gray-500">Teléfono de contacto</p>
-              {user? (
-                <p className="capitalize">
-                  {pet.phone?.trim()
-                    ? pet.phone
-                    : 'No disponible'}
-                </p>
-              ) : (
-                <button
-                  onClick={handleContactar}
-                  className="mt-1 px-4 py-2 bg-rose-600 text-white rounded hover:bg-blue-700"
-                >
-                  Contactar
-                </button>
-              )}
-            </div>
+            {/* Se removió teléfono de contacto como fue solicitado */}
 
             <p className="text-sm text-gray-500">Descripción</p>
             <p className="whitespace-pre-line">{pet.description}</p>

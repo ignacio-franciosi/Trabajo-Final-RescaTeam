@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const DropdownMenu = ({ options, onSelect }) => {
+const DropdownMenu = ({ options, onSelect, label = 'Perfil' }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSelect = (option) => {
@@ -14,7 +14,7 @@ const DropdownMenu = ({ options, onSelect }) => {
         onClick={() => setIsOpen(!isOpen)}
         className="text-white hover:text-blue-600 focus:outline-none"
       >
-        Perfil
+        {label}
       </button>
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
