@@ -6,7 +6,7 @@ const MyPets = ({ pets, onDelete, onMarkAdopted }) => {
   const navigate = useNavigate();
 
   const handleEdit = (pet) => {
-    navigate(`/editar-publicacion/${pet.id_adoption_post}`);
+    navigate(`/editar-publicacion/${pet.postId || pet.id}`);
   };
 
   return (
@@ -17,7 +17,7 @@ const MyPets = ({ pets, onDelete, onMarkAdopted }) => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {pets.map((pet, index) => (
-            <div key={pet.id_adoption_post || index} className="border rounded-lg overflow-hidden">
+            <div key={pet.postId || pet.id || index} className="border rounded-lg overflow-hidden">
               <PetCard pet={pet} onClick={() => {}} />
               <div className="p-4 bg-gray-50 flex justify-around space-x-2">
                 <button
@@ -37,7 +37,7 @@ const MyPets = ({ pets, onDelete, onMarkAdopted }) => {
                     onClick={() => onMarkAdopted(pet)}
                     className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm hover:bg-green-700 transition-colors"
                   >
-                    Marcar Adoptada
+                    Marcar Resuelto
                   </button>
                 )}
               </div>

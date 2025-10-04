@@ -19,8 +19,12 @@ import UserProfilePage from '../pages/UserProfilePage';
 import ChangePasswordPage from '../pages/ChangePasswordPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
-import PublicPetPage from '../pages/PublicPetPage'; 
+import PublicPetPage from '../pages/PublicPetPage';
 import EditPetPage from '../pages/EditPetPage';
+import AdminReportsPage from '../pages/AdminReportsPage';
+import AdoptionPage from '../pages/AdoptionPage';
+import LostPage from '../pages/LostPage';
+import FoundPage from '../pages/FoundPage';
 
 
 // Vistas compartidas
@@ -38,56 +42,67 @@ const AppRouter = () => {
   return (
     <Router>
       <Header />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<LoginForm />} />
-          <Route path="/register" element={<RegisterForm />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route
-            path="/mis-publicaciones"
-            element={
-              <PrivateRoute>
-                <MyPetsPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <PrivateRoute>
-                <UserProfilePage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/cambiar-contraseña"
-            element={
-              <PrivateRoute>
-                <ChangePasswordPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/publicar"
-            element={
-              <PrivateRoute>
-                <PublicPetPage />
-              </PrivateRoute>
-            }     
-          />
-          <Route
-            path="/editar-publicacion/:id"
-            element={
-              <PrivateRoute>
-                <EditPetPage />
-              </PrivateRoute>
-            }
-          />
-          <Route path="/mascota/:id" element={<PetDetailPage />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-        <Footer />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/adopcion" element={<AdoptionPage />} />
+        <Route path="/perdidos" element={<LostPage />} />
+        <Route path="/encontrados" element={<FoundPage />} />
+        <Route path="/login" element={<LoginForm />} />
+        <Route path="/register" element={<RegisterForm />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route
+          path="/mis-publicaciones"
+          element={
+            <PrivateRoute>
+              <MyPetsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute>
+              <UserProfilePage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cambiar-contraseña"
+          element={
+            <PrivateRoute>
+              <ChangePasswordPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/publicar"
+          element={
+            <PrivateRoute>
+              <PublicPetPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/editar-publicacion/:id"
+          element={
+            <PrivateRoute>
+              <EditPetPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/reportes"
+          element={
+            <PrivateRoute>
+              <AdminReportsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route path="/mascota/:id" element={<PetDetailPage />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+      <Footer />
     </Router>
   );
 };

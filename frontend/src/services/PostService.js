@@ -1,4 +1,4 @@
-import apiAdoption from './axiosConfigAdoption';
+import apiAdoption from './axiosConfigPost';
 
 export const createPost = async (formData) => {
   try {
@@ -30,7 +30,7 @@ export const getPostById = async (id) => {
   }
 };
 
-export const getAllPosts = async (type = 'adoption') => {
+export const getAllPosts = async (type) => {
   try {
     const res = type
       ? await apiAdoption.get(`/post?type=${encodeURIComponent(type)}`)
@@ -177,8 +177,8 @@ export const getFilteredPosts = async (filters) => {
   try {
     const queryParams = new URLSearchParams();
 
-    // postType: usar el provisto o por defecto 'adoption' para mantener compatibilidad
-    const postType = filters.postType || filters.tipo || 'adoption';
+    // postType: solo si fue provisto, sino traer todos los tipos
+    const postType = filters.postType || filters.tipo;
     if (postType) queryParams.append('postType', postType);
 
     if (filters.especie || filters.species) queryParams.append('species', filters.especie || filters.species);

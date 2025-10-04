@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createAdoptionPost } from '../../services/AdoptionService';
-import { getUserById } from '../../services/UserService';
+import { createPost } from '../../services/PostService';
 import { useAuth } from '../../context/AuthContext';
 
 const PetForm = () => {
@@ -10,20 +9,24 @@ const PetForm = () => {
   const errorRef = useRef(null);
 
   const [formData, setFormData] = useState({
+    // Campos del DTO de posts
+    postType: 'adoption', // 'adoption' | 'lost' | 'found'
+    postStatus: true,     // activo al crear
     name: '',
     species: 'perro',
     age: '',
-    size: 'mediano',
     breed: '',
-    sex: 'macho',
     color: '',
+    size: 'mediano',
+    sex: 'macho',
     description: '',
     neutered: false,
-    complete_vaccines: false,
+    complete_vaccines: false, // lo mapeamos a completeVaccines
+    date: new Date().toISOString().slice(0, 10),
     zone: '',
-    phone: '',
-    adoption_status: false,
-    date: new Date().toISOString().slice(0, 10)
+    healthStatus: '',
+    collar: false,
+    collarColor: '',
   });
 
   const [images, setImages] = useState([]);
@@ -31,20 +34,7 @@ const PetForm = () => {
   const [generalError, setGeneralError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  useEffect(() => {
-    const fetchPhone = async () => {
-      if (user?.userId) {
-        const res = await getUserById(user.userId);
-        if (res.success && res.data.phone) {
-          setFormData((prev) => ({
-            ...prev,
-            phone: res.data.phone
-          }));
-        }
-      }
-    };
-    fetchPhone();
-  }, [user]);
+  // Se elimina la lógica de teléfono según lo solicitado
 
   useEffect(() => {
     if ((generalError || Object.keys(errors).length > 0) && errorRef.current) {
@@ -89,7 +79,7 @@ const PetForm = () => {
   };
 
   const validateFields = () => {
-    const requiredFields = ['species', 'age', 'size', 'sex', 'color', 'zone', 'description'];
+  const requiredFields = ['postType', 'species', 'age', 'size', 'sex', 'color', 'zone', 'description'];
     const newErrors = {};
 
     requiredFields.forEach((field) => {
@@ -129,13 +119,18 @@ const PetForm = () => {
     };
 
     Object.entries(finalForm).forEach(([key, value]) => {
-      data.append(key, value);
+      // mapear complete_vaccines -> completeVaccines para el backend
+      if (key === 'complete_vaccines') {
+        data.append('completeVaccines', value);
+      } else {
+        data.append(key, value);
+      }
     });
     images.forEach((file) => {
       data.append('images', file);
     });
 
-    const res = await createAdoptionPost(data);
+  const res = await createPost(data);
     if (res.success) {
       setSuccessMsg('¡Mascota publicada con éxito!');
       setTimeout(() => navigate('/mis-publicaciones'), 1500);
@@ -145,8 +140,7 @@ const PetForm = () => {
   };
 
   const inputClass = (field) =>
-    `w-full mt-1 px-4 py-2 border rounded-md ${
-      errors[field] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+    `w-full mt-1 px-4 py-2 border rounded-md ${errors[field] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
     }`;
 
   return (
@@ -155,6 +149,42 @@ const PetForm = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700">Tipo de publicación</label>
+            <div className="flex items-center gap-4 mt-1">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="postType"
+                  value="adoption"
+                  checked={formData.postType === 'adoption'}
+                  onChange={handleChange}
+                />
+                Adopción
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="postType"
+                  value="lost"
+                  checked={formData.postType === 'lost'}
+                  onChange={handleChange}
+                />
+                Perdido
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="postType"
+                  value="found"
+                  checked={formData.postType === 'found'}
+                  onChange={handleChange}
+                />
+                Encontrado
+              </label>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Nombre (opcional)</label>
             <input name="name" value={formData.name} onChange={handleChange} className={inputClass('name')} placeholder="Ej: Lola" />
@@ -212,8 +242,25 @@ const PetForm = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Teléfono de contacto</label>
-            <input name="phone" value={formData.phone} readOnly className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 cursor-not-allowed" />
+            <label className="block text-sm font-medium text-gray-700">Estado de salud</label>
+            <input name="healthStatus" value={formData.healthStatus} onChange={handleChange} className={inputClass('healthStatus')} />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Collar</label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="collar" checked={formData.collar} onChange={handleChange} />
+                Tiene collar
+              </label>
+              <input
+                name="collarColor"
+                value={formData.collarColor}
+                onChange={handleChange}
+                placeholder="Color del collar (opcional)"
+                className={inputClass('collarColor')}
+              />
+            </div>
           </div>
         </div>
 

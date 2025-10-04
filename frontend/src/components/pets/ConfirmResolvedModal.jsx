@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ConfirmAdoptedModal = ({ isOpen, onCancel, onConfirm }) => {
+const ConfirmResolvedModal = ({ isOpen, onCancel, onConfirm }) => {
   if (!isOpen) return null;
 
   return (
@@ -9,11 +9,11 @@ const ConfirmAdoptedModal = ({ isOpen, onCancel, onConfirm }) => {
         <div className="flex items-center mb-4">
           <span className="text-green-600 text-3xl mr-2">🐾</span>
           <h2 className="text-lg font-semibold text-gray-800">
-            ¿Confirmar adopción?
+            ¿Confirmar como resuelto?
           </h2>
         </div>
         <p className="text-gray-600 mb-6">
-          Al marcar esta mascota como adoptada, se eliminará la publicación del listado público. ¿Estás seguro de continuar?
+          Al marcar esta publicación como resuelta, se eliminará del listado público. ¿Estás seguro de continuar?
         </p>
         <div className="flex justify-end gap-4">
           <button
@@ -26,7 +26,7 @@ const ConfirmAdoptedModal = ({ isOpen, onCancel, onConfirm }) => {
             onClick={onConfirm}
             className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
           >
-            Marcar como adoptada
+            Marcar como resuelto
           </button>
         </div>
       </div>
@@ -34,4 +34,4 @@ const ConfirmAdoptedModal = ({ isOpen, onCancel, onConfirm }) => {
   );
 };
 
-export default ConfirmAdoptedModal;
+export default ConfirmResolvedModal;
