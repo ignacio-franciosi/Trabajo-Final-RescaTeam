@@ -65,7 +65,7 @@ const PetDetail = ({ pet }) => {
                       : `http://localhost:8090${(pet.imagenes[currentImage].filepath || '').startsWith('/') ? '' : '/'}${pet.imagenes[currentImage].filepath || ''}`
                   }
                   alt={`Mascota ${currentImage + 1}`}
-                  className="w-full rounded-lg object-cover h-64"
+                  className="w-full rounded-lg object-cover h-72 max-h-[420px]"
                 />
                 {pet.imagenes.length > 1 && (
                   <>
@@ -94,11 +94,13 @@ const PetDetail = ({ pet }) => {
                 )}
               </>
             ) : (
-              <img
-                src="/no-image.png"
-                alt="Sin imagen"
-                className="w-full rounded-lg object-cover h-64"
-              />
+              <div className="w-full h-72 bg-gray-100 rounded-lg flex items-center justify-center">
+                <img
+                  src="/no-image.png"
+                  alt="Sin imagen"
+                  className="max-h-full max-w-full object-contain p-4 opacity-70"
+                />
+              </div>
             )}
           </div>
 
@@ -107,15 +109,31 @@ const PetDetail = ({ pet }) => {
             <h2 className="text-3xl font-bold">{pet.name || 'Sin nombre'}</h2>
             <div className="grid grid-cols-2 gap-4">
               <DetailItem label="Especie" value={pet.species} />
-              <DetailItem label="Edad" value={`${pet.age} años`} />
+              {pet.age !== undefined && pet.age !== null && pet.age !== '' && (
+                <DetailItem label="Edad" value={`${pet.age} años`} />
+              )}
               <DetailItem label="Tamaño" value={pet.size} />
               <DetailItem label="Raza" value={pet.breed} />
               <DetailItem label="Sexo" value={pet.sex} />
               <DetailItem label="Color" value={pet.color} />
-              <DetailItem label="Castrado" value={pet.neutered ? 'Sí' : 'No'} />
-              <DetailItem label="Vacunas" value={pet.completeVaccines ? 'Completas' : 'Incompletas'} />
+              {pet.postType === 'adoption' && (
+                <>
+                  <DetailItem label="Castrado" value={pet.neutered ? 'Sí' : 'No'} />
+                  <DetailItem label="Vacunas" value={pet.completeVaccines ? 'Completas' : 'Incompletas'} />
+                </>
+              )}
+              {pet.postType !== 'adoption' && (
+                <>
+                  <DetailItem label="Estado de salud" value={pet.healthStatus} />
+                  <DetailItem label="Collar" value={pet.collar ? 'Sí' : 'No'} />
+                  {pet.collarColor && <DetailItem label="Color collar" value={pet.collarColor} />}
+                </>
+              )}
             </div>
             <DetailItem label="Zona" value={pet.zone} />
+            {pet.postType !== 'adoption' && pet.date && (
+              <DetailItem label="Publicado" value={formatDate(pet.date)} />
+            )}
 
             {/* Se removió teléfono de contacto como fue solicitado */}
 
@@ -134,5 +152,21 @@ const DetailItem = ({ label, value }) => (
     <p className="capitalize">{value}</p>
   </div>
 );
+
+// Util local para formato DD/MM/AAAA aceptando ISO o string simple
+function formatDate(dateStr) {
+  try {
+    if (!dateStr) return '';
+    // Intentar parsear (si viene en ISO: 2025-10-04)
+    const parts = dateStr.includes('T') ? new Date(dateStr) : new Date(dateStr);
+    if (isNaN(parts.getTime())) return dateStr;
+    const d = String(parts.getDate()).padStart(2, '0');
+    const m = String(parts.getMonth() + 1).padStart(2, '0');
+    const y = parts.getFullYear();
+    return `${d}/${m}/${y}`;
+  } catch {
+    return dateStr;
+  }
+}
 
 export default PetDetail;

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { validateEmail, validatePassword, validateRequiredFields } from '../../utils/validators';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
@@ -89,9 +89,8 @@ const RegisterForm = () => {
               name={field}
               value={formData[field]}
               onChange={handleChange}
-              className={`w-full mt-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                errors[field] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-              }`}
+              className={`w-full mt-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${errors[field] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                }`}
             />
             {errors[field] && <p className="text-red-500 text-xs mt-1">{errors[field]}</p>}
           </div>
@@ -107,6 +106,9 @@ const RegisterForm = () => {
         >
           Registrarse
         </button>
+        <p className="text-sm text-center text-gray-600">¿Ya tienes cuenta?{' '}
+          <Link to="/login" className="text-blue-600 hover:underline">Ingresar</Link>
+        </p>
       </form>
     </div>
   );

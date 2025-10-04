@@ -65,6 +65,10 @@ const LoginForm = () => {
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
+        <div className="text-sm text-center mt-2 text-gray-600">
+          ¿No tienes cuenta?{' '}
+          <Link to="/register" className="text-blue-600 hover:underline">Registrarme</Link>
+        </div>
       </form>
     </div>
   );

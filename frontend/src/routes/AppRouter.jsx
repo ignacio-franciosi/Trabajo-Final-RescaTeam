@@ -20,6 +20,9 @@ import ChangePasswordPage from '../pages/ChangePasswordPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
 import PublicPetPage from '../pages/PublicPetPage';
+import PublicAdoptionPage from '../pages/PublicAdoptionPage';
+import PublicLostPage from '../pages/PublicLostPage';
+import PublicFoundPage from '../pages/PublicFoundPage';
 import EditPetPage from '../pages/EditPetPage';
 import AdminReportsPage from '../pages/AdminReportsPage';
 import AdoptionPage from '../pages/AdoptionPage';
@@ -80,6 +83,30 @@ const AppRouter = () => {
           element={
             <PrivateRoute>
               <PublicPetPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/publicar/adopcion"
+          element={
+            <PrivateRoute>
+              <PublicAdoptionPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/publicar/perdido"
+          element={
+            <PrivateRoute>
+              <PublicLostPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/publicar/encontrado"
+          element={
+            <PrivateRoute>
+              <PublicFoundPage />
             </PrivateRoute>
           }
         />

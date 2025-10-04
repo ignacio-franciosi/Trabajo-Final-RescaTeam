@@ -15,11 +15,14 @@ const PetCard = ({ pet }) => {
       onClick={handleClick}
       className="cursor-pointer bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
     >
-      <img
-        src={pet.foto}
-        alt={pet.name || 'Mascota'}
-        className="w-full h-48 object-cover"
-      />
+      <div className="relative w-full aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden">
+        <img
+          src={pet.foto || '/no-image.png'}
+          alt={pet.name || 'Mascota'}
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e)=>{ e.target.src='/no-image.png'; e.target.className='absolute inset-0 w-full h-full object-contain p-2'; }}
+        />
+      </div>
       <div className="p-4">
         <h3 className="font-bold text-lg">{pet.name || 'Sin nombre'}</h3>
         <p className="text-gray-600">{pet.age} años - {pet.species?.charAt(0).toUpperCase() + pet.species?.slice(1).toLowerCase()}</p>
