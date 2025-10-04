@@ -32,8 +32,7 @@ func (cc *ChatController) Subscribe(c *gin.Context) {
 		return
 	}
 
-	// Extraer userID desde contexto (ejemplo)
-	userID := c.GetString("userID")
+	userID := c.GetString("userId") // viene del middleware JWT
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
 		return
@@ -55,18 +54,29 @@ func (cc *ChatController) StartChat(c *gin.Context) {
 		return
 	}
 
-	chat, err := cc.Service.StartChat(c.Request.Context(), req.Me, req.Other, req.PostID)
+	me := c.GetString("userId") // usuario autenticado
+	if me == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
+		return
+	}
+
+	chat, err := cc.Service.StartChat(c.Request.Context(), me, req.ReceiverID, req.PostID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.FromChatModel(chat))
+	c.JSON(http.StatusOK, dto.ToChatResponse(&chat))
 }
 
-// ListChats devuelve los chats de un usuario
+// ListChats devuelve los chats del usuario autenticado
 func (cc *ChatController) ListChats(c *gin.Context) {
-	userID := c.Query("userId")
+	userID := c.GetString("userId") // ahora solo JWT, no query
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
+		return
+	}
+
 	limitStr := c.DefaultQuery("limit", "20")
 	limit, _ := strconv.ParseInt(limitStr, 10, 64)
 
@@ -76,9 +86,9 @@ func (cc *ChatController) ListChats(c *gin.Context) {
 		return
 	}
 
-	var res []dto.ChatDTO
+	var res []dto.ChatResponse
 	for _, ch := range chats {
-		res = append(res, dto.FromChatModel(ch))
+		res = append(res, dto.ToChatResponse(&ch))
 	}
 
 	c.JSON(http.StatusOK, res)
@@ -96,9 +106,9 @@ func (cc *ChatController) ListMessages(c *gin.Context) {
 		return
 	}
 
-	var res []dto.MessageDTO
+	var res []dto.MessageResponse
 	for _, m := range msgs {
-		res = append(res, dto.FromMessageModel(m))
+		res = append(res, dto.ToMessageResponse(&m))
 	}
 
 	c.JSON(http.StatusOK, res)
@@ -112,16 +122,27 @@ func (cc *ChatController) SendMessageHTTP(c *gin.Context) {
 		return
 	}
 
-	msg, err := cc.Service.SendMessage(c.Request.Context(), req.ChatID, req.SenderID, req.Content)
+	senderID := c.GetString("userId") // tomado del JWT
+	if senderID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
+		return
+	}
+
+	msg, err := cc.Service.SendMessage(c.Request.Context(), senderID, dto.WSMessage{
+		ChatID:     req.ChatID,
+		ReceiverID: req.Receiver,
+		PostID:     req.PostID,
+		Content:    req.Content,
+	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.FromMessageModel(msg))
+	c.JSON(http.StatusOK, dto.ToMessageResponse(&msg))
 }
 
-// MarkRead marca un chat como leído para un usuario
+// MarkRead marca un chat como leído para el usuario autenticado
 func (cc *ChatController) MarkRead(c *gin.Context) {
 	var req dto.MarkReadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -129,7 +150,13 @@ func (cc *ChatController) MarkRead(c *gin.Context) {
 		return
 	}
 
-	if err := cc.Service.MarkRead(c.Request.Context(), req.ChatID, req.UserID); err != nil {
+	userID := c.GetString("userId") // autenticado
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
+		return
+	}
+
+	if err := cc.Service.MarkRead(c.Request.Context(), req.ChatID, userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

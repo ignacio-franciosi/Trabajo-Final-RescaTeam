@@ -22,18 +22,20 @@ func NewChatService(r Repository, h *Hub, pc *push.PushClient) *ChatService {
 	return &ChatService{repo: r, hub: h, pushClient: pc}
 }
 
-func (s *ChatService) StartChat(ctx context.Context, me, receiverID, postID string) (model.Chat, error) {
-	if me == receiverID {
+// StartChat: crea o busca un chat único por (me, other, postId)
+func (s *ChatService) StartChat(ctx context.Context, me, other, postID string) (model.Chat, error) {
+	if me == other {
 		return model.Chat{}, errors.New("no puedes iniciar chat contigo mismo")
 	}
-	return s.repo.FindOrCreateChat(ctx, me, receiverID, postID)
+	return s.repo.FindOrCreateChat(ctx, me, other, postID)
 }
 
+// SendMessage: guarda mensaje y lo distribuye por WS/Push
 func (s *ChatService) SendMessage(ctx context.Context, senderID string, in dto.WSMessage) (model.Message, error) {
-	// 1) Resolver chat
 	var chat model.Chat
 	var err error
 
+	// Resolver el chat
 	if in.ChatID == "" && in.ReceiverID != "" && in.PostID != "" {
 		chat, err = s.repo.FindOrCreateChat(ctx, senderID, in.ReceiverID, in.PostID)
 		if err != nil {
@@ -48,18 +50,18 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID string, in dto.W
 		return model.Message{}, errors.New("faltan datos: chatId o (receiverId + postId)")
 	}
 
-	// 2) Validar que el usuario sea participante del chat
+	// Validar que el remitente pertenezca al chat
 	if !s.hub.IsUserInChat(senderID, chat) {
-		return model.Message{}, errors.New("no tienes permiso para enviar mensajes en este chat")
+		return model.Message{}, errors.New("no tienes permiso en este chat")
 	}
 
-	// 3) Validar contenido
+	// Validar contenido
 	content := strings.TrimSpace(in.Content)
 	if content == "" {
 		return model.Message{}, errors.New("contenido vacío")
 	}
 
-	// 4) Crear y guardar mensaje
+	// Crear y persistir mensaje
 	msg := model.Message{
 		ID:        primitive.NewObjectID(),
 		ChatID:    chat.ID,
@@ -73,7 +75,7 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID string, in dto.W
 		return model.Message{}, err
 	}
 
-	// 5) Determinar receptor y notificar por WS
+	// Determinar receptor
 	var receiver string
 	if chat.Participants[0] == senderID {
 		receiver = chat.Participants[1]
@@ -81,15 +83,16 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID string, in dto.W
 		receiver = chat.Participants[0]
 	}
 
+	// Notificar por WS
 	out := dto.WSOutgoing{
 		Type:    "message",
 		Payload: dto.ToMessageResponse(&saved),
 	}
 	s.hub.SendToUser(receiver, out)
 
-	// 6) Si receptor NO está conectado, fallback push
+	// Fallback Push si receptor no está conectado
 	if !s.hub.HasConnections(receiver) {
-		_ = s.pushClient.SendPush(receiver,
+		s.pushClient.SendPush(receiver,
 			"Nuevo mensaje",
 			saved.Content,
 			saved.ChatID.Hex(),
@@ -130,4 +133,9 @@ func (s *ChatService) SavePushSubscription(ctx context.Context, userID string, i
 		CreatedAt: time.Now(),
 	}
 	return s.repo.SaveSubscription(ctx, sub)
+}
+
+// Devuelve la instancia de PushClient
+func (s *ChatService) GetPushClient() *push.PushClient {
+	return s.pushClient
 }

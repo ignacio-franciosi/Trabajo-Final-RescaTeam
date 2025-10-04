@@ -1,0 +1,68 @@
+package utils
+
+import (
+	"net/http"
+	"os"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
+)
+
+// JWT genera un middleware que valida tokens usando la misma secret key que AUTH
+func JWT(secret string) gin.HandlerFunc {
+	if secret == "" {
+		secret = os.Getenv("JWT_SECRET")
+		if secret == "" {
+			panic("JWT_SECRET no configurada")
+		}
+	}
+
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token faltante"})
+			return
+		}
+
+		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+
+		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, jwt.ErrSignatureInvalid
+			}
+			return []byte(secret), nil
+		})
+
+		if err != nil || !token.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token no válido"})
+			return
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token inválido"})
+			return
+		}
+
+		// Extraer el campo id_user (según AUTH)
+		if idVal, ok := claims["id_user"]; ok {
+			switch v := idVal.(type) {
+			case float64:
+				c.Set("userId", int(v))
+			case int:
+				c.Set("userId", v)
+			case string:
+				c.Set("userId", v)
+			default:
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "tipo de id_user inválido"})
+				return
+			}
+		} else {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token sin id_user"})
+			return
+		}
+
+		c.Next()
+	}
+}

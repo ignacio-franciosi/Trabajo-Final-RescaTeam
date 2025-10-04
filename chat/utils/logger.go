@@ -1,11 +1,8 @@
 package utils
 
-import "log"
+import (
+	"log"
+	"os"
+)
 
-func LogInfo(msg string) {
-	log.Printf("ℹ️ %s\n", msg)
-}
-
-func LogError(msg string) {
-	log.Printf("❌ %s\n", msg)
-}
+var Logger = log.New(os.Stdout, "[ChatAPI] ", log.LstdFlags|log.Lshortfile)

@@ -59,6 +59,6 @@ func EnsureIndexes(database *mongo.Database) error {
 		return err
 	}
 
-	log.Println("✅ Índices creados en MongoDB (chats, messages, push_subscriptions)")
+	log.Println("Índices creados en MongoDB (chats, messages, push_subscriptions)")
 	return nil
 }
