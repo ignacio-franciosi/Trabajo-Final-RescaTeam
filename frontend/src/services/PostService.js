@@ -187,7 +187,7 @@ export const getFilteredPosts = async (filters) => {
     if (filters.sexo || filters.sex) queryParams.append('sex', filters.sexo || filters.sex);
     if (filters.castrado || filters.neutered) queryParams.append('neutered', filters.castrado || filters.neutered);
     if (filters.vacunas || filters.completeVaccines) queryParams.append('completeVaccines', filters.vacunas || filters.completeVaccines);
-    if (filters.zona || filters.zone) queryParams.append('zone', (filters.zona || filters.zone).replace(/\s/g, '%'));
+  if (filters.zona || filters.zone) queryParams.append('zone', (filters.zona || filters.zone));
     // Filtros adicionales soportados por el backend
     if (filters.healthStatus || filters.estadoSalud) queryParams.append('healthStatus', filters.healthStatus || filters.estadoSalud);
     if (filters.collarColor || filters.colorCollar) queryParams.append('collarColor', filters.collarColor || filters.colorCollar);

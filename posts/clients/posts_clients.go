@@ -159,7 +159,8 @@ func (c *postClient) GetFilteredPosts(filters map[string]string) ([]model.Post, 
 	for key, value := range filters {
 		switch key {
 		case "species", "size", "sex", "zone", "postType", "healthStatus", "collarColor", "breed":
-			filter[key] = value
+			// Case-insensitive regex match
+			filter[key] = bson.M{"$regex": value, "$options": "i"}
 
 		case "neutered", "completeVaccines":
 			filter[key] = (value == "true")
@@ -305,14 +306,14 @@ func (c *postClient) DeleteAllImagesByPostId(postId string) error {
 }
 
 func (c *postClient) DeleteAllPostsByUserId(userId int) error {
-	collection:= db.PostsCollection
-	_, err := collection.DeleteMany(context.Background(),bson.M{"userId": userId})
+	collection := db.PostsCollection
+	_, err := collection.DeleteMany(context.Background(), bson.M{"userId": userId})
 	return err
 }
 
 func (c *postClient) DeleteAllImagesByUserId(userId int) error {
-	collection:= db.ImagesCollection
-	_, err := collection.DeleteMany(context.Background(),bson.M{"userId": userId})
+	collection := db.ImagesCollection
+	_, err := collection.DeleteMany(context.Background(), bson.M{"userId": userId})
 	return err
 }
 

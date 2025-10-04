@@ -9,7 +9,7 @@ const AdoptionPage = () => {
         setFilters(prev => ({ ...prev, ...updated, postType: 'adoption' }));
     };
 
-    
+
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -20,11 +20,11 @@ const AdoptionPage = () => {
                 </p>
             </div>
 
-            
+
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="md:col-span-1">
-                    <FilterPanel onFilterChange={handleFilterChange} />
+                    <FilterPanel onFilterChange={handleFilterChange} postType="adoption" />
                 </div>
                 <div className="md:col-span-3">
                     <PetList filters={filters} />

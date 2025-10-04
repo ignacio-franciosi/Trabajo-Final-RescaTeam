@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import ZoneSelect from './ZoneSelect';
 
-const FilterPanel = ({ onFilterChange }) => {
+// postType se recibe para decidir qué filtros mostrar.
+// Mapeo de nombres internos -> backend ya manejado en PostService (especie/species, etc.)
+const FilterPanel = ({ onFilterChange, postType }) => {
   const [filters, setFilters] = useState({
     especie: '',
     edad: '',
@@ -8,7 +11,10 @@ const FilterPanel = ({ onFilterChange }) => {
     sexo: '',
     castrado: '',
     vacunas: '',
-    zona: ''
+    zona: '',
+    raza: '',
+    estadoSalud: '',
+    colorCollar: ''
   });
 
   const handleChange = (e) => {
@@ -28,7 +34,10 @@ const FilterPanel = ({ onFilterChange }) => {
       sexo: '',
       castrado: '',
       vacunas: '',
-      zona: ''
+      zona: '',
+      raza: '',
+      estadoSalud: '',
+      colorCollar: ''
     };
     setFilters(emptyFilters);
     onFilterChange(emptyFilters);
@@ -46,15 +55,21 @@ const FilterPanel = ({ onFilterChange }) => {
         </select>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Edad</label>
-        <select name="edad" value={filters.edad} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
-          <option value="">Cualquiera</option>
-          <option value="0-1">0-1 año</option>
-          <option value="2-3">2-3 años</option>
-          <option value="4-7">4-7 años</option>
-          <option value="8+">8+ años</option>
-        </select>
+        <label className="block text-sm font-medium text-gray-700">Raza</label>
+        <input name="raza" value={filters.raza} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Opcional" />
       </div>
+      {postType === 'adoption' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Edad</label>
+          <select name="edad" value={filters.edad} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
+            <option value="">Cualquiera</option>
+            <option value="0-1">0-1 año</option>
+            <option value="2-3">2-3 años</option>
+            <option value="4-7">4-7 años</option>
+            <option value="8plus">8+ años</option>
+          </select>
+        </div>
+      )}
       <div>
         <label className="block text-sm font-medium text-gray-700">Tamaño</label>
         <select name="tamaño" value={filters.tamaño} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
@@ -72,30 +87,43 @@ const FilterPanel = ({ onFilterChange }) => {
           <option value="hembra">Hembra</option>
         </select>
       </div>
+      {postType === 'adoption' && (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Castrado</label>
+            <select name="castrado" value={filters.castrado} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
+              <option value="">Cualquiera</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Vacunas completas</label>
+            <select name="vacunas" value={filters.vacunas} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
+              <option value="">Cualquiera</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+        </>
+      )}
+      {postType !== 'adoption' && (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Estado de salud</label>
+            <input name="estadoSalud" value={filters.estadoSalud} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Ej: herido" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Color del collar</label>
+            <input name="colorCollar" value={filters.colorCollar} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Opcional" />
+          </div>
+        </>
+      )}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Castrado</label>
-        <select name="castrado" value={filters.castrado} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
-          <option value="">Cualquiera</option>
-          <option value="true">Sí</option>
-          <option value="false">No</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Vacunas completas</label>
-        <select name="vacunas" value={filters.vacunas} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
-          <option value="">Cualquiera</option>
-          <option value="true">Sí</option>
-          <option value="false">No</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Zona</label>
-        <input
-          type="text"
-          name="zona"
+        <ZoneSelect
+          label="Zona"
           value={filters.zona}
-          onChange={handleChange}
-          className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+          onChange={(val) => setFilters(prev => ({ ...prev, zona: val }))}
         />
       </div>
       <div className="flex space-x-2">

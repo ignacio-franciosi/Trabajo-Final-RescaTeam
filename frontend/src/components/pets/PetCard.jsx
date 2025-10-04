@@ -20,12 +20,24 @@ const PetCard = ({ pet }) => {
           src={pet.foto || '/no-image.png'}
           alt={pet.name || 'Mascota'}
           className="absolute inset-0 w-full h-full object-cover"
-          onError={(e)=>{ e.target.src='/no-image.png'; e.target.className='absolute inset-0 w-full h-full object-contain p-2'; }}
+          onError={(e) => { e.target.src = '/no-image.png'; e.target.className = 'absolute inset-0 w-full h-full object-contain p-2'; }}
         />
       </div>
       <div className="p-4">
         <h3 className="font-bold text-lg">{pet.name || 'Sin nombre'}</h3>
-        <p className="text-gray-600">{pet.age} años - {pet.species?.charAt(0).toUpperCase() + pet.species?.slice(1).toLowerCase()}</p>
+        {(() => {
+          const parts = [];
+          const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '');
+          if (pet.postType === 'adoption') {
+            if (pet.age !== undefined && pet.age !== null && pet.age !== '') parts.push(`${pet.age} años`);
+            if (pet.sex) parts.push(cap(pet.sex));
+            if (pet.species) parts.push(cap(pet.species));
+          } else { // lost / found u otros
+            if (pet.sex) parts.push(cap(pet.sex));
+            if (pet.species) parts.push(cap(pet.species));
+          }
+          return <p className="text-gray-600">{parts.join(' • ')}</p>;
+        })()}
         <p className="text-gray-500 text-sm">{pet.zone}</p>
       </div>
     </div>
