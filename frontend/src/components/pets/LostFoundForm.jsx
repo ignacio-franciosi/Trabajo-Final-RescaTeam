@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPost } from '../../services/PostService';
+import ZoneSelect from './ZoneSelect';
 
 // Formulario reutilizable para Perdidos y Encontrados
 // Prop: type = 'lost' | 'found'
@@ -132,9 +133,16 @@ const LostFoundForm = ({ type }) => {
                         {errors.sex && <p className="text-xs text-red-500">{errors.sex}</p>}
                     </div>
                     <div>
-                        <label className="text-sm font-medium">Zona <span className="text-red-500">*</span></label>
-                        <input name="zone" value={formData.zone} onChange={handleChange} className={inputClass('zone')} />
-                        {errors.zone && <p className="text-xs text-red-500">{errors.zone}</p>}
+                        <ZoneSelect
+                            label="Zona"
+                            required
+                            value={formData.zone}
+                            onChange={(val) => {
+                                setFormData(prev => ({ ...prev, zone: val }));
+                                if (errors.zone) setErrors(prev => { const c = { ...prev }; delete c.zone; return c; });
+                            }}
+                        />
+                        {errors.zone && <p className="text-xs text-red-500 mt-1">{errors.zone}</p>}
                     </div>
                     <div>
                         <label className="text-sm font-medium">Estado de salud <span className="text-red-500">*</span></label>
