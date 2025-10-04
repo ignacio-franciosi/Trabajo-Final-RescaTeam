@@ -16,8 +16,8 @@ type Client struct {
 	conn    *websocket.Conn
 	service *ChatService
 
-	send chan []byte // canal de salida para enviar mensajes al WS
-	user string      // userID del usuario conectado
+	send   chan []byte // canal de salida para enviar mensajes al WS
+	UserID string      // userID del usuario conectado
 }
 
 // NewClient crea un nuevo cliente WebSocket
@@ -33,7 +33,7 @@ func NewClient(hub *Hub, conn *websocket.Conn, svc *ChatService) *Client {
 // ReadPump escucha mensajes entrantes desde el WebSocket
 func (c *Client) ReadPump() {
 	defer func() {
-		c.hub.RemoveConnection(c.user, c)
+		c.hub.RemoveConnection(c.UserID, c)
 		c.conn.Close()
 	}()
 
@@ -53,7 +53,7 @@ func (c *Client) ReadPump() {
 		// Procesar mensaje entrante → enviar por ChatService
 		saved, err := c.service.SendMessage(
 			context.Background(), // usamos un contexto base
-			c.user,
+			c.UserID,
 			incoming,
 		)
 		if err != nil {

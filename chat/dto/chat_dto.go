@@ -11,8 +11,8 @@ import (
 
 // StartChatRequest: datos mínimos para iniciar un chat
 type StartChatRequest struct {
-	Other  string `json:"other" binding:"required"`
-	PostID string `json:"postId" binding:"required"`
+	ReceiverID string `json:"receiverId" binding:"required"`
+	PostID     string `json:"postId" binding:"required"`
 }
 
 // SendMessageRequest: enviar mensaje por HTTP (fallback)
@@ -41,6 +41,10 @@ type MessageResponse struct {
 	Content   string    `json:"content"`
 	Timestamp time.Time `json:"timestamp"`
 	Viewed    bool      `json:"viewed"`
+}
+
+type MarkReadRequest struct {
+	ChatID string `json:"chatId" binding:"required"`
 }
 
 // ---------- MAPPERS ----------

@@ -17,7 +17,11 @@ func Bootstrap() *gin.Engine {
 
 	// 2. Conexión a MongoDB
 	client, database := db.MustConnectMongo()
-	defer client.Disconnect(context.Background())
+	defer func() {
+		if err := client.Disconnect(context.Background()); err != nil {
+			log.Printf("Error cerrando conexión MongoDB: %v", err)
+		}
+	}()
 
 	// 3. Crear índices
 	if err := db.EnsureIndexes(database); err != nil {
@@ -27,28 +31,32 @@ func Bootstrap() *gin.Engine {
 	// 4. Repositorio Mongo
 	repo := services.NewMongoRepository(database)
 
-	// 5. PushClient con VAPID
+	// 5. PushClient con claves VAPID
 	vapidPub := os.Getenv("VAPID_PUBLIC_KEY")
 	vapidPriv := os.Getenv("VAPID_PRIVATE_KEY")
 	if vapidPub == "" || vapidPriv == "" {
 		log.Fatal("Faltan VAPID_PUBLIC_KEY y/o VAPID_PRIVATE_KEY en el .env")
 	}
-	pushClient := push.NewPushClient(vapidPub, vapidPriv, repo)
+	pushClient := push.NewPushClient(vapidPub, vapidPriv)
 
-	// 6. ChatService
-	chatService := services.NewChatService(repo, pushClient)
-
-	// 7. Hub (WebSockets)
+	// 6. Hub (maneja conexiones WebSocket)
 	hub := services.NewHub()
-	go hub.Run()
 
-	// 8. Router y rutas
+	// 7. ChatService (inyectamos repo, hub, pushClient)
+	chatService := services.NewChatService(repo, hub, pushClient)
+
+	// 8. Router principal
 	router := SetupRouter()
+
+	// 9. JWT Secret (debe coincidir con el microservicio AUTH)
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
-		jwtSecret = "changeme"
+		log.Fatal("Falta JWT_SECRET en el .env")
 	}
-	RegisterRoutes(router, chatService, hub, jwtSecret)
 
+	// 10. Registrar rutas
+	RegisterRoutes(router, database, chatService, hub, jwtSecret)
+
+	log.Println("[Chat] Microservicio iniciado correctamente")
 	return router
 }

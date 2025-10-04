@@ -134,3 +134,8 @@ func (s *ChatService) SavePushSubscription(ctx context.Context, userID string, i
 	}
 	return s.repo.SaveSubscription(ctx, sub)
 }
+
+// Devuelve la instancia de PushClient
+func (s *ChatService) GetPushClient() *push.PushClient {
+	return s.pushClient
+}
