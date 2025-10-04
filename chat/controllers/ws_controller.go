@@ -3,6 +3,7 @@ package controllers
 import (
 	"chat/dto"
 	"chat/services"
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,12 +17,12 @@ type WSController struct {
 }
 
 func NewWSController(hub *services.Hub, svc *services.ChatService, jwtSecret string) *WSController {
-	return &WSController{hub: hub, service: svc, jwtSecret: jwtSecret}
+	return &WSController{hub: hub, Service: svc, jwtSecret: jwtSecret}
 }
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		return true // ⚠️ ajustar en prod
+		return true // ⚠️ En producción ajustar
 	},
 }
 
@@ -33,14 +34,23 @@ func (wsc *WSController) Upgrade(c *gin.Context) {
 		return
 	}
 
-	client := services.NewClient(wsc.hub, conn, wsc.service)
-	wsc.hub.Register <- client
+	// userID desde JWT
+	userID := c.GetString("userId")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
+		conn.Close()
+		return
+	}
+
+	client := services.NewClient(wsc.hub, conn, wsc.Service)
+	client.UserID = userID
+	wsc.hub.AddConnection(userID, client)
 
 	go client.ReadPump()
 	go client.WritePump()
 }
 
-// HandleWebSocket abre la conexión WebSocket y procesa mensajes en tiempo real
+// HandleWebSocket procesa mensajes en tiempo real (fallback básico)
 func (wsc *WSController) HandleWebSocket(c *gin.Context) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -49,19 +59,35 @@ func (wsc *WSController) HandleWebSocket(c *gin.Context) {
 	}
 	defer conn.Close()
 
+	userID := c.GetString("userId")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
+		return
+	}
+
 	for {
 		var req dto.SendMessageRequest
 		if err := conn.ReadJSON(&req); err != nil {
 			break
 		}
 
-		msg, err := wsc.Service.SendMessage(c.Request.Context(), req.ChatID, req.SenderID, req.Content)
+		// Construir WSMessage
+		msg, err := wsc.Service.SendMessage(
+			context.Background(),
+			userID,
+			dto.WSMessage{
+				ChatID:     req.ChatID,
+				ReceiverID: req.Receiver, // en el DTO podés tenerlo
+				PostID:     req.PostID,
+				Content:    req.Content,
+			},
+		)
 		if err != nil {
 			conn.WriteJSON(gin.H{"error": err.Error()})
 			continue
 		}
 
 		// Responder mensaje confirmado
-		_ = conn.WriteJSON(dto.FromMessageModel(msg))
+		_ = conn.WriteJSON(dto.ToMessageResponse(&msg))
 	}
 }

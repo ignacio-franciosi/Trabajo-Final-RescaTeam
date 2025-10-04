@@ -7,18 +7,24 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// ---------- REQUESTS ----------
+
+// StartChatRequest: datos mínimos para iniciar un chat
 type StartChatRequest struct {
-	ReceiverID string `json:"receiverId" binding:"required"`
-	PostID     string `json:"postId" binding:"required"`
+	Other  string `json:"other" binding:"required"`
+	PostID string `json:"postId" binding:"required"`
 }
 
+// SendMessageRequest: enviar mensaje por HTTP (fallback)
 type SendMessageRequest struct {
-	Content string `json:"content" binding:"required,min=1,max=2000"`
+	ChatID   string `json:"chatId,omitempty"`
+	Receiver string `json:"receiverId,omitempty"`
+	PostID   string `json:"postId,omitempty"`
+	Content  string `json:"content" binding:"required,min=1,max=2000"`
 }
 
-// ========== RESPONSES ==========
+// ---------- RESPONSES ----------
 
-// ChatResponse: lo que se devuelve al crear/listar chats
 type ChatResponse struct {
 	ChatID       string    `json:"chatId"`
 	Participants [2]string `json:"participants"`
@@ -28,7 +34,6 @@ type ChatResponse struct {
 	LastSenderID string    `json:"lastSenderId,omitempty"`
 }
 
-// MessageResponse: lo que se devuelve al enviar/recibir mensajes
 type MessageResponse struct {
 	MessageID string    `json:"messageId"`
 	ChatID    string    `json:"chatId"`
@@ -38,7 +43,7 @@ type MessageResponse struct {
 	Viewed    bool      `json:"viewed"`
 }
 
-// ========== MAPPERS ==========
+// ---------- MAPPERS ----------
 
 func ToChatResponse(chat *model.Chat) ChatResponse {
 	return ChatResponse{

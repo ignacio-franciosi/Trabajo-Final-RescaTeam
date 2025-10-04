@@ -34,12 +34,10 @@ func RegisterRoutes(r *gin.Engine, db *mongo.Database, svc *services.ChatService
 
 	// Rutas Push Notifications
 	pushRepo := repositories.NewPushRepository(db)
-	pushCtl := controllers.NewPushController(pushRepo)
+	pushCtl := controllers.NewPushController(pushRepo, svc.GetPushClient())
 
 	// Ruta pública: clave VAPID
-	r.GET("/push/public-key", func(c *gin.Context) {
-		c.JSON(200, gin.H{"publicKey": svc.PushClientPublicKey()})
-	})
+	r.GET("/push/public-key", pushCtl.PublicKey)
 
 	// Rutas protegidas: suscripción/unsub
 	grpPush := r.Group("/api/push", auth)
