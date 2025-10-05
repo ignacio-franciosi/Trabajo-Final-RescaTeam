@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import EditPetForm from '../components/pets/EditPetForm';
 import { getPostById, getImagesByPostId } from '../services/PostService';
+import EditAdoptionForm from '../components/pets/EditAdoptionForm';
+import EditLostFoundForm from '../components/pets/EditLostFoundForm';
 
 const EditPetPage = () => {
   const { id } = useParams();
@@ -38,7 +39,14 @@ const EditPetPage = () => {
   if (error) return <p className="text-center text-red-500">{error}</p>;
   if (!pet) return <p className="text-center">Mascota no encontrada</p>;
 
-  return <EditPetForm pet={pet} />;
+  // Selección dinámica del formulario según postType
+  if (pet.postType === 'adoption') {
+    return <EditAdoptionForm post={pet} />;
+  }
+  if (pet.postType === 'lost' || pet.postType === 'found') {
+    return <EditLostFoundForm post={pet} />;
+  }
+  return <p className="text-center">Tipo de publicación no soportado.</p>;
 };
 
 export default EditPetPage;
