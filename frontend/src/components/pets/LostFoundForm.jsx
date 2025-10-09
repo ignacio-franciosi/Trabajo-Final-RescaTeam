@@ -2,11 +2,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPost } from '../../services/PostService';
 import ZoneSelect from './ZoneSelect';
+import { useAuth } from '../../context/AuthContext';
+import SuspendedNotice from '../common/SuspendedNotice';
 
 // Formulario reutilizable para Perdidos y Encontrados
 // Prop: type = 'lost' | 'found'
 const LostFoundForm = ({ type }) => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    if (user?.suspended) {
+        return <SuspendedNotice />;
+    }
     const errorRef = useRef(null);
 
     const [formData, setFormData] = useState({

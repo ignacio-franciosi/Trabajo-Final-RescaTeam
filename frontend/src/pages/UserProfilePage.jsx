@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import UserProfile from '../components/profile/UserProfile';
+import SuspendedNotice from '../components/common/SuspendedNotice';
 import EditUserForm from '../components/profile/EditUserForm';
 import { useAuth } from '../context/AuthContext';
 import { getUserById, deleteUser, updateUser } from '../services/UserService';
@@ -26,18 +27,26 @@ const UserProfilePage = () => {
   }, [user]);
 
   const handleDelete = async () => {
-  if (window.confirm('¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.')) {
-    const res = await deleteUser(user.userId);
-    if (res.success) {
-      logout();          
-      navigate('/login');     
-    } else {
-      alert(res.message); 
+    if (user?.suspended) {
+      alert('Cuenta suspendida: no puedes eliminar la cuenta.');
+      return;
     }
-  }
-};
+    if (window.confirm('¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.')) {
+      const res = await deleteUser(user.userId);
+      if (res.success) {
+        logout();
+        navigate('/login');
+      } else {
+        alert(res.message);
+      }
+    }
+  };
 
   const handleEdit = () => {
+    if (user?.suspended) {
+      alert('Cuenta suspendida: no puedes editar el perfil.');
+      return;
+    }
     setEditing(true);
   };
 
@@ -51,7 +60,11 @@ const UserProfilePage = () => {
   };
 
   const handleChangePassword = () => {
-  navigate('/cambiar-contraseña');
+    if (user?.suspended) {
+      alert('Cuenta suspendida: no puedes cambiar la contraseña.');
+      return;
+    }
+    navigate('/cambiar-contraseña');
   };
 
 
@@ -65,12 +78,16 @@ const UserProfilePage = () => {
           onCancel={() => setEditing(false)}
         />
       ) : userData ? (
-        <UserProfile
-          user={userData}
-          onEdit={handleEdit}
-          onChangePassword={handleChangePassword}
-          onDelete={handleDelete}
-        />
+        <>
+          {user?.suspended && <SuspendedNotice small />}
+          <UserProfile
+            user={userData}
+            onEdit={handleEdit}
+            onChangePassword={handleChangePassword}
+            onDelete={handleDelete}
+            disabled={!!user?.suspended}
+          />
+        </>
       ) : (
         <p className="text-center">Cargando datos del usuario...</p>
       )}

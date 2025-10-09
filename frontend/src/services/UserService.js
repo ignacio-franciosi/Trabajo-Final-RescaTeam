@@ -85,3 +85,36 @@ export const resetPassword = async (token, data) => {
   }
 };
 
+export const suspendUser = async (id) => {
+  try {
+    const res = await api.patch(`/user/suspend/${id}`);
+    return { success: true, data: res.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.error || 'Error al suspender usuario'
+    };
+  }
+};
+
+export const reactivateUser = async (id) => {
+  try {
+    const res = await api.patch(`/user/reactivate/${id}`);
+    return { success: true, data: res.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.error || 'Error al reactivar usuario'
+    };
+  }
+};
+
+export const getSuspendedUsers = async () => {
+  try {
+    const res = await api.get('/user/suspended');
+    return { success: true, data: res.data };
+  } catch (error) {
+    return { success: false, message: error.response?.data?.error || 'Error al obtener usuarios suspendidos' };
+  }
+};
+

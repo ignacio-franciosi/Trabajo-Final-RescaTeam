@@ -1,11 +1,16 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/smtp"
+	"os"
 	"path/filepath"
 	"posts/services"
 	"strconv"
+	"strings"
 
 	"posts/dto"
 	authhelper "posts/utils/auth"
@@ -14,6 +19,9 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
+
+var smtpServer = "smtp.gmail.com"
+var smtpPort = "587"
 
 func InsertPost(c *gin.Context) {
 	authorized, userId, _ := authhelper.VerifyTokenAndAuthorize(c, true, true)
@@ -186,6 +194,68 @@ func DeletePost(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error interno al eliminar la publicación"})
 		return
+	}
+
+	// Si la acción la realizó un admin, enviamos un mail al owner informando la eliminación
+	if isAdmin {
+		// obtenemos datos del usuario desde users service (forward token para autorizar)
+		usersUrl := fmt.Sprintf("http://localhost:8080/user/%d", postDto.UserId)
+		req, _ := http.NewRequest("GET", usersUrl, nil)
+		if t := c.GetHeader("Authorization"); t != "" {
+			req.Header.Set("Authorization", t)
+		}
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Error("Error al obtener usuario para notificación: ", err)
+		} else {
+			defer resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				b, _ := io.ReadAll(resp.Body)
+				var userObj map[string]interface{}
+				if err := json.Unmarshal(b, &userObj); err == nil {
+					email, _ := userObj["email"].(string)
+					name, _ := userObj["name"].(string)
+					if email != "" {
+						// Use same SMTP defaults as users service: allow overriding MAIL_SMTP and MAIL_SMTP_PORT,
+						// but default to gmail settings when not provided. Read MAIL_USER and MAIL_PASS for auth.
+						// use package-level smtpServer and smtpPort (defaults set above)
+						from := os.Getenv("MAIL_USER")
+						pass := os.Getenv("MAIL_PASS")
+						subject := "Subject: RescaTeam - Publicación eliminada\n"
+						reason := "Violación de los términos de servicio"
+
+						// Construir descripción legible de la mascota (nombre, especie, sexo) si está disponible
+						var petParts []string
+						if postDto.Name != nil && *postDto.Name != "" {
+							petParts = append(petParts, fmt.Sprintf("Nombre: %s", *postDto.Name))
+						}
+						if postDto.Species != nil && *postDto.Species != "" {
+							petParts = append(petParts, fmt.Sprintf("Especie: %s", *postDto.Species))
+						}
+						if postDto.Sex != nil && *postDto.Sex != "" {
+							petParts = append(petParts, fmt.Sprintf("Sexo: %s", *postDto.Sex))
+						}
+						petInfo := ""
+						if len(petParts) > 0 {
+							petInfo = strings.Join(petParts, ", ")
+						} else {
+							// fallback al ID si no hay datos de la mascota
+							petInfo = fmt.Sprintf("ID: %s", id)
+						}
+
+						body := fmt.Sprintf("Hola %s,\n\nTu publicación (%s) ha sido eliminada por un administrador.\nMotivo: %s\n\nSi crees que esto es un error, contactáctanos por este medio.\n\nSaludos,\nEquipo de RescaTeam", name, petInfo, reason)
+						msg := []byte(subject + "\n" + body)
+						auth := smtp.PlainAuth("", from, pass, smtpServer)
+						if err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{email}, msg); err != nil {
+							log.Error("Error al enviar email de eliminación de post: ", err)
+						}
+					}
+				}
+			} else {
+				log.Error("Users service respondió con status no OK al obtener usuario: ", resp.Status)
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Publicación eliminada"})

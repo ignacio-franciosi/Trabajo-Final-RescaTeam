@@ -1,17 +1,33 @@
 import { FaFacebookF, FaInstagram, FaTwitter } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import logo from '../../assets/logo.png';
+import { useAuth } from '../../context/AuthContext';
 
 const Footer = () => {
+  const { user, token } = useAuth();
+  const navigate = useNavigate();
+
+  const handlePublishClick = (e) => {
+    if (user?.suspended) {
+      e.preventDefault();
+      alert('Tu cuenta está suspendida. No puedes publicar.');
+      return;
+    }
+    if (!token) {
+      e.preventDefault();
+      alert('Debes registrarte para realizar esta acción.');
+      navigate('/register');
+    }
+  };
   return (
     <footer className="bg-neutral-900 text-white w-full">
       {/* Contenedor principal sin márgenes superiores */}
       <div className="container mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Logo y eslogan */}
         <div className="space-y-3">
-          <img 
-            src={logo} 
-            alt="RescaTeam Logo" 
+          <img
+            src={logo}
+            alt="RescaTeam Logo"
             className="h-24 w-auto object-contain"
           />
           <p className="text-sm font-light text-gray-300">
@@ -29,9 +45,22 @@ const Footer = () => {
               </Link>
             </li>
             <li>
-              <Link to="/publicar" className="hover:underline hover:text-rose-600 transition-colors">
-                Publicar Mascota
-              </Link>
+              {user?.suspended ? (
+                <span
+                  className="opacity-40 cursor-not-allowed"
+                  title="Cuenta suspendida: no puedes publicar"
+                >
+                  Publicar Mascota
+                </span>
+              ) : (
+                <Link
+                  to="/publicar"
+                  onClick={handlePublishClick}
+                  className="hover:underline hover:text-rose-600 transition-colors"
+                >
+                  Publicar Mascota
+                </Link>
+              )}
             </li>
             <li>
               <Link to="/login" className="hover:underline hover:text-rose-600 transition-colors">
@@ -60,16 +89,16 @@ const Footer = () => {
         <div>
           <h4 className="font-bold text-lg mb-3 text-blue-500">Seguinos</h4>
           <div className="flex space-x-4 text-white text-xl">
-            <a href="https://facebook.com" target="_blank" rel="noreferrer" 
-               className="hover:text-blue-400 transition-colors">
+            <a href="https://facebook.com" target="_blank" rel="noreferrer"
+              className="hover:text-blue-400 transition-colors">
               <FaFacebookF />
             </a>
-            <a href="https://instagram.com" target="_blank" rel="noreferrer" 
-               className="hover:text-pink-400 transition-colors">
+            <a href="https://instagram.com" target="_blank" rel="noreferrer"
+              className="hover:text-pink-400 transition-colors">
               <FaInstagram />
             </a>
-            <a href="https://twitter.com" target="_blank" rel="noreferrer" 
-               className="hover:text-cyan-400 transition-colors">
+            <a href="https://twitter.com" target="_blank" rel="noreferrer"
+              className="hover:text-cyan-400 transition-colors">
               <FaTwitter />
             </a>
           </div>

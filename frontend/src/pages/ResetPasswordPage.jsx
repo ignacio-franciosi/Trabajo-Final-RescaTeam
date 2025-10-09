@@ -63,7 +63,7 @@ const ResetPasswordPage = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md mt-10">
+    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md mt-24 mb-24">
       <h2 className="text-2xl font-bold mb-6 text-center">Restablecer Contraseña</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input

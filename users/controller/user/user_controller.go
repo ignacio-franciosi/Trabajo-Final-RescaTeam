@@ -300,3 +300,16 @@ func ReactivateUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, userDto)
 }
+
+func GetAllSuspendedUsers(c *gin.Context) {
+	// Solo admin
+	if !authhelper.VerifyTokenAndAuthorize(c, true, true, 0) {
+		return
+	}
+	usersDto, err := service.UserService.GetAllSuspendedUsers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, usersDto)
+}

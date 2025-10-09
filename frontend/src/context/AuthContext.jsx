@@ -11,15 +11,19 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null); // objeto con id, userType, etc.
   const [token, setToken] = useState(null);
+  const [initialized, setInitialized] = useState(false);
 
   // Cargar desde localStorage
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    const savedUser = localStorage.getItem("user");
-
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+    try {
+      const savedToken = localStorage.getItem("token");
+      const savedUser = localStorage.getItem("user");
+      if (savedToken && savedUser) {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      }
+    } finally {
+      setInitialized(true);
     }
   }, []);
 
@@ -52,7 +56,7 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: error.response?.data?.message || "Error al registrarse." };
     }
   };
-  
+
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -60,8 +64,20 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Permite actualizar token y user desde otras partes de la app
+  const setAuth = (newToken, newUser) => {
+    if (newToken) {
+      localStorage.setItem("token", newToken);
+      setToken(newToken);
+    }
+    if (newUser) {
+      localStorage.setItem("user", JSON.stringify(newUser));
+      setUser(newUser);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, register }}>
+    <AuthContext.Provider value={{ user, token, login, logout, register, initialized, setAuth }}>
       {children}
     </AuthContext.Provider>
   );

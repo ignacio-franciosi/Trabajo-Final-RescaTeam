@@ -9,8 +9,7 @@ const RegisterForm = () => {
     apellido: '',
     dni: '',
     email: '',
-    password: '',
-    telefono: ''
+    password: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -19,7 +18,7 @@ const RegisterForm = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const requiredFields = ['nombre', 'apellido', 'dni', 'email', 'password', 'telefono'];
+  const requiredFields = ['nombre', 'apellido', 'dni', 'email', 'password'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -54,7 +53,7 @@ const RegisterForm = () => {
         dni: parseInt(formData.dni),
         email: formData.email,
         password: formData.password,
-        phone: formData.telefono,
+        // phone eliminado
         type: false,
         suspended: false
       };
@@ -76,13 +75,13 @@ const RegisterForm = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md mt-24 mb-24">
       <h2 className="text-2xl font-bold mb-6 text-center">Registrarse</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {requiredFields.map((field) => (
           <div key={field}>
             <label className="block text-sm font-medium text-gray-700 capitalize">
-              {field === 'telefono' ? 'Teléfono' : field}
+              {field}
             </label>
             <input
               type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}

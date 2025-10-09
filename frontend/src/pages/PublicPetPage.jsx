@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import SuspendedNotice from '../components/common/SuspendedNotice';
 
 const cards = [
   {
@@ -24,6 +26,14 @@ const cards = [
 
 const PublicPetPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  if (user?.suspended) {
+    return (
+      <div className="min-h-screen py-12 px-4 bg-stone-200">
+        <SuspendedNotice />
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen py-12 px-4 bg-stone-200">
       <div className="max-w-5xl mx-auto">

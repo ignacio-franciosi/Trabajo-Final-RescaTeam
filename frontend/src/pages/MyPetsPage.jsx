@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import SuspendedNotice from '../components/common/SuspendedNotice';
 import {
   getPostsByUserId,
   getImagesByPostId,
@@ -116,8 +117,10 @@ const MyPetsPage = () => {
 
   return (
     <>
+      {user?.suspended && <SuspendedNotice small />}
       <MyPets
         pets={pets}
+        disabled={!!user?.suspended}
         onEdit={(pet) => (window.location.href = `/editar-publicacion/${pet.postId}`)}
         onDelete={handleDeleteClick}
         onMarkAdopted={handleMarkAdoptedClick}
@@ -135,7 +138,7 @@ const MyPetsPage = () => {
       />
 
       <ConfirmResolvedModal
-  isOpen={modalAction === 'resolve' && showModal}
+        isOpen={modalAction === 'resolve' && showModal}
         onCancel={() => setShowModal(false)}
         onConfirm={handleConfirmAction}
       />

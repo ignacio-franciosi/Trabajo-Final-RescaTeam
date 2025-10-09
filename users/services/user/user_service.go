@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
-	"golang.org/x/crypto/bcrypt"
 	"net/smtp"
 	"os"
 	"regexp"
@@ -14,6 +12,9 @@ import (
 	dto "users/dto"
 	"users/model"
 	"users/utils/queue"
+
+	"github.com/golang-jwt/jwt/v4"
+	"golang.org/x/crypto/bcrypt"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -35,6 +36,7 @@ type userServiceInterface interface {
 	SendSuspensionNotificationEmail(userId int, reason string) error
 	SendReactivationNotificationEmail(userId int) error
 	SendAccountDeletionEmailWithUserData(user model.User, admin model.User) error
+	GetAllSuspendedUsers() (dto.UsersDto, error)
 }
 
 var (
@@ -461,7 +463,6 @@ func (s *userService) ReactivateUser(userId int) (dto.TokenDto, error) {
 	return tokenDto, nil
 }
 
-
 func (s *userService) SendSuspensionNotificationEmail(userId int, reason string) error {
 	user := userClient.UserClient.GetUserById(userId)
 	if user.UserId == 0 {
@@ -528,4 +529,25 @@ func (s *userService) SendAccountDeletionEmailWithUserData(user model.User, admi
 
 	log.Printf("Email de eliminación de cuenta enviado a %s por acción del admin %s", user.Email, admin.Email)
 	return nil
+}
+
+func (s *userService) GetAllSuspendedUsers() (dto.UsersDto, error) {
+	var usersDto dto.UsersDto
+	users, err := userClient.UserClient.GetAllSuspendedUsers()
+	if err != nil {
+		return usersDto, err
+	}
+	for _, u := range users {
+		usersDto = append(usersDto, dto.UserDto{
+			UserId:    u.UserId,
+			Name:      u.Name,
+			Surname:   u.Surname,
+			Dni:       u.Dni,
+			Email:     u.Email,
+			Password:  u.Password,
+			Type:      u.Type,
+			Suspended: u.Suspended,
+		})
+	}
+	return usersDto, nil
 }

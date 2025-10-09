@@ -2,10 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPost } from '../../services/PostService';
 import ZoneSelect from './ZoneSelect';
+import { useAuth } from '../../context/AuthContext';
+import SuspendedNotice from '../common/SuspendedNotice';
 
 // Formulario exclusivo para publicaciones de adopción
 const AdoptionForm = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    if (user?.suspended) {
+        return <SuspendedNotice />;
+    }
     const errorRef = useRef(null);
 
     const [formData, setFormData] = useState({

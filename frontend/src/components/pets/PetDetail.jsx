@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import ReportPostModal from '../reports/ReportPostModal';
 
 const PetDetail = ({ pet }) => {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ const PetDetail = ({ pet }) => {
   const [phone, setPhone] = useState('');
   const hasImages = pet.imagenes && pet.imagenes.length > 0;
   const location = useLocation();
+  const [reportOpen, setReportOpen] = useState(false);
 
   const handleVolver = () => {
     const origin = location.state?.origin;
@@ -19,10 +21,10 @@ const PetDetail = ({ pet }) => {
     const path = pet.postType === 'adoption'
       ? '/adopcion'
       : pet.postType === 'lost'
-      ? '/perdidos'
-      : pet.postType === 'found'
-      ? '/encontrados'
-      : '/';
+        ? '/perdidos'
+        : pet.postType === 'found'
+          ? '/encontrados'
+          : '/';
     navigate(path);
   };
 
@@ -139,9 +141,25 @@ const PetDetail = ({ pet }) => {
 
             <p className="text-sm text-gray-500">Descripción</p>
             <p className="whitespace-pre-line">{pet.description}</p>
+            {!user?.suspended && (
+              <div className="pt-4">
+                <button
+                  type="button"
+                  onClick={() => setReportOpen(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white text-sm px-5 py-2 rounded shadow"
+                >Reportar publicación</button>
+              </div>
+            )}
           </div>
         </div>
       </div>
+      <ReportPostModal
+        post={pet}
+        ownerUserId={pet.userId || pet.ownerId || pet.id_user}
+        isOpen={reportOpen}
+        onClose={() => setReportOpen(false)}
+        onSuccess={() => setReportOpen(false)}
+      />
     </div>
   );
 };

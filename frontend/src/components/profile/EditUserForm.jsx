@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 
 const EditUserForm = ({ initialData, onSave, onCancel }) => {
-  const [formData, setFormData] = useState({ 
+  const [formData, setFormData] = useState({
     //...initialData 
     name: initialData?.name || '',
     surname: initialData?.surname || '',
     dni: initialData?.dni || '',
-    email: initialData?.email || '',
-    phone: initialData?.phone || ''
+    email: initialData?.email || ''
   });
   const [error, setError] = useState('');
 
@@ -20,13 +19,13 @@ const EditUserForm = ({ initialData, onSave, onCancel }) => {
     e.preventDefault();
 
     const dataToSend = {
-        ...formData,
-        dni: parseInt(formData.dni),
+      ...formData,
+      dni: parseInt(formData.dni),
     };
 
     const res = await onSave(dataToSend);
     if (!res.success) {
-        setError(res.message || 'Error al actualizar usuario');
+      setError(res.message || 'Error al actualizar usuario');
     }
   };
 
@@ -35,7 +34,7 @@ const EditUserForm = ({ initialData, onSave, onCancel }) => {
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-center">Editar Perfil</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {['name', 'surname', 'dni', 'email', 'phone'].map((field) => (
+        {['name', 'surname', 'dni', 'email'].map((field) => (
           <div key={field}>
             <label className="block text-sm font-medium text-gray-700 capitalize">{field}</label>
             <input

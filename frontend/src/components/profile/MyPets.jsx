@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import PetCard from '../pets/PetCard';
 
-const MyPets = ({ pets, onDelete, onMarkAdopted }) => {
+const MyPets = ({ pets, onDelete, onMarkAdopted, disabled = false }) => {
   const navigate = useNavigate();
 
   const handleEdit = (pet) => {
@@ -18,24 +18,30 @@ const MyPets = ({ pets, onDelete, onMarkAdopted }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {pets.map((pet, index) => (
             <div key={pet.postId || pet.id || index} className="border rounded-lg overflow-hidden">
-              <PetCard pet={pet} onClick={() => {}} />
+              <PetCard pet={pet} onClick={() => { }} />
               <div className="p-4 bg-gray-50 flex justify-around space-x-2">
                 <button
-                  onClick={() => handleEdit(pet)}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm hover:bg-yellow-600 transition-colors"
+                  onClick={() => !disabled && handleEdit(pet)}
+                  disabled={disabled}
+                  className={`flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm transition-colors ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-yellow-600'}`}
+                  title={disabled ? 'Cuenta suspendida' : ''}
                 >
                   Editar
                 </button>
                 <button
-                  onClick={() => onDelete(pet)}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm hover:bg-red-700 transition-colors"
+                  onClick={() => !disabled && onDelete(pet)}
+                  disabled={disabled}
+                  className={`flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm transition-colors ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-red-700'}`}
+                  title={disabled ? 'Cuenta suspendida' : ''}
                 >
                   Eliminar
                 </button>
                 {!pet.adopted && (
                   <button
-                    onClick={() => onMarkAdopted(pet)}
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm hover:bg-green-700 transition-colors"
+                    onClick={() => !disabled && onMarkAdopted(pet)}
+                    disabled={disabled}
+                    className={`flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm transition-colors ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-green-700'}`}
+                    title={disabled ? 'Cuenta suspendida' : ''}
                   >
                     Marcar Resuelto
                   </button>

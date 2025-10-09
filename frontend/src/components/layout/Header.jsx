@@ -83,12 +83,16 @@ const Header = () => {
   }, [token, user?.userId]);
 
   const handleProtectedAction = (action) => {
-    if (isLoggedIn) {
-      navigate(`/${action}`);
-    } else {
+    if (!isLoggedIn) {
       alert('Debes registrarte para realizar esta acción.');
       navigate('/register');
+      return;
     }
+    if (user?.suspended) {
+      alert('Tu cuenta está suspendida. No puedes realizar esta acción.');
+      return;
+    }
+    navigate(`/${action}`);
   };
 
   return (
@@ -118,7 +122,9 @@ const Header = () => {
           </button>
           <button
             onClick={() => handleProtectedAction('publicar')}
-            className="text-white hover:text-blue-600"
+            disabled={!!user?.suspended}
+            className={`text-white ${user?.suspended ? 'opacity-40 cursor-not-allowed' : 'hover:text-blue-600'}`}
+            title={user?.suspended ? 'Cuenta suspendida: no puedes publicar' : ''}
           >
             Publicar Mascota
           </button>

@@ -1,9 +1,10 @@
 package app
 
 import (
-	log "github.com/sirupsen/logrus"
 	reportController "users/controller/report"
 	userController "users/controller/user"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func mapUrls() {
@@ -27,10 +28,10 @@ func mapUrls() {
 	router.DELETE("/user/:id", userController.DeleteUser)
 
 	// can access: Only admin
-	router.PATCH("user/suspend/:id", userController.SuspendUser) //hace nuevo token con suspended true
-	router.PATCH("user/reactivate/:id", userController.ReactivateUser) //hace nuevo token con suspended false
+	router.PATCH("/user/suspend/:id", userController.SuspendUser)       //hace nuevo token con suspended true
+	router.PATCH("/user/reactivate/:id", userController.ReactivateUser) //hace nuevo token con suspended false
+    router.GET("/user/suspended", userController.GetAllSuspendedUsers)
 	//router.GET("/reports", userController.ViewReports)
-
 
 	/*
 	   Report Routes

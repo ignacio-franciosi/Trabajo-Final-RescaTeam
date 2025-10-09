@@ -19,6 +19,7 @@ type userClientInterface interface {
 	DeleteUser(user model.User) error
 	SuspendUser(userId int) (model.User, error)
 	ReactivateUser(userId int) (model.User, error)
+	GetAllSuspendedUsers() ([]model.User, error)
 }
 
 var UserClient userClientInterface
@@ -176,4 +177,14 @@ func (c *userClient) ReactivateUser(userId int) (model.User, error) {
 
 	log.Debug("Usuario reactivado exitosamente: ", userId)
 	return user, nil
+}
+
+func (c *userClient) GetAllSuspendedUsers() ([]model.User, error) {
+	var users []model.User
+	err := Db.Where("suspended = ?", true).Find(&users).Error
+	if err != nil {
+		log.Error("Error al obtener usuarios suspendidos: ", err)
+		return nil, err
+	}
+	return users, nil
 }

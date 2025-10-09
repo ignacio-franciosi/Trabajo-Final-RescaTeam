@@ -2,9 +2,17 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { changePassword } from '../services/UserService';
 import { useNavigate } from 'react-router-dom';
+import SuspendedNotice from '../components/common/SuspendedNotice';
 
 const ChangePasswordPage = () => {
   const { user } = useAuth();
+  if (user?.suspended) {
+    return (
+      <div className="min-h-screen py-10 px-4 bg-white">
+        <SuspendedNotice />
+      </div>
+    );
+  }
   const [formData, setFormData] = useState({
     old_password: '',
     new_password_1: '',
@@ -48,6 +56,11 @@ const ChangePasswordPage = () => {
       id_user: user?.userId,
       ...formData,
     };
+
+    if (user?.suspended) {
+      setError('Cuenta suspendida: no puedes cambiar la contraseña.');
+      return;
+    }
 
     const res = await changePassword(user?.userId, payload);
 
