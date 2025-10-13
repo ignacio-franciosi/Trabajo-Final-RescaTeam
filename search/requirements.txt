@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+transformers
+torch
+pillow
+numpy
+qdrant-client
+pika
+python-multipart
