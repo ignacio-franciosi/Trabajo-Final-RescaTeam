@@ -20,6 +20,9 @@ func mapUrls() {
 	//hay que ir concatenando los parametros de la url segun los filtros que el usuario va seleccionando
 	router.GET("/post/images/:id", controllers.GetImagesByPostId)
 
+	// AI Autocomplete: recibe una imagen y devuelve campos sugeridos (species, zone, inferredType, notes)
+	router.POST("/post/autocomplete", controllers.AnalyzeImageHandler)
+
 	//PRIVATE ROUTES (REQUIRE TOKEN)
 
 	router.POST("/post", controllers.InsertPost) //no se hace con JSON, se hace con form-data
@@ -29,7 +32,7 @@ func mapUrls() {
 	router.DELETE("post/images/:idImage", controllers.DeleteImageById)
 	router.DELETE("post/images/deleteall/:postId", controllers.DeleteAllImagesByPostId)
 	router.PUT("/post/resolved/:id", controllers.MarkPostAsResolved)
-	router.GET("/post/user/:userId", controllers.GetAllPostsByUserId) //mis publicaciones
+	router.GET("/post/user/:userId", controllers.GetAllPostsByUserId)       //mis publicaciones
 	router.DELETE("/post/user/:userId", controllers.DeleteAllPostsByUserId) // eliminar cuenta
 
 	log.Info("Url mapping ready")
