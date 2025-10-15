@@ -30,8 +30,9 @@ func main() {
     }()
 
     utils.InitCache()
+    
     db.InitDB()
-
+      
     app.StartRoute()
 
     wg.Wait()

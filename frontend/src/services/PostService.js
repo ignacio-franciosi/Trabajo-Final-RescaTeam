@@ -18,6 +18,25 @@ export const createPost = async (formData) => {
   }
 };
 
+export const autocompletePostFromImage = async (imageFile) => {
+  try {
+    const form = new FormData();
+    // Backend acepta 'image' o 'file'; usamos 'image'
+    form.append('image', imageFile);
+    const res = await apiAdoption.post('/post/autocomplete', form, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return { success: true, data: res.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.error || 'No se pudo autocompletar con la imagen',
+    };
+  }
+};
+
 export const getPostById = async (id) => {
   try {
     const res = await apiAdoption.get(`/post/${id}`);

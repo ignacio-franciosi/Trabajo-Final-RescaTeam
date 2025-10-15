@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createPost } from '../../services/PostService';
+import { createPost, autocompletePostFromImage } from '../../services/PostService';
 import ZoneSelect from './ZoneSelect';
 import { useAuth } from '../../context/AuthContext';
 import SuspendedNotice from '../common/SuspendedNotice';
@@ -32,6 +32,8 @@ const AdoptionForm = () => {
     });
 
     const [images, setImages] = useState([]);
+    const [aiImage, setAiImage] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [generalError, setGeneralError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
@@ -57,6 +59,47 @@ const AdoptionForm = () => {
         if (selected.some(f => !validFormats.includes(f.type))) { setGeneralError('Solo .jpg o .png'); return; }
         setGeneralError('');
         setImages(selected);
+    };
+
+    const handleAiDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const file = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file) handleAiSelect({ target: { files: [file] } });
+    };
+
+    const handleAiSelect = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const validFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!validFormats.includes(file.type)) { setGeneralError('La imagen debe ser .jpg, .png o .webp'); return; }
+        setAiImage(file);
+        setAiLoading(true);
+        setGeneralError('');
+        const res = await autocompletePostFromImage(file);
+        setAiLoading(false);
+        if (!res.success) {
+            setGeneralError(res.message);
+            return;
+        }
+        const d = res.data || {};
+        // Mapear solo si existe cada campo; no sobreescribir si el usuario ya puso uno manualmente
+        setFormData(prev => ({
+            ...prev,
+            name: d.name ?? prev.name,
+            species: d.species ? d.species.toLowerCase() : prev.species,
+            age: d.age ?? prev.age,
+            breed: d.breed ?? prev.breed,
+            color: d.color ?? prev.color,
+            size: d.size ? d.size.toLowerCase() : prev.size,
+            sex: d.sex ? d.sex.toLowerCase() : prev.sex,
+            description: d.description ?? prev.description,
+            neutered: typeof d.neutered === 'boolean' ? d.neutered : prev.neutered,
+            complete_vaccines: typeof d.completeVaccines === 'boolean' ? d.completeVaccines : prev.complete_vaccines,
+            date: d.date ?? prev.date,
+            zone: d.zone ?? prev.zone,
+            // healthStatus y collar/collarColor no aplican a adopción
+        }));
     };
 
     const validate = () => {
@@ -105,6 +148,42 @@ const AdoptionForm = () => {
             <h2 className="text-2xl font-bold mb-2 text-center">Publicar Mascota en Adopción</h2>
             <p className="text-center text-gray-600 mb-6 text-sm">Completá los datos para ayudar a que encuentre un hogar.</p>
             <form onSubmit={handleSubmit} className="space-y-5">
+                {/* AI Autocomplete */}
+                <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
+                    <div className="flex items-center gap-3">
+                        <div className="shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">AI</div>
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-blue-900">Autocompletar formulario con imagen</h3>
+                            <p className="text-xs text-blue-800">Seleccioná o arrastrá una imagen del post y completaremos los campos por vos. Se permite solo una imagen.</p>
+                        </div>
+                        <button
+                            type="button"
+                            className="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                            onClick={() => document.getElementById('ai-file-input-adoption').click()}
+                        >
+                            Elegir imagen
+                        </button>
+                    </div>
+                    <div
+                        className={`mt-3 border-2 border-dashed rounded-md p-4 text-center text-sm ${aiLoading ? 'opacity-60' : ''}`}
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onDrop={handleAiDrop}
+                        onClick={() => document.getElementById('ai-file-input-adoption').click()}
+                    >
+                        {aiImage ? (
+                            <div className="flex items-center gap-3 justify-center">
+                                <img src={URL.createObjectURL(aiImage)} alt="ai-preview" className="w-16 h-16 object-cover rounded" />
+                                <div className="text-left">
+                                    <p className="text-gray-700 text-sm">{aiImage.name}</p>
+                                    {aiLoading ? <p className="text-xs text-blue-700">Analizando imagen...</p> : <p className="text-xs text-gray-500">Podés volver a elegir otra para reintentar.</p>}
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-gray-600">Soltá acá la imagen del post o hacé click para seleccionarla</p>
+                        )}
+                    </div>
+                    <input id="ai-file-input-adoption" hidden type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleAiSelect} />
+                </div>
                 <div className="grid md:grid-cols-2 gap-4">
                     <div>
                         <label className="text-sm font-medium">Nombre (opcional)</label>

@@ -76,13 +76,13 @@ const CategoryCards = () => {
     }, []);
 
     return (
-        <section className="container mx-auto px-4 py-10">
+        <section id="pets-list" className="container mx-auto px-4 py-10">
             <h2 className="text-3xl font-bold text-center mb-8">Explora por categoría</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card
                     title="Adopción"
-                    description="Encontrá a tu nuevo mejor amigo. Mirá las mascotas que están buscando un hogar."
-                    actionLabel="Ver Mascotas en Adopción"
+                    description="Encontrá a tu nuevo mejor amigo entre las mascotas que buscan un hogar."
+                    actionLabel="Ver adopciones"
                     to="/adopcion"
                     colorClass="border-blue-200"
                     icon={<HeartIcon />}
@@ -91,8 +91,8 @@ const CategoryCards = () => {
                 />
                 <Card
                     title="Perdidos"
-                    description="¿Perdiste a tu mascota? Publicá el aviso y ayudá a difundir. También podés ver otras mascotas reportadas como perdidas."
-                    actionLabel="Ver Mascotas Perdidas"
+                    description="Reportá y buscá mascotas perdidas en tu zona para acelerar el reencuentro."
+                    actionLabel="Ver perdidos"
                     to="/perdidos"
                     colorClass="border-amber-200"
                     icon={<SearchIcon />}
@@ -101,8 +101,8 @@ const CategoryCards = () => {
                 />
                 <Card
                     title="Encontrados"
-                    description="¿Encontraste una mascota? Compartí la publicación para ayudar a que vuelva con su familia. Revisá también los reportes de otros usuarios."
-                    actionLabel="Ver Mascotas Encontradas"
+                    description="Publicá mascotas encontradas o revisá reportes para ayudar a que vuelvan a casa."
+                    actionLabel="Ver encontrados"
                     to="/encontrados"
                     colorClass="border-emerald-200"
                     icon={<HomeSolidIcon />}

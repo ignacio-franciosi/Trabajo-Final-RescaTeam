@@ -53,7 +53,7 @@ func (c *geminiClient) analyzeImageBase64(data []byte, mimeType string, _ string
 
 	// Build JSON request for generateContent with inline_data
 	b64 := base64.StdEncoding.EncodeToString(data)
-	prompt := "Analiza la siguiente imagen y cualquier texto visible (p.ej., un posteo de redes sociales sobre una mascota en adopción, pérdida o encontrada). Devuelve EXCLUSIVAMENTE un JSON con las claves exactas y SOLO los campos que puedas determinar.\n\nEstructura:\n{\n  \"name\": string | null,\n  \"species\": string | null,\n  \"age\": number | null,\n  \"breed\": string | null,\n  \"color\": string | null,\n  \"size\": string | null,\n  \"sex\": string | null,\n  \"neutered\": boolean | null,\n  \"completeVaccines\": boolean | null,\n  \"zone\": string | null,\n  \"healthStatus\": string | null,\n  \"collar\": boolean | null,\n  \"collarColor\": string | null\n}\n\nReglas estrictas:\n- color y collarColor: SOLO el color principal en UNA palabra (sin paréntesis ni comentarios).\n- size: EXACTAMENTE uno de: pequeño | mediano | grande (no uses barras ni combinaciones).\n- zone: sin palabras \"barrio\"/\"zona\" delante; sólo el nombre del lugar (p.ej., Centro, Palermo).\n- species en minúsculas: perro | gato.\n- No devuelvas ningún texto fuera del JSON. Si un dato no puede determinarse, omite esa clave."
+	prompt := "Analiza la siguiente imagen y cualquier texto visible (p.ej., un posteo de redes sociales sobre una mascota en adopción, pérdida o encontrada). Devuelve EXCLUSIVAMENTE un JSON con las claves exactas y SOLO los campos que puedas determinar.\n\nEstructura:\n{\n  \"name\": string | null,\n  \"species\": string | null,\n  \"age\": number | null,\n  \"breed\": string | null,\n  \"color\": string | null,\n  \"size\": string | null,\n  \"sex\": string | null,\n  \"neutered\": boolean | null,\n  \"completeVaccines\": boolean | null,\n  \"zone\": string | null,\n  \"healthStatus\": string | null,\n  \"collar\": boolean | null,\n  \"collarColor\": string | null\n}\n\nReglas estrictas:\n- Detectá la raza (breed) a partir de la imagen y/o texto. Si no se identifica una raza específica, usar exactamente \"mestizo\" como valor.\n- color y collarColor: SOLO el color principal en UNA palabra (sin paréntesis ni comentarios).\n- size: EXACTAMENTE uno de: pequeño | mediano | grande (no uses barras ni combinaciones).\n- zone: sin palabras \"barrio\"/\"zona\" delante; sólo el nombre del lugar (p.ej., Centro, Palermo).\n- species en minúsculas: perro | gato.\n- No devuelvas ningún texto fuera del JSON. Si un dato no puede determinarse, omite esa clave."
 	reqPayload := map[string]interface{}{
 		"contents": []interface{}{
 			map[string]interface{}{
@@ -261,6 +261,11 @@ func mapDetectedToPostDto(m map[string]interface{}) dto.PostDto {
 
 // normalizePostDtoFields post-processes fields to enforce single-word colors and a single size category
 func normalizePostDtoFields(p *dto.PostDto) {
+	// default breed if missing
+	if p.Breed == nil || (p.Breed != nil && strings.TrimSpace(*p.Breed) == "") {
+		def := "mestizo"
+		p.Breed = &def
+	}
 	// normalize color
 	if p.Color != nil {
 		if v := normalizeColor(*p.Color); v != "" {
