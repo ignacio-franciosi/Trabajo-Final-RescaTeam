@@ -7,10 +7,11 @@ import (
 	"users/model"
 	services "users/services/user"
 
+	"users/utils/queue"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/crypto/bcrypt"
-	"users/utils/queue"
 )
 
 // --- Mock que implementa la interfaz del client ---
@@ -70,7 +71,10 @@ func (m *mockUserClient) DeleteUser(user model.User) error {
 	return args.Error(0)
 }
 
-
+func (m *mockUserClient) GetAllSuspendedUsers() ([]model.User, error) {
+	args := m.Called()
+	return args.Get(0).([]model.User), args.Error(1)
+}
 
 // --- TESTS ---
 
@@ -394,6 +398,92 @@ func TestDeleteUser_Error_UserNotFound(t *testing.T) {
 	mockClient.On("GetUserById", 99).Return(model.User{})
 
 	err := services.UserService.DeleteUser(99, 1, false)
+
+	assert.EqualError(t, err, "user not found")
+	mockClient.AssertExpectations(t)
+}
+
+// TESTS ResetPassword
+func TestResetPassword_Success(t *testing.T) {
+	mockClient := new(mockUserClient)
+	clients.UserClient = mockClient
+
+	user := model.User{
+		UserId:   7,
+		Name:     "Test",
+		Surname:  "User",
+		Dni:      123,
+		Email:    "test@example.com",
+		Password: "$2a$10$abcdefghijklmnopqrstuv", // hashed placeholder, not used for reset validation
+		Type:     false,
+	}
+
+	mockClient.On("GetUserById", 7).Return(user)
+	mockClient.On("ChangePassword", 7, mock.Anything).Return(nil)
+
+	dtoReset := dto.ResetPasswordDto{
+		NewPassword1: "NewPass123",
+		NewPassword2: "NewPass123",
+	}
+
+	err := services.UserService.ResetPassword(7, dtoReset)
+
+	assert.Nil(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestResetPassword_Error_InvalidPasswordFormat(t *testing.T) {
+	mockClient := new(mockUserClient)
+	clients.UserClient = mockClient
+
+	user := model.User{UserId: 5, Email: "a@b.com"}
+	mockClient.On("GetUserById", 5).Return(user)
+
+	dtoReset := dto.ResetPasswordDto{
+		NewPassword1: "short",
+		NewPassword2: "short",
+	}
+
+	err := services.UserService.ResetPassword(5, dtoReset)
+
+	assert.EqualError(t, err, "la contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número")
+	mockClient.AssertExpectations(t)
+}
+
+func TestUpdateUser_Error_UserNotFound(t *testing.T) {
+	mockClient := new(mockUserClient)
+	clients.UserClient = mockClient
+
+	mockClient.On("GetUserById", 123).Return(model.User{})
+
+	_, err := services.UserService.UpdateUser(dto.UpdateUserDto{UserId: 123, Name: "X"})
+
+	assert.EqualError(t, err, "usuario no encontrado")
+	mockClient.AssertExpectations(t)
+}
+
+func TestGetUserByEmail_Success(t *testing.T) {
+	mockClient := new(mockUserClient)
+	clients.UserClient = mockClient
+
+	expected := model.User{UserId: 2, Email: "user@example.com", Name: "U"}
+	mockClient.On("GetUserByEmail", "user@example.com").Return(expected)
+
+	res, err := services.UserService.GetUserByEmail("user@example.com")
+
+	assert.Nil(t, err)
+	assert.Equal(t, expected.UserId, res.UserId)
+	assert.Equal(t, expected.Email, res.Email)
+	mockClient.AssertExpectations(t)
+}
+
+func TestGetUserByEmail_NotFound(t *testing.T) {
+	mockClient := new(mockUserClient)
+	clients.UserClient = mockClient
+
+	mockClient.On("GetUserByEmail", "missing@example.com").Return(model.User{})
+
+	_, err := services.UserService.GetUserByEmail("missing@example.com")
 
 	assert.EqualError(t, err, "user not found")
 	mockClient.AssertExpectations(t)
