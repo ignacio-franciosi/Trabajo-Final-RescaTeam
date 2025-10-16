@@ -216,7 +216,7 @@ const LostFoundForm = ({ type }) => {
                     </div>
                     <div>
                         <ZoneSelect
-                            label="Zona"
+                            label="Barrio"
                             required
                             value={formData.zone}
                             onChange={(val) => {
@@ -254,7 +254,7 @@ const LostFoundForm = ({ type }) => {
                     <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className={inputClass('description')} />
                 </div>
                 <div>
-                    <label className="text-sm font-medium">Imágenes (.jpg/.png máx 3) (opcional)</label>
+                    <label className="text-sm font-medium">Agregá imágenes de tu mascota (opcional)</label>
                     <div className="mt-1 border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 transition" onClick={() => document.getElementById(`lf-file-input-${type}`).click()}>
                         <p className="text-xs text-gray-500">Click para seleccionar o arrastrar archivos</p>
                         <p className="text-[10px] text-gray-400 mt-1">Hasta 3 imágenes</p>

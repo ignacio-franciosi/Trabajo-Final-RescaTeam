@@ -53,7 +53,7 @@ func (c *geminiClient) analyzeImageBase64(data []byte, mimeType string, _ string
 
 	// Build JSON request for generateContent with inline_data
 	b64 := base64.StdEncoding.EncodeToString(data)
-	prompt := "Analiza la siguiente imagen y cualquier texto visible (p.ej., un posteo de redes sociales sobre una mascota en adopción, pérdida o encontrada). Devuelve EXCLUSIVAMENTE un JSON con las claves exactas y SOLO los campos que puedas determinar.\n\nEstructura:\n{\n  \"name\": string | null,\n  \"species\": string | null,\n  \"age\": number | null,\n  \"breed\": string | null,\n  \"color\": string | null,\n  \"size\": string | null,\n  \"sex\": string | null,\n  \"neutered\": boolean | null,\n  \"completeVaccines\": boolean | null,\n  \"zone\": string | null,\n  \"healthStatus\": string | null,\n  \"collar\": boolean | null,\n  \"collarColor\": string | null\n}\n\nReglas estrictas:\n- Detectá la raza (breed) a partir de la imagen y/o texto. Si no se identifica una raza específica, usar exactamente \"mestizo\" como valor.\n- color y collarColor: SOLO el color principal en UNA palabra (sin paréntesis ni comentarios).\n- size: EXACTAMENTE uno de: pequeño | mediano | grande (no uses barras ni combinaciones).\n- zone: sin palabras \"barrio\"/\"zona\" delante; sólo el nombre del lugar (p.ej., Centro, Palermo).\n- species en minúsculas: perro | gato.\n- No devuelvas ningún texto fuera del JSON. Si un dato no puede determinarse, omite esa clave."
+	prompt := "Analiza la siguiente imagen y cualquier texto visible (p.ej., un posteo de redes sociales sobre una mascota en adopción, pérdida o encontrada). Devuelve EXCLUSIVAMENTE un JSON con las claves exactas y SOLO los campos que puedas determinar.\n\nEstructura:\n{\n  \"name\": string | null,\n  \"species\": string | null,\n  \"age\": number | null,\n  \"breed\": string | null,\n  \"color\": string | null,\n  \"size\": string | null,\n  \"sex\": string | null,\n  \"neutered\": boolean | null,\n  \"completeVaccines\": boolean | null,\n  \"zone\": string | null,\n  \"healthStatus\": string | null,\n  \"collar\": boolean | null,\n  \"collarColor\": string | null\n}\n\nReglas estrictas:\n- Detectá la raza (breed) a partir de la imagen y/o texto. Si no se identifica una raza específica, usar exactamente \"mestizo\" como valor.\n- color y collarColor: SOLO el color principal en UNA palabra (sin paréntesis ni comentarios).\n- size: EXACTAMENTE uno de: pequeño | mediano | grande (no uses barras ni combinaciones).\n- zone: debe ser un barrio, no una calle/dirección. Si detectás una calle/avenida/dirección (p.ej. con número), NO devuelvas la clave zone. Sin prefijos \"barrio\"/\"zona\"; sólo el nombre (p.ej., Centro, Palermo).\n- species en minúsculas: perro | gato.\n- No devuelvas ningún texto fuera del JSON. Si un dato no puede determinarse, omite esa clave."
 	reqPayload := map[string]interface{}{
 		"contents": []interface{}{
 			map[string]interface{}{
@@ -265,6 +265,12 @@ func normalizePostDtoFields(p *dto.PostDto) {
 	if p.Breed == nil || (p.Breed != nil && strings.TrimSpace(*p.Breed) == "") {
 		def := "mestizo"
 		p.Breed = &def
+	} else if p.Breed != nil {
+		nb := normalizeBreed(*p.Breed)
+		if nb == "" {
+			nb = "mestizo"
+		}
+		*p.Breed = nb
 	}
 	// normalize color
 	if p.Color != nil {
@@ -284,6 +290,16 @@ func normalizePostDtoFields(p *dto.PostDto) {
 			*p.Size = v
 		}
 	}
+	// Zone: remove street-like values; keep only barrio names
+	if p.Zone != nil {
+		cleaned, looksStreet := normalizeZoneValue(*p.Zone)
+		if looksStreet {
+			p.Zone = nil
+		} else {
+			*p.Zone = cleaned
+		}
+	}
+
 	// Title-case string fields (capitalize first letter; lower the rest per word)
 	capPtr := func(sp **string) {
 		if sp != nil && *sp != nil {
@@ -301,6 +317,70 @@ func normalizePostDtoFields(p *dto.PostDto) {
 	capPtr(&p.Zone)
 	capPtr(&p.HealthStatus)
 	capPtr(&p.CollarColor)
+}
+
+// normalizeBreed removes size/variant qualifiers from breed names
+func normalizeBreed(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return s
+	}
+	// remove parenthetical text
+	lower := strings.ToLower(s)
+	if i := strings.Index(lower, "("); i >= 0 {
+		lower = strings.TrimSpace(lower[:i])
+	}
+	// replace common separators with space
+	replacers := []string{",", ";", "/", "|", "-", "_"}
+	for _, r := range replacers {
+		lower = strings.ReplaceAll(lower, r, " ")
+	}
+	// qualifiers to drop
+	quals := map[string]struct{}{
+		"mini": {}, "miniatura": {}, "miniature": {}, "toy": {}, "estandar": {}, "estándar": {}, "standard": {},
+		"mediano": {}, "mediana": {}, "pequeño": {}, "pequeno": {}, "grande": {}, "gigante": {},
+		"medium": {}, "small": {}, "large": {},
+	}
+	tokens := strings.Fields(lower)
+	kept := make([]string, 0, len(tokens))
+	for _, t := range tokens {
+		if _, isQual := quals[t]; isQual {
+			continue
+		}
+		kept = append(kept, t)
+	}
+	out := strings.TrimSpace(strings.Join(kept, " "))
+	return out
+}
+
+// normalizeZoneValue cleans zone names and returns (cleaned, looksLikeStreet)
+func normalizeZoneValue(s string) (string, bool) {
+	t := strings.TrimSpace(s)
+	if t == "" {
+		return t, false
+	}
+	l := strings.ToLower(t)
+	// remove common prefixes
+	if strings.HasPrefix(l, "barrio ") {
+		l = strings.TrimSpace(l[len("barrio "):])
+	}
+	if strings.HasPrefix(l, "zona ") {
+		l = strings.TrimSpace(l[len("zona "):])
+	}
+	// detect street-like patterns
+	keywords := []string{"calle", "avenida", "av.", "av ", "ruta", "rta", "camino", "pasaje", "pasillo", "c/", "cal."}
+	for _, k := range keywords {
+		if strings.Contains(l, k) {
+			return "", true
+		}
+	}
+	// if contains number (likely address) treat as street
+	for _, r := range l {
+		if unicode.IsDigit(r) {
+			return "", true
+		}
+	}
+	return l, false
 }
 
 // normalizeColor extracts a single base color name in Spanish
