@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSuspendedUsers, reactivateUser } from '../services/UserService';
-import { getAllReportsByStatus } from '../services/ReportService';
 
 const SuspendedUsersPage = () => {
     const { user, token } = useAuth();

@@ -87,11 +87,13 @@ const ReportsByUserPage = () => {
             try {
                 const pRes = await getUserById(id);
                 if (pRes.success && pRes.data) setProfileUser(pRes.data);
-            } catch { }
+            } catch {
+                // ignore
+            }
             setLoading(false);
         };
         fetchData();
-    }, [id, isReporter, token, user]);
+    }, [id, isReporter, token, user, userNames]);
 
     const filtered = useMemo(() => {
         const term = search.trim().toLowerCase();

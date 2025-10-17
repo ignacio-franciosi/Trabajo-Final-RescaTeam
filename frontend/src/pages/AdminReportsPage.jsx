@@ -33,7 +33,7 @@ const AdminReportsPage = () => {
     const [search, setSearch] = useState('');
     const [selected, setSelected] = useState(null);
     const [adminComment, setAdminComment] = useState('');
-    const [actionLoading, setActionLoading] = useState(false);
+    // const [actionLoading, setActionLoading] = useState(false);
     const [updating, setUpdating] = useState(false);
     const [suspendLoading, setSuspendLoading] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
@@ -406,7 +406,7 @@ const AdminReportsPage = () => {
                             </button>
                             <button
                                 onClick={handleMarkRevised}
-                                disabled={updating || actionLoading}
+                                disabled={updating}
                                 className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                             >
                                 {updating ? 'Guardando...' : 'Marcar como revisado'}

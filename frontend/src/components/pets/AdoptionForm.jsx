@@ -9,9 +9,6 @@ import SuspendedNotice from '../common/SuspendedNotice';
 const AdoptionForm = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
-    if (user?.suspended) {
-        return <SuspendedNotice />;
-    }
     const errorRef = useRef(null);
 
     const [formData, setFormData] = useState({
@@ -143,6 +140,9 @@ const AdoptionForm = () => {
 
     const inputClass = (f) => `w-full mt-1 px-3 py-2 border rounded-md text-sm ${errors[f] ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-blue-500`;
 
+    if (user?.suspended) {
+        return <SuspendedNotice />;
+    }
     return (
         <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow mt-8">
             <h2 className="text-2xl font-bold mb-2 text-center">Publicar Mascota en Adopción</h2>

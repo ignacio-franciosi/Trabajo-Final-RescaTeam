@@ -4,8 +4,8 @@ export const getUserById = async (id) => {
   try {
     const res = await api.get(`/user/${id}`);
     return { success: true, data: res.data };
-  } catch (err) {
-    return { success: false, message: err.response?.data?.message || 'Error al obtener usuario' };
+  } catch {
+    return { success: false, message: 'Usuario no encontrado' };
   }
 };
 
@@ -57,7 +57,7 @@ export const getUserByEmail = async (email) => {
 
 export const changePassword = async (userId, payload) => {
   try {
-    const res = await api.patch(`/user/${userId}/change-password`, payload);
+    await api.patch(`/user/${userId}/change-password`, payload);
     return { success: true };
   } catch (error) {
     return {
@@ -78,7 +78,7 @@ export const forgotPassword = async (email) => {
 
 export const resetPassword = async (token, data) => {
   try {
-    const res = await api.patch(`/reset-password?token=${token}`, data);
+    await api.patch(`/reset-password?token=${token}`, data);
     return { success: true };
   } catch (error) {
     return { success: false, message: error.response?.data?.error || 'Error' };
