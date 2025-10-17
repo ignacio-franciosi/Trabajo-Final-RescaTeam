@@ -11,16 +11,17 @@ import (
 
 // StartChatRequest: datos mínimos para iniciar un chat
 type StartChatRequest struct {
-	ReceiverID string `json:"receiverId" binding:"required"`
-	PostID     string `json:"postId" binding:"required"`
+	ReceiverID StringOrNumber `json:"receiverId" binding:"required"`
+	PostID     string         `json:"postId" binding:"required"`
 }
 
 // SendMessageRequest: enviar mensaje por HTTP (fallback)
 type SendMessageRequest struct {
-	ChatID   string `json:"chatId,omitempty"`
-	Receiver string `json:"receiverId,omitempty"`
-	PostID   string `json:"postId,omitempty"`
-	Content  string `json:"content" binding:"required,min=1,max=2000"`
+	ChatID      string         `json:"chatId,omitempty"`
+	ReceiverID  StringOrNumber `json:"receiverId"` // preferido
+	ReceiverAlt StringOrNumber `json:"receiver"`
+	PostID      string         `json:"postId,omitempty"`
+	Content     string         `json:"content" binding:"required,min=1,max=2000"`
 }
 
 // ---------- RESPONSES ----------
@@ -74,4 +75,15 @@ func ToMessageResponse(msg *model.Message) MessageResponse {
 // Helper inverso: de string a ObjectID (para buscar en Mongo)
 func ParseObjectID(id string) (primitive.ObjectID, error) {
 	return primitive.ObjectIDFromHex(id)
+}
+
+// Helper para obtener el receiverId normalizado
+func (r SendMessageRequest) NormalizedReceiverID() string {
+	if r.ReceiverID != "" {
+		return r.ReceiverID.String()
+	}
+	if r.ReceiverAlt != "" {
+		return r.ReceiverAlt.String()
+	}
+	return ""
 }

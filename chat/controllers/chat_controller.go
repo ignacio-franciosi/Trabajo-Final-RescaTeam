@@ -60,7 +60,7 @@ func (cc *ChatController) StartChat(c *gin.Context) {
 		return
 	}
 
-	chat, err := cc.Service.StartChat(c.Request.Context(), me, req.ReceiverID, req.PostID)
+	chat, err := cc.Service.StartChat(c.Request.Context(), me, req.ReceiverID.String(), req.PostID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -130,7 +130,7 @@ func (cc *ChatController) SendMessageHTTP(c *gin.Context) {
 
 	msg, err := cc.Service.SendMessage(c.Request.Context(), senderID, dto.WSMessage{
 		ChatID:     req.ChatID,
-		ReceiverID: req.Receiver,
+		ReceiverID: req.NormalizedReceiverID(),
 		PostID:     req.PostID,
 		Content:    req.Content,
 	})

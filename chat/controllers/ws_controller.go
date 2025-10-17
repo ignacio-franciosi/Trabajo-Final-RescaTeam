@@ -77,7 +77,7 @@ func (wsc *WSController) HandleWebSocket(c *gin.Context) {
 			userID,
 			dto.WSMessage{
 				ChatID:     req.ChatID,
-				ReceiverID: req.Receiver, // en el DTO podés tenerlo
+				ReceiverID: req.NormalizedReceiverID(), // en el DTO podés tenerlo
 				PostID:     req.PostID,
 				Content:    req.Content,
 			},
