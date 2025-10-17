@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -46,18 +47,28 @@ func JWT(secret string) gin.HandlerFunc {
 		}
 
 		// Extraer el campo id_user (según AUTH)
-		if idVal, ok := claims["id_user"]; ok {
-			switch v := idVal.(type) {
-			case float64:
-				c.Set("userId", int(v))
-			case int:
-				c.Set("userId", v)
-			case string:
-				c.Set("userId", v)
-			default:
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "tipo de id_user inválido"})
+		/*
+			if idVal, ok := claims["id_user"]; ok {
+				switch v := idVal.(type) {
+				case float64:
+					c.Set("userId", int(v))
+				case int:
+					c.Set("userId", v)
+				case string:
+					c.Set("userId", v)
+				default:
+					c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "tipo de id_user inválido"})
+					return
+				}
+			} else {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token sin id_user"})
 				return
 			}
+		*/
+
+		// Normalizamos id_user a string, venga como número o string
+		if idVal, ok := claims["id_user"]; ok {
+			c.Set("userId", fmt.Sprint(idVal)) // <- SIEMPRE string
 		} else {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token sin id_user"})
 			return
