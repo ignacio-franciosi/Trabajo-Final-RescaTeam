@@ -34,7 +34,7 @@ func NewClient(hub *Hub, conn *websocket.Conn, svc *ChatService) *Client {
 func (c *Client) ReadPump() {
 	defer func() {
 		c.hub.RemoveConnection(c.UserID, c)
-		c.conn.Close()
+		_ = c.conn.Close()
 	}()
 
 	for {
@@ -44,30 +44,64 @@ func (c *Client) ReadPump() {
 			break
 		}
 
-		var incoming dto.WSMessage
+		// 1) Wrapper
+		var incoming dto.WSIncoming
 		if err := json.Unmarshal(msg, &incoming); err != nil {
 			log.Printf("[WS] json inválido: %v", err)
 			continue
 		}
 
-		// Procesar mensaje entrante → enviar por ChatService
-		saved, err := c.service.SendMessage(
-			context.Background(), // usamos un contexto base
-			c.UserID,
-			incoming,
-		)
-		if err != nil {
-			log.Printf("[WS] error guardando mensaje: %v", err)
-			continue
-		}
+		switch incoming.Type {
+		case "send_message":
+			var payload dto.WSMessage
+			if err := json.Unmarshal(incoming.Payload, &payload); err != nil {
+				log.Printf("[WS] payload inválido send_message: %v", err)
+				continue
+			}
 
-		// Enviar confirmación al remitente
-		out := dto.WSOutgoing{
-			Type:    "message:sent",
-			Payload: dto.ToMessageResponse(&saved),
+			saved, err := c.service.SendMessage(
+				context.Background(),
+				c.UserID,
+				payload,
+			)
+			if err != nil {
+				log.Printf("[WS] error guardando mensaje: %v", err)
+				_ = c.conn.WriteJSON(dto.WSOutgoing{Type: "error", Payload: err.Error()})
+				continue
+			}
+
+			// Enviar confirmación al remitente
+			out := dto.WSOutgoing{
+				Type:    "message:sent",
+				Payload: dto.ToMessageResponse(&saved),
+			}
+			data, _ := json.Marshal(out)
+			c.send <- data
+
+		case "chat:active":
+			var payload dto.WSChatActive
+			if err := json.Unmarshal(incoming.Payload, &payload); err != nil {
+				log.Printf("[WS] payload inválido chat:active: %v", err)
+				continue
+			}
+
+			if err := c.service.MarkRead(context.Background(), payload.ChatID, c.UserID); err != nil {
+				log.Printf("[WS] error mark read: %v", err)
+				_ = c.conn.WriteJSON(dto.WSOutgoing{Type: "error", Payload: err.Error()})
+				continue
+			}
+
+			_ = c.conn.WriteJSON(dto.WSOutgoing{
+				Type:    "ack",
+				Payload: map[string]string{"ok": "read"},
+			})
+
+		default:
+			_ = c.conn.WriteJSON(dto.WSOutgoing{
+				Type:    "error",
+				Payload: "unknown type",
+			})
 		}
-		data, _ := json.Marshal(out)
-		c.send <- data
 	}
 }
 
@@ -76,7 +110,7 @@ func (c *Client) WritePump() {
 	ticker := time.NewTicker(30 * time.Second) // ping cada 30s
 	defer func() {
 		ticker.Stop()
-		c.conn.Close()
+		_ = c.conn.Close()
 	}()
 
 	for {
