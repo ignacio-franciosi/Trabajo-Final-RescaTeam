@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 import HeroSection from "../components/home/HeroSection";
@@ -7,7 +7,7 @@ import CategoryCards from "../components/home/CategoryCards";
 
 const Home = () => {
   const location = useLocation();
-  const [filters, setFilters] = useState({});
+  // const [filters, setFilters] = useState({});
 
   useEffect(() => {
     if (location.hash === "#pets-list") {
@@ -27,9 +27,9 @@ const Home = () => {
     }
   };
 
-  const handleFilterChange = (updatedFilters) => {
-    setFilters(updatedFilters);
-  };
+  // const handleFilterChange = (updatedFilters) => {
+  //   setFilters(updatedFilters);
+  // };
 
   return (
     <>

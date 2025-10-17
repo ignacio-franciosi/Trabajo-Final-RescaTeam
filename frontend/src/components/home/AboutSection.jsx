@@ -1,16 +1,12 @@
 import React, { useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { useInView } from 'framer-motion';
+import * as Framer from 'framer-motion';
 import logo from '../../assets/logo.png';
 import logo3 from '../../assets/logo3.png';
 
 const AboutSection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.5 });
-
-  const scrollToPets = () => {
-    const el = document.getElementById('pets-list');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
 
   return (
     <section
@@ -22,7 +18,7 @@ const AboutSection = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/30"></div>
 
       <div className="container mx-auto px-4 relative z-10">
-        <motion.div
+        <Framer.motion.div
           ref={ref}
           initial={{ opacity: 0, y: 50 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -30,7 +26,7 @@ const AboutSection = () => {
           className="flex flex-col md:flex-row items-center gap-10 md:gap-12 bg-white/60 backdrop-blur-md p-8 md:p-10 rounded-2xl shadow-2xl ring-1 ring-black/10"
         >
           {/* Imagen */}
-          <motion.div
+          <Framer.motion.div
             className="md:w-1/2"
             initial={{ opacity: 0, x: -40 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
@@ -41,10 +37,10 @@ const AboutSection = () => {
               alt="Equipo RescaTeam"
               className="rounded-xl shadow-xl w-full max-w-md mx-auto ring-1 ring-black/10 hover:shadow-2xl hover:scale-[1.015] transition duration-300"
             />
-          </motion.div>
+          </Framer.motion.div>
 
           {/* Texto */}
-          <motion.div
+          <Framer.motion.div
             className="md:w-1/2 space-y-6"
             initial={{ opacity: 0, x: 40 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
@@ -94,8 +90,8 @@ const AboutSection = () => {
             </ul>
 
             {/* CTA eliminado según feedback */}
-          </motion.div>
-        </motion.div>
+          </Framer.motion.div>
+        </Framer.motion.div>
       </div>
     </section>
   );

@@ -10,9 +10,6 @@ import SuspendedNotice from '../common/SuspendedNotice';
 const LostFoundForm = ({ type }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
-    if (user?.suspended) {
-        return <SuspendedNotice />;
-    }
     const errorRef = useRef(null);
 
     const [formData, setFormData] = useState({
@@ -134,6 +131,9 @@ const LostFoundForm = ({ type }) => {
     const title = type === 'lost' ? 'Publicar Mascota Perdida' : 'Publicar Mascota Encontrada';
     const subtitle = type === 'lost' ? 'Cargá los datos para ayudar a encontrarla.' : 'Brindá información para ubicar a su familia.';
 
+    if (user?.suspended) {
+        return <SuspendedNotice />;
+    }
     return (
         <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow mt-8">
             <h2 className="text-2xl font-bold mb-2 text-center">{title}</h2>

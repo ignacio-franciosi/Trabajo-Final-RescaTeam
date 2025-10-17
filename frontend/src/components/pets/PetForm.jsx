@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPost } from '../../services/PostService';
-import { useAuth } from '../../context/AuthContext';
+// import { useAuth } from '../../context/AuthContext';
 
 const PetForm = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const errorRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -79,7 +79,7 @@ const PetForm = () => {
   };
 
   const validateFields = () => {
-  const requiredFields = ['postType', 'species', 'age', 'size', 'sex', 'color', 'zone', 'description'];
+    const requiredFields = ['postType', 'species', 'age', 'size', 'sex', 'color', 'zone', 'description'];
     const newErrors = {};
 
     requiredFields.forEach((field) => {
@@ -130,7 +130,7 @@ const PetForm = () => {
       data.append('images', file);
     });
 
-  const res = await createPost(data);
+    const res = await createPost(data);
     if (res.success) {
       setSuccessMsg('¡Mascota publicada con éxito!');
       setTimeout(() => navigate('/mis-publicaciones'), 1500);

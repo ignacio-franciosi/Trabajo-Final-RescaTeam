@@ -10,8 +10,8 @@ export const createPost = async (formData) => {
       },
     });
     return { success: true, data: res.data };
-  } catch (error) {
-    return {
+  } catch {
+      return { 
       success: false,
       message: error.response?.data?.error || 'Error al publicar la mascota',
     };
@@ -22,8 +22,8 @@ export const getPostById = async (id) => {
   try {
     const res = await apiAdoption.get(`/post/${id}`);
     return { success: true, data: res.data };
-  } catch (error) {
-    return {
+  } catch {
+      return { 
       success: false,
       message: 'Error al obtener publicación',
     };
@@ -37,7 +37,7 @@ export const getAllPosts = async (type = 'adoption') => {
       : await apiAdoption.get('/post');
     return { success: true, data: res.data };
   } catch (error) {
-    return {
+      return { 
       success: false,
       message: error.response?.data?.error || 'Error al obtener publicaciones',
     };
@@ -49,7 +49,7 @@ export const getImagesByPostId = async (postId) => {
     const res = await apiAdoption.get(`/post/images/${postId}`);
     return { success: true, data: res.data };
   } catch (error) {
-    return {
+      return { 
       success: false,
       message: 'Error al obtener imágenes',
     };
@@ -71,7 +71,7 @@ export const getPostsByUserId = async (userId) => {
 
     return { success: true, data: res.data };
   } catch (error) {
-    return {
+      return { 
       success: false,
       message: error.response?.data?.error || 'Error al obtener tus publicaciones.',
     };
@@ -92,7 +92,7 @@ export const getAllPostsByUserId = async (userId) => {
 
     return { success: true, data };
   } catch (err) {
-    return {
+      return { 
       success: false,
       message:
         err.response?.data?.error || 'Error al obtener publicaciones del usuario.',
@@ -105,7 +105,7 @@ export const updatePost = async (id, data) => {
     const res = await apiAdoption.put(`/post/${id}`, data);
     return { success: true, data: res.data };
   } catch (err) {
-    return {
+      return { 
       success: false,
       message: err.response?.data?.error || 'Error al actualizar la publicación'
     };
@@ -127,7 +127,7 @@ export const uploadImage = async (postId, imageFile) => {
 
     return { success: true, data: res.data };
   } catch (err) {
-    return {
+      return { 
       success: false,
       message: err.response?.data?.error || 'Error al subir la imagen'
     };
@@ -139,7 +139,7 @@ export const deleteImageById = async (imageId) => {
     const res = await apiAdoption.delete(`/post/images/${imageId}`);
     return { success: true, data: res.data };
   } catch (err) {
-    return {
+      return { 
       success: false,
       message: err.response?.data?.error || 'Error al eliminar la imagen'
     };
@@ -151,7 +151,7 @@ export const deletePost = async (id) => {
     const res = await apiAdoption.delete(`/post/${id}`);
     return { success: true, data: res.data };
   } catch (err) {
-    return { success: false, message: err.response?.data?.error || 'Error al eliminar publicación' };
+     return { success: false, message: err.response?.data?.error || 'Error al eliminar publicación' };
   }
 };
 
@@ -160,7 +160,7 @@ export const deleteAllImagesByPostId = async (postId) => {
     const res = await apiAdoption.delete(`/post/images/deleteall/${postId}`);
     return { success: true, data: res.data };
   } catch (err) {
-    return { success: false, message: err.response?.data?.error || 'Error al eliminar imágenes' };
+     return { success: false, message: err.response?.data?.error || 'Error al eliminar imágenes' };
   }
 };
 
@@ -169,7 +169,7 @@ export const markAsResolved = async (postId) => {
     const res = await apiAdoption.put(`/post/resolved/${postId}`);
     return { success: true, data: res.data };
   } catch (err) {
-    return { success: false, message: err.response?.data?.error || 'Error al marcar como adoptada' };
+     return { success: false, message: err.response?.data?.error || 'Error al marcar como adoptada' };
   }
 };
 
@@ -196,6 +196,6 @@ export const getFilteredPosts = async (filters) => {
     const res = await apiAdoption.get(`/post/filter?${queryParams.toString()}`);
     return { success: true, data: res.data };
   } catch (err) {
-    return { success: false, message: err.response?.data?.error || 'Error al filtrar mascotas' };
+     return { success: false, message: err.response?.data?.error || 'Error al filtrar mascotas' };
   }
 };

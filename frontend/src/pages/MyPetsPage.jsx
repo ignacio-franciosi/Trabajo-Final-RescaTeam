@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import SuspendedNotice from '../components/common/SuspendedNotice';
 import {
@@ -22,7 +22,7 @@ const MyPetsPage = () => {
   const [modalAction, setModalAction] = useState('delete'); // 'delete' o 'resolve'
   const [petSelected, setPetSelected] = useState(null);
 
-  const fetchMyPets = async () => {
+  const fetchMyPets = useCallback(async () => {
     if (!user) return;
 
     setLoading(true);
@@ -63,18 +63,18 @@ const MyPetsPage = () => {
       );
 
       setPets(postsWithImages);
-    } catch (err) {
-      console.error('Error cargando mis mascotas:', err.message);
-      setError(err.message || 'Ocurrió un error inesperado.');
+    } catch (e) {
+      console.error('Error cargando mis mascotas:', e?.message);
+      setError(e?.message || 'Ocurrió un error inesperado.');
       setPets([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchMyPets();
-  }, [user]);
+  }, [fetchMyPets]);
 
   const handleDeleteClick = (pet) => {
     setModalAction('delete');
@@ -103,7 +103,7 @@ const MyPetsPage = () => {
       }
 
       setPets(prev => prev.filter(p => p.postId !== petSelected.postId));
-    } catch (err) {
+    } catch {
       alert('Error al realizar la acción.');
     } finally {
       setShowModal(false);

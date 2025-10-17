@@ -33,8 +33,8 @@ import FoundPage from '../pages/FoundPage';
 
 
 // Vistas compartidas
-import PetList from "../components/pets/PetList";
-import FilterPanel from "../components/pets/FilterPanel";
+// import PetList from "../components/pets/PetList";
+// import FilterPanel from "../components/pets/FilterPanel";
 
 const PrivateRoute = ({ children }) => {
   const { token, initialized } = useAuth();
@@ -50,7 +50,7 @@ const PrivateRoute = ({ children }) => {
 };
 
 const AppRouter = () => {
-  const { token, logout } = useAuth();
+  // const { token, logout } = useAuth();
 
   return (
     <Router>

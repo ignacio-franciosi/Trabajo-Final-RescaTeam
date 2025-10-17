@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ReportPostModal from '../reports/ReportPostModal';
+import { searchBarrioOverpassPoint } from '../../services/overpass';
+import MiniLeafletMap from '../map/MiniLeafletMap';
 
 const PetDetail = ({ pet }) => {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [currentImage, setCurrentImage] = useState(0);
-  const [phone, setPhone] = useState('');
   const hasImages = pet.imagenes && pet.imagenes.length > 0;
   const location = useLocation();
   const [reportOpen, setReportOpen] = useState(false);
@@ -40,10 +41,108 @@ const PetDetail = ({ pet }) => {
     );
   };
 
-  const handleContactar = () => {
-    localStorage.setItem('redirectAfterLogin', `/mascota/${pet.postId}`);
-    navigate('/register');
+  // contactar eliminado del UI
+
+  const [userPos, setUserPos] = useState(null);
+  const [barrioPoint, setBarrioPoint] = useState(null);
+  const [mapError, setMapError] = useState(null);
+  const [mapLoading, setMapLoading] = useState(false);
+
+  const barrioLoadingText = pet.postType === 'lost'
+    ? 'Cargando zona de la mascota perdida…'
+    : pet.postType === 'found'
+      ? 'Cargando zona de la mascota encontrada…'
+      : pet.postType === 'adoption'
+        ? 'Cargando zona de la mascota en adopción…'
+        : 'Cargando zona…';
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserPos([pos.coords.latitude, pos.coords.longitude]),
+        () => { },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    const zoneRaw = (pet?.zone || '').trim();
+    if (!zoneRaw) return;
+    const cleaned = zoneRaw
+      .replace(/\bzona\b\s*/i, '')
+      .replace(/^\s*b[º°]\s*/i, '')
+      .replace(/[.,;]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!cleaned) return;
+    const controller = new AbortController();
+    let softId;
+    let hardId;
+    setMapError(null);
+    setBarrioPoint(null);
+    setMapLoading(true);
+    // Mensaje suave si tarda más de 7s (un poco más de tiempo)
+    softId = setTimeout(() => {
+      setMapError((prev) => prev || 'Tarda más de lo normal en ubicar el barrio…');
+    }, 7000);
+    // Corte duro a los ~15s para no dejar colgado el UI pero dar más margen
+    hardId = setTimeout(() => {
+      controller.abort();
+    }, 15000);
+    (async () => {
+      try {
+        const res = await searchBarrioOverpassPoint(cleaned, { signal: controller.signal });
+        setBarrioPoint(res);
+        setMapError(null); // limpiar el mensaje si finalmente llegó
+      } catch (e) {
+        if (e?.name === 'AbortError') return;
+        setMapError('No se pudo cargar el barrio en el mapa.');
+      } finally {
+        clearTimeout(softId);
+        clearTimeout(hardId);
+        setMapLoading(false);
+      }
+    })();
+    return () => {
+      controller.abort();
+      clearTimeout(softId);
+      clearTimeout(hardId);
+    };
+  }, [pet?.zone]);
+
+  // Build a flat list of detail items and split evenly into two columns
+  const details = [];
+  const pushDetail = (label, value) => {
+    if (value !== undefined && value !== null && value !== '') {
+      details.push({ label, value });
+    }
   };
+  pushDetail('Especie', pet.species);
+  if (pet.age !== undefined && pet.age !== null && pet.age !== '') {
+    pushDetail('Edad', `${pet.age} años`);
+  }
+  pushDetail('Tamaño', pet.size);
+  pushDetail('Raza', pet.breed);
+  pushDetail('Sexo', pet.sex);
+  pushDetail('Color', pet.color);
+  if (pet.postType === 'adoption') {
+    pushDetail('Castrado', pet.neutered ? 'Sí' : 'No');
+    pushDetail('Vacunas', pet.completeVaccines ? 'Completas' : 'Incompletas');
+  } else {
+    pushDetail('Estado de salud', pet.healthStatus);
+    pushDetail('Collar', pet.collar ? 'Sí' : 'No');
+    pushDetail('Color collar', pet.collarColor);
+  }
+  // Add Zona and Publicado to the grid for better balance
+  pushDetail('Zona', pet.zone);
+  if (pet.postType !== 'adoption' && pet.date) {
+    pushDetail('Publicado', formatDate(pet.date));
+  }
+
+  const mid = Math.ceil(details.length / 2);
+  const leftDetails = details.slice(0, mid);
+  const rightDetails = details.slice(mid);
 
   return (
     <div className="relative max-w-5xl mx-auto p-4">
@@ -109,33 +208,19 @@ const PetDetail = ({ pet }) => {
           {/* Info */}
           <div className="md:w-1/2 space-y-4">
             <h2 className="text-3xl font-bold">{pet.name || 'Sin nombre'}</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <DetailItem label="Especie" value={pet.species} />
-              {pet.age !== undefined && pet.age !== null && pet.age !== '' && (
-                <DetailItem label="Edad" value={`${pet.age} años`} />
-              )}
-              <DetailItem label="Tamaño" value={pet.size} />
-              <DetailItem label="Raza" value={pet.breed} />
-              <DetailItem label="Sexo" value={pet.sex} />
-              <DetailItem label="Color" value={pet.color} />
-              {pet.postType === 'adoption' && (
-                <>
-                  <DetailItem label="Castrado" value={pet.neutered ? 'Sí' : 'No'} />
-                  <DetailItem label="Vacunas" value={pet.completeVaccines ? 'Completas' : 'Incompletas'} />
-                </>
-              )}
-              {pet.postType !== 'adoption' && (
-                <>
-                  <DetailItem label="Estado de salud" value={pet.healthStatus} />
-                  <DetailItem label="Collar" value={pet.collar ? 'Sí' : 'No'} />
-                  {pet.collarColor && <DetailItem label="Color collar" value={pet.collarColor} />}
-                </>
-              )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                {leftDetails.map((d, i) => (
+                  <DetailItem key={`l-${i}`} label={d.label} value={d.value} />
+                ))}
+              </div>
+              <div className="space-y-4">
+                {rightDetails.map((d, i) => (
+                  <DetailItem key={`r-${i}`} label={d.label} value={d.value} />
+                ))}
+              </div>
             </div>
-            <DetailItem label="Zona" value={pet.zone} />
-            {pet.postType !== 'adoption' && pet.date && (
-              <DetailItem label="Publicado" value={formatDate(pet.date)} />
-            )}
+            {/* Zona y Publicado ahora se muestran en el grid superior */}
 
             {/* Se removió teléfono de contacto como fue solicitado */}
 
@@ -152,6 +237,33 @@ const PetDetail = ({ pet }) => {
             )}
           </div>
         </div>
+        {pet.zone && (
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-2">Mapa de la zona</h3>
+            {mapLoading && !mapError && (
+              <p className="text-sm mb-2 inline-flex items-center gap-2 text-blue-700">
+                <span className="inline-block w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                {barrioLoadingText}
+              </p>
+            )}
+            {mapError && <p className="text-sm text-red-600 mb-2">{mapError}</p>}
+            <MiniLeafletMap
+              barrioPoint={barrioPoint}
+              userPos={userPos}
+              height="380px"
+              userLabel="Tu Ubicación"
+              barrioLabel={
+                pet.postType === 'lost'
+                  ? 'Zona de la mascota perdida'
+                  : pet.postType === 'found'
+                    ? 'Zona de la mascota encontrada'
+                    : pet.postType === 'adoption'
+                      ? 'Zona de la mascota en adopción'
+                      : 'Barrio'
+              }
+            />
+          </div>
+        )}
       </div>
       <ReportPostModal
         post={pet}
@@ -165,9 +277,9 @@ const PetDetail = ({ pet }) => {
 };
 
 const DetailItem = ({ label, value }) => (
-  <div>
+  <div className="min-h-[48px]">
     <p className="text-sm text-gray-500">{label}</p>
-    <p className="capitalize">{value}</p>
+    <p className="capitalize leading-snug">{value}</p>
   </div>
 );
 

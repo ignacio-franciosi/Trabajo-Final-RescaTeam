@@ -6,13 +6,6 @@ import SuspendedNotice from '../components/common/SuspendedNotice';
 
 const ChangePasswordPage = () => {
   const { user } = useAuth();
-  if (user?.suspended) {
-    return (
-      <div className="min-h-screen py-10 px-4 bg-white">
-        <SuspendedNotice />
-      </div>
-    );
-  }
   const [formData, setFormData] = useState({
     old_password: '',
     new_password_1: '',
@@ -74,6 +67,14 @@ const ChangePasswordPage = () => {
 
   const pwd = formData.new_password_1;
 
+
+  if (user?.suspended) {
+    return (
+      <div className="min-h-screen py-10 px-4 bg-white">
+        <SuspendedNotice />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md mt-10">
