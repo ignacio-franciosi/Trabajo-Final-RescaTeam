@@ -1,12 +1,13 @@
-from clients import model_client, qdrant_client
-from search.app.dto.dtos import CreateEmbeddingDto, SearchPetDto
+from app.clients import qdrant_client
+from app.dto.dtos import CreateEmbeddingDto, SearchPetDto
+from app.clients.s3_client import load_image_from_s3
 
 class EmbeddingService:
 
     @staticmethod
-    def create_vector(request: CreateEmbeddingDto) -> str:
-        # descargar imagen de s3
-        vector = model_client.generate_embedding(request.image_url)
+    def create_vector(ai_client, request: CreateEmbeddingDto) -> str:
+        image = load_image_from_s3(request.image_url)
+        vector = ai_client.generate_embedding(image)
         qdrant_id = qdrant_client.insert_embedding(request=request, vector=vector)
         return qdrant_id
 

@@ -1,20 +1,25 @@
-from transformers import AutoProcessor, AutoModel
-from PIL import Image
-import torch
 import numpy as np
-import requests
+from PIL import Image
+from finetuned_model.model import ResNet50Backbone
+from torchvision import transforms
+import torch
 
-MODEL_PATH = "finetuned_model/"
+class AIModelClient:
+    def __init__(self, model_path="finetuned_model/best_resnet50_hard_triplet.pth", device=None):
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = ResNet50Backbone(embedding_dim=2048).to(self.device)
+        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
+        self.model.eval()
 
-processor = AutoProcessor.from_pretrained(MODEL_PATH)
-model = AutoModel.from_pretrained(MODEL_PATH)
-model.eval()
+        self.transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225]),
+        ])
 
-def generate_embedding(image_url: str) -> np.ndarray:
-    if image_url.startswith("http"):
-        image = Image.open(requests.get(image_url, stream=True).raw).convert("RGB")
-    inputs = processor(images=image, return_tensors="pt")
-    with torch.no_grad():
-        outputs = model(**inputs)
-        embedding = outputs.pooler_output[0].numpy()
-    return embedding
+    def generate_embedding(self, image: Image) -> np.ndarray: 
+        tensor = self.transform(image).unsqueeze(0).to(self.device)
+        with torch.no_grad():
+            embedding = self.model(tensor)
+        return embedding.squeeze(0).cpu().numpy()

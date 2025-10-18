@@ -2,11 +2,24 @@ from qdrant_client import QdrantClient
 import uuid
 from qdrant_client import models
 from qdrant_client.models import PointStruct, Filter, FieldCondition
-from search.app.dto.dtos import CreateEmbeddingDto, SearchPetDto
+from app.dto.dtos import CreateEmbeddingDto, SearchPetDto
 import numpy as np
+from config.settings import QDRANT_URL, QDRANT_API_KEY, QDRANT_COLLECTION
 
-QDRANT_COLLECTION = "pets_vectors"
-client = QdrantClient(host="localhost", port=6333)
+client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+print(client.get_collections())
+
+def init_qdrant_collection():
+    collections = [c.name for c in client.get_collections().collections]
+    if QDRANT_COLLECTION not in collections:
+        client.create_collection(
+            collection_name=QDRANT_COLLECTION,
+            vectors_config=models.VectorParams(size=2048, distance=models.Distance.COSINE),
+        )
+        print(f"Colección creada: {QDRANT_COLLECTION}")
+    else:
+        print(f"Conectado a colección existente: {QDRANT_COLLECTION}")
+
 
 def save_embedding(request: CreateEmbeddingDto, vector: np.ndarray):
     qdrant_id = str(uuid.uuid4())

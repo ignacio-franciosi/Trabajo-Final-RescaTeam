@@ -1,9 +1,16 @@
+# api
 fastapi
 uvicorn[standard]
-transformers
+python-dotenv
+pydantic
+
+# model
 torch
-pillow
+torchvision
+transformers
 numpy
-qdrant-client
-pika
-python-multipart
+
+pillow # images
+qdrant-client # qdrant
+boto3 # s3
+pika # Rabbit MQ
