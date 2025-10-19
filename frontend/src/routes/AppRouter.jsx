@@ -30,6 +30,7 @@ import SuspendedUsersPage from '../pages/SuspendedUsersPage';
 import AdoptionPage from '../pages/AdoptionPage';
 import LostPage from '../pages/LostPage';
 import FoundPage from '../pages/FoundPage';
+import ChatPage from "../pages/ChatPage";
 
 
 // Vistas compartidas
@@ -164,6 +165,22 @@ const AppRouter = () => {
             />
             <Route path="/mascota/:id" element={<PetDetailPage />} />
             <Route path="*" element={<Navigate to="/" />} />
+            <Route
+              path="/chat"
+              element={
+                <PrivateRoute>
+                  <ChatPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/chat/:chatId"
+              element={
+                <PrivateRoute>
+                  <ChatPage />
+                </PrivateRoute>
+              }
+            />
           </Routes>
         </main>
         <Footer />
