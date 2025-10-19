@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -75,5 +77,46 @@ func JWT(secret string) gin.HandlerFunc {
 		}
 
 		c.Next()
+	}
+}
+
+func ParseUserIDFromToken(tokenStr string, secret string) (string, error) {
+	if tokenStr == "" {
+		return "", errors.New("empty token")
+	}
+	if secret == "" {
+		secret = os.Getenv("JWT_SECRET")
+		if secret == "" {
+			return "", errors.New("JWT_SECRET not set")
+		}
+	}
+
+	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return []byte(secret), nil
+	})
+	if err != nil || !token.Valid {
+		return "", errors.New("invalid token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", errors.New("invalid claims")
+	}
+
+	idVal, ok := claims["id_user"]
+	if !ok {
+		return "", errors.New("id_user not found")
+	}
+
+	switch v := idVal.(type) {
+	case string:
+		return v, nil
+	case float64:
+		return strconv.Itoa(int(v)), nil
+	default:
+		return "", errors.New("id_user type not supported")
 	}
 }

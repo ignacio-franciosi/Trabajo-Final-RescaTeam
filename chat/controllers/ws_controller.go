@@ -3,8 +3,10 @@ package controllers
 import (
 	"chat/dto"
 	"chat/services"
+	"chat/utils"
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -26,7 +28,10 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// Upgrade inicia la conexión WebSocket autenticada
+// Upgrade inicia la conexión WebSocket autenticada.
+// Soporta: (1) userId seteado por middleware (Authorization: Bearer ...)
+//
+//	(2) ?token=JWT en query string (navegadores)
 func (wsc *WSController) Upgrade(c *gin.Context) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -34,8 +39,18 @@ func (wsc *WSController) Upgrade(c *gin.Context) {
 		return
 	}
 
-	// userID desde JWT
+	// 1) Intentar obtener userId del middleware (si vino Authorization header)
 	userID := c.GetString("userId")
+
+	// 2) Si no vino por header (caso navegador), aceptar ?token=JWT
+	if userID == "" {
+		if token := c.Query("token"); token != "" {
+			if uid, err := utils.ParseUserIDFromToken(token, os.Getenv("JWT_SECRET")); err == nil {
+				userID = uid
+			}
+		}
+	}
+
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
 		conn.Close()

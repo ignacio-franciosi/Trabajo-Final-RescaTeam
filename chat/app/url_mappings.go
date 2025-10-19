@@ -19,7 +19,7 @@ func RegisterRoutes(r *gin.Engine, db *mongo.Database, svc *services.ChatService
 
 	// WebSocket protegido con JWT
 	wsCtl := controllers.NewWSController(hub, svc, jwtSecret)
-	r.GET("/ws", auth, wsCtl.Upgrade)
+	r.GET("/ws", wsCtl.Upgrade)
 
 	// Rutas REST del chat (todas requieren auth)
 	chatCtl := controllers.NewChatController(svc)
