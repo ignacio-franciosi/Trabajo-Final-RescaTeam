@@ -1,35 +1,33 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import api from '../services/axiosConfigUsers';
-import { initPush } from "../services/PushService"; 
+import { initPush } from "../services/PushService";
 
-// Crear el contexto
-const AuthContext = createContext();
+// ⬅️ ahora exportamos también el contexto como named export
+export const AuthContext = createContext(null);
 
 // Hook personalizado
 export const useAuth = () => useContext(AuthContext);
 
-// Proveedor del contexto
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // objeto con id, userType, etc.
+  const [user, setUser] = useState(null);     // { userId, type, suspended }
   const [token, setToken] = useState(null);
   const [initialized, setInitialized] = useState(false);
 
-  // evita doble init de push
+  // Evita doble init de push
   const pushInitDoneRef = useRef(false);
 
-  // Helper centralizado para inicializar Push 1 sola vez
+  // Inicializa Push solo una vez si tenemos JWT
   const ensurePushInit = async (jwt) => {
     if (!jwt || pushInitDoneRef.current) return;
     try {
       await initPush(jwt);
       pushInitDoneRef.current = true;
     } catch (err) {
-      // No bloqueamos la app si falla push
       console.warn("[Push] init falló:", err);
     }
   };
 
-  // Cargar desde localStorage
+  // Bootstrap desde localStorage
   useEffect(() => {
     (async () => {
       try {
@@ -39,7 +37,6 @@ export const AuthProvider = ({ children }) => {
           setToken(savedToken);
           setUser(JSON.parse(savedUser));
           await ensurePushInit(savedToken);
-         
         }
       } finally {
         setInitialized(true);
@@ -51,14 +48,14 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.post('/login', { email, password });
       const { token, id_user, type, suspended } = res.data;
-      const user = { userId: id_user, type, suspended };
+      const nextUser = { userId: id_user, type, suspended };
 
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("user", JSON.stringify(nextUser));
       setToken(token);
-      setUser(user);
+      setUser(nextUser);
 
-      await ensurePushInit(savedToken);
+      await ensurePushInit(token);
 
       return { success: true };
     } catch (error) {
@@ -70,14 +67,14 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.post('/register', data);
       const { token, id_user, type, suspended } = res.data;
-      const user = { userId: id_user, type, suspended };
+      const nextUser = { userId: id_user, type, suspended };
 
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("user", JSON.stringify(nextUser));
       setToken(token);
-      setUser(user);
+      setUser(nextUser);
 
-      await ensurePushInit(savedToken);
+      await ensurePushInit(token);
 
       return { success: true };
     } catch (error) {
@@ -91,7 +88,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     // permitir nueva init de push si vuelve a loguearse
-    pushInitDoneRef.current = false; 
+    pushInitDoneRef.current = false;
   };
 
   // Permite actualizar token y user desde otras partes de la app
@@ -99,7 +96,8 @@ export const AuthProvider = ({ children }) => {
     if (newToken) {
       localStorage.setItem("token", newToken);
       setToken(newToken);
-      ensurePushInit(savedToken);
+      // Intentar init push si aún no lo hicimos
+      ensurePushInit(newToken);
     }
     if (newUser) {
       localStorage.setItem("user", JSON.stringify(newUser));
@@ -113,3 +111,5 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+export default AuthProvider;

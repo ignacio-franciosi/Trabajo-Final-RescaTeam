@@ -31,7 +31,7 @@ import AdoptionPage from '../pages/AdoptionPage';
 import LostPage from '../pages/LostPage';
 import FoundPage from '../pages/FoundPage';
 import ChatPage from "../pages/ChatPage";
-
+import { ChatProvider } from "../context/ChatContext";
 
 // Vistas compartidas
 // import PetList from "../components/pets/PetList";
@@ -164,12 +164,13 @@ const AppRouter = () => {
               }
             />
             <Route path="/mascota/:id" element={<PetDetailPage />} />
-            <Route path="*" element={<Navigate to="/" />} />
             <Route
               path="/chat"
               element={
                 <PrivateRoute>
-                  <ChatPage />
+                  <ChatProvider>
+                    <ChatPage />
+                  </ChatProvider>
                 </PrivateRoute>
               }
             />
@@ -177,10 +178,13 @@ const AppRouter = () => {
               path="/chat/:chatId"
               element={
                 <PrivateRoute>
-                  <ChatPage />
+                  <ChatProvider>
+                    <ChatPage />
+                  </ChatProvider>
                 </PrivateRoute>
               }
             />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
         <Footer />

@@ -1,24 +1,24 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useWebSocketChat } from '../hooks/useWebSocketChat';
-import { ChatService } from '../services/ChatService'
-import { AuthContext } from './AuthContext';
+import ChatService from '../services/ChatService';            // <-- asegúrate que este archivo exporte por default
+import { useAuth } from './AuthContext';
 
 export const ChatContext = createContext(null);
 
 export function ChatProvider({ children }) {
-  const { token } = useContext(AuthContext);
+  const { token } = useAuth();
   const { status, events, sendMessage } = useWebSocketChat(token);
 
-  const [chats, setChats] = useState([]);           // [{chatId, ...}]
+  const [chats, setChats] = useState([]);                   // [{chatId, ...}]
   const [messagesByChat, setMessagesByChat] = useState({}); // { chatId: [msgs...] }
 
-  // cargar lista de chats al montar
+  // cargar lista de chats al montar o cuando cambia token
   useEffect(() => {
     if (!token) return;
-    ChatService.listChats(token).then(({ data }) => setChats(data));
+    ChatService.listChats(token).then(({ data }) => setChats(data)).catch(() => {});
   }, [token]);
 
-  // manejar eventos entrantes WS
+  // manejar últimos eventos entrantes WS
   useEffect(() => {
     if (!events.length) return;
     const evt = events[events.length - 1];
@@ -29,9 +29,11 @@ export function ChatProvider({ children }) {
         const list = prev[msg.chatId] || [];
         return { ...prev, [msg.chatId]: [...list, msg] };
       });
-      // opcional: actualizar preview de chat
+      // actualizar última vista del chat
       setChats((prev) =>
-        prev.map((c) => (c.chatId === msg.chatId ? { ...c, lastMessage: msg.content, lastUpdate: msg.timestamp } : c))
+        prev.map((c) => (c.chatId === msg.chatId
+          ? { ...c, lastMessage: msg.content, lastUpdate: msg.timestamp }
+          : c))
       );
     }
   }, [events]);

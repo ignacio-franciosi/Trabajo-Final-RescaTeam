@@ -4,10 +4,11 @@ import { useAuth } from '../../context/AuthContext';
 import ReportPostModal from '../reports/ReportPostModal';
 import { searchBarrioOverpassPoint } from '../../services/overpass';
 import MiniLeafletMap from '../map/MiniLeafletMap';
+import { ChatService } from '../../services/ChatService';
 
 const PetDetail = ({ pet }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token} = useAuth();
   const [currentImage, setCurrentImage] = useState(0);
   const hasImages = pet.imagenes && pet.imagenes.length > 0;
   const location = useLocation();
@@ -40,6 +41,49 @@ const PetDetail = ({ pet }) => {
       prev === pet.imagenes.length - 1 ? 0 : prev + 1
     );
   };
+
+  // INICIAR CHAT (HU1)
+  // =======================
+  const [startingChat, setStartingChat] = useState(false);
+  const [startError, setStartError] = useState(null);
+
+  const ownerId =
+    pet?.userId ?? pet?.ownerId ?? pet?.id_user ?? pet?.idUser ?? null;
+
+  const postId =
+    pet?.postId ?? pet?.PostId ?? pet?._id ?? pet?.id ?? null;
+
+  const isOwner = user?.userId != null && ownerId != null
+    ? String(user.userId) === String(ownerId)
+    : false;
+
+  const canStartChat = !!token && !!ownerId && !!postId && !isOwner && !user?.suspended;
+
+  const handleStartChat = async () => {
+    if (!canStartChat) return;
+    try {
+      setStartingChat(true);
+      setStartError(null);
+
+      const { data } = await ChatService.startChat(token, {
+        receiverId: ownerId, // DTO backend acepta string/number (StringOrNumber)
+        postId: String(postId),
+      });
+
+      // data.chatId del backend
+      if (data?.chatId) {
+        navigate(`/chat/${data.chatId}`);
+      } else {
+        setStartError('No se obtuvo el chatId del servidor.');
+      }
+    } catch (err) {
+      console.error('[chat/start] error:', err);
+      setStartError(err?.response?.data?.error || 'No se pudo iniciar el chat.');
+    } finally {
+      setStartingChat(false);
+    }
+  };
+  // =======================
 
   // contactar eliminado del UI
 
@@ -233,6 +277,21 @@ const PetDetail = ({ pet }) => {
                   onClick={() => setReportOpen(true)}
                   className="bg-red-600 hover:bg-red-700 text-white text-sm px-5 py-2 rounded shadow"
                 >Reportar publicación</button>
+                
+                {canStartChat && (
+                  <button
+                    type="button"
+                    onClick={handleStartChat}
+                    disabled={startingChat}
+                    className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm px-5 py-2 rounded shadow"
+                  >
+                    {startingChat ? 'Creando chat…' : 'Iniciar chat'}
+                  </button>
+                )}
+
+                {startError && (
+                  <span className="text-sm text-red-600">{startError}</span>
+                )}
               </div>
             )}
           </div>
