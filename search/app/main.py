@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 import uvicorn
 from contextlib import asynccontextmanager
 #from consumer import start_in_background
@@ -32,7 +32,7 @@ async def create_vector(request: CreateEmbeddingDto):
     return {"status": "success", "qdrant_id": qdrant_id}
 
 @app.get("/vectors/search")
-def search(request: SearchPetDto):
+def search(request: SearchPetDto = Depends()):
     results_ids = EmbeddingService.search_vector(request)
     return {"matches": results_ids}
 
