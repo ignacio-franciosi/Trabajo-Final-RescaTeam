@@ -1,16 +1,23 @@
 package queue
 
 import (
+	"context"
 	"encoding/json"
 	"posts/dto"
-	"posts/services"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
 )
 
-var queue amqp.Queue
+var usersQueue amqp.Queue
+var searchQueue amqp.Queue
 var channel *amqp.Channel
+
+// Handler function type for processing queue messages
+type MessageHandler func(messageDto dto.QueueMessageDto) error
+
+var messageHandler MessageHandler
 
 func InitQueue() {
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
@@ -29,9 +36,10 @@ func InitQueue() {
 		log.Info("Channel opened")
 	}
 
-	queue, err = channel.QueueDeclare(
+	// Declare users queue for consuming
+	usersQueue, err = channel.QueueDeclare(
 		"users-events",
-		true, 
+		true,
 		false,
 		false,
 		false,
@@ -39,17 +47,38 @@ func InitQueue() {
 	)
 
 	if err != nil {
-		log.Info("Failed to declare a queue")
+		log.Info("Failed to declare users queue")
 		log.Fatal(err)
 	} else {
-		log.Info("Queue declared")
+		log.Info("Users queue declared successfully - Name: ", usersQueue.Name, " Messages: ", usersQueue.Messages, " Consumers: ", usersQueue.Consumers)
 	}
+
+	// Declare search queue for producing
+	searchQueue, err = channel.QueueDeclare(
+		"posts-search-events",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+
+	if err != nil {
+		log.Info("Failed to declare search queue")
+		log.Fatal(err)
+	} else {
+		log.Info("Search queue declared successfully - Name: ", searchQueue.Name, " Messages: ", searchQueue.Messages, " Consumers: ", searchQueue.Consumers)
+	}
+}
+
+func SetMessageHandler(handler MessageHandler) {
+	messageHandler = handler
 }
 
 func Consume() {
 
 	msgs, err := channel.Consume(
-		queue.Name,
+		usersQueue.Name,
 		"users-events",
 		true,
 		false,
@@ -71,19 +100,37 @@ func Consume() {
 			log.Error("Error:", err)
 		}
 
-		handleQueueMessage(jsonMessage)
+		if messageHandler != nil {
+			err := messageHandler(jsonMessage)
+			if err != nil {
+				log.Error("Error handling queue message:", err)
+			}
+		}
 	}
 }
 
-func handleQueueMessage(messageDto dto.QueueMessageDto) {
+func PublishToSearch(body []byte) error {
 
-	if messageDto.Message == "delete" {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-		err := services.PostsService.DeleteAllPostsByUserId(messageDto.Id)
+	log.Info("Publishing message to search queue: ", string(body))
 
-		if err != nil {
-			log.Error(err)
-			return
-		}
+	err := channel.PublishWithContext(
+		ctx,
+		"",
+		searchQueue.Name,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		})
+
+	if err != nil {
+		log.Debug("Error while publishing message to search queue", err)
+		return err
 	}
+
+	return nil
 }

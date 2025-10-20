@@ -4,6 +4,7 @@ import (
 	"log"
 	"posts/app"
 	"posts/db"
+	"posts/services"
 	"posts/utils/queue"
 	utils "posts/utils/cache"
 	s3client "posts/utils/s3"
@@ -21,6 +22,8 @@ func main() {
     }
 
     queue.InitQueue()
+
+    queue.SetMessageHandler(services.HandleQueueMessage)
 
     var wg sync.WaitGroup
     wg.Add(1)

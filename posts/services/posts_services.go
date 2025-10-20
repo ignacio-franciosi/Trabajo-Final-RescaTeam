@@ -1,17 +1,19 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"mime/multipart"
 	"path/filepath"
-	"strings"
-	"log"
 	postsClient "posts/clients"
 	"posts/dto"
 	"posts/model"
 	e "posts/utils/errors"
+	"posts/utils/queue"
 	s3client "posts/utils/s3"
+	"strings"
 )
 
 type postsService struct{}
@@ -326,10 +328,13 @@ func (s postsService) UploadImage(postId string, userId int, file multipart.File
 		return dto.ImageDto{}, e.NewInternalServerApiError("Cannot save image to database", dbErr)
 	}
 
+	// Check if this is the first image of a lost or found post and send to search queue
+	go s.sendToSearchQueueIfNeeded(postId, fileURL)
+
 	return dto.ImageDto{
 		ImageId:  savedImage.ImageId.Hex(), // Convert ObjectID to string
 		PostId:   savedImage.PostId,
-		UserId:   savedImage.UserId,        // NUEVO: incluir userId en la respuesta
+		UserId:   savedImage.UserId, // NUEVO: incluir userId en la respuesta
 		Filepath: savedImage.Filepath,
 	}, nil
 }
@@ -345,8 +350,8 @@ func (s postsService) GetImagesByPostId(postId string) ([]dto.ImageDto, e.ApiErr
 		dtos = append(dtos, dto.ImageDto{
 			ImageId:  img.ImageId.Hex(), // Convert ObjectID to string
 			PostId:   img.PostId,
-			UserId:   img.UserId,        // NUEVO: incluir userId en la respuesta
-			Filepath: img.Filepath,     // Ya contiene la URL completa de S3
+			UserId:   img.UserId,   // NUEVO: incluir userId en la respuesta
+			Filepath: img.Filepath, // Ya contiene la URL completa de S3
 		})
 	}
 	return dtos, nil
@@ -359,10 +364,10 @@ func (s *postsService) GetImageById(id string) (dto.ImageDto, e.ApiError) {
 	}
 
 	imageDto := dto.ImageDto{
-		ImageId:  image.ImageId.Hex(), 
+		ImageId:  image.ImageId.Hex(),
 		PostId:   image.PostId,
-		UserId:   image.UserId,      
-		Filepath: image.Filepath,     
+		UserId:   image.UserId,
+		Filepath: image.Filepath,
 	}
 
 	return imageDto, nil
@@ -430,7 +435,7 @@ func (s *postsService) DeleteAllImagesByUserId(userId int) error {
 	for _, image := range images {
 		// Si tienes la URL completa de la imagen
 		if image.Filepath != "" {
-			err :=s3client.S3ClientInstance.DeleteFile(image.Filepath)
+			err := s3client.S3ClientInstance.DeleteFile(image.Filepath)
 			if err != nil {
 				// Log del error pero continuar con las demás imágenes
 				log.Printf("Error al eliminar imagen de S3: %s, error: %v", image.Filepath, err)
@@ -443,7 +448,7 @@ func (s *postsService) DeleteAllImagesByUserId(userId int) error {
 	if err != nil {
 		return fmt.Errorf("error al eliminar imagenes del usuario %d: %w", userId, err)
 	}
-	
+
 	return nil
 }
 
@@ -456,11 +461,60 @@ func (s postsService) GetAllImagesByUserId(userId int) ([]dto.ImageDto, e.ApiErr
 	var dtos []dto.ImageDto
 	for _, img := range images {
 		dtos = append(dtos, dto.ImageDto{
-			ImageId:  img.ImageId.Hex(), 
+			ImageId:  img.ImageId.Hex(),
 			PostId:   img.PostId,
-			UserId:   img.UserId,        
-			Filepath: img.Filepath,     
+			UserId:   img.UserId,
+			Filepath: img.Filepath,
 		})
 	}
 	return dtos, nil
+}
+
+func (s *postsService) sendToSearchQueueIfNeeded(postId string, imageUrl string) {
+	// Get post details to check post type
+	postDto, err := s.GetPostById(postId)
+	if err != nil {
+		log.Printf("Error getting post for queue message: %v", err)
+		return
+	}
+
+	// Only send to queue if it's a lost or found post
+	if postDto.PostType != "lost" && postDto.PostType != "found" {
+		return
+	}
+
+	// Check if this is the first image (no existing images count check needed since we're in upload)
+	// We'll send every image upload, but search service can handle duplicates or we can optimize later
+
+	// Create message for search queue
+	message := dto.PostSearchMessageDto{
+		PostId:   postId,
+		PostType: postDto.PostType,
+		ImageUrl: imageUrl,
+	}
+
+	// Convert to JSON
+	messageBytes, jsonErr := json.Marshal(message)
+	if jsonErr != nil {
+		log.Printf("Error marshaling search queue message: %v", jsonErr)
+		return
+	}
+
+	// Send to search queue
+	queueErr := queue.PublishToSearch(messageBytes)
+	if queueErr != nil {
+		log.Printf("Error sending message to search queue: %v", queueErr)
+	}
+}
+
+// HandleQueueMessage handles messages from the users queue
+func HandleQueueMessage(messageDto dto.QueueMessageDto) error {
+	if messageDto.Message == "delete" {
+		err := PostsService.DeleteAllPostsByUserId(messageDto.Id)
+		if err != nil {
+			log.Printf("Error deleting posts for user %d: %v", messageDto.Id, err)
+			return err
+		}
+	}
+	return nil
 }
