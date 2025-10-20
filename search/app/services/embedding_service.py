@@ -8,7 +8,7 @@ class EmbeddingService:
     def create_vector(ai_client, request: CreateEmbeddingDto) -> str:
         image = load_image_from_s3(request.image_url)
         vector = ai_client.generate_embedding(image)
-        qdrant_id = qdrant_client.insert_embedding(request=request, vector=vector)
+        qdrant_id = qdrant_client.save_embedding(request=request, vector=vector)
         return qdrant_id
 
     @staticmethod
