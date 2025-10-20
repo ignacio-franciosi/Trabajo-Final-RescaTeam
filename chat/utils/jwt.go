@@ -120,3 +120,24 @@ func ParseUserIDFromToken(tokenStr string, secret string) (string, error) {
 		return "", errors.New("id_user type not supported")
 	}
 }
+
+func ParseUserIDFromJWT(tokenStr, secret string) (string, error) {
+	tok, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return []byte(secret), nil
+	})
+	if err != nil || !tok.Valid {
+		return "", err
+	}
+	claims, ok := tok.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", fmt.Errorf("invalid claims")
+	}
+	id, ok := claims["id_user"]
+	if !ok {
+		return "", fmt.Errorf("missing id_user")
+	}
+	return fmt.Sprint(id), nil
+}

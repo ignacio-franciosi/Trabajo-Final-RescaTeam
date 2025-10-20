@@ -33,27 +33,23 @@ var upgrader = websocket.Upgrader{
 //
 //	(2) ?token=JWT en query string (navegadores)
 func (wsc *WSController) Upgrade(c *gin.Context) {
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo iniciar WebSocket"})
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "token faltante en query"})
 		return
 	}
 
-	// 1) Intentar obtener userId del middleware (si vino Authorization header)
-	userID := c.GetString("userId")
-
-	// 2) Si no vino por header (caso navegador), aceptar ?token=JWT
-	if userID == "" {
-		if token := c.Query("token"); token != "" {
-			if uid, err := utils.ParseUserIDFromToken(token, os.Getenv("JWT_SECRET")); err == nil {
-				userID = uid
-			}
-		}
+	// Verificar el token igual que en el middleware
+	secret := os.Getenv("JWT_SECRET")
+	userID, err := utils.ParseUserIDFromJWT(token, secret)
+	if err != nil || userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "token inválido"})
+		return
 	}
 
-	if userID == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
-		conn.Close()
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo iniciar WebSocket"})
 		return
 	}
 

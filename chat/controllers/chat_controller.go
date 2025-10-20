@@ -144,19 +144,19 @@ func (cc *ChatController) SendMessageHTTP(c *gin.Context) {
 
 // MarkRead marca un chat como leído para el usuario autenticado
 func (cc *ChatController) MarkRead(c *gin.Context) {
-	var req dto.MarkReadRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
+	chatID := c.Param("chatId")
+	if chatID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "chatId requerido"})
 		return
 	}
 
-	userID := c.GetString("userId") // autenticado
+	userID := c.GetString("userId")
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
 		return
 	}
 
-	if err := cc.Service.MarkRead(c.Request.Context(), req.ChatID, userID); err != nil {
+	if err := cc.Service.MarkRead(c.Request.Context(), chatID, userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
