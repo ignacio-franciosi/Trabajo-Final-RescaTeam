@@ -1,10 +1,11 @@
 from fastapi import FastAPI, Depends
 import uvicorn
+import asyncio
 from contextlib import asynccontextmanager
-#from consumer import start_in_background
 from app.services.embedding_service import EmbeddingService
 from app.dto.dtos import CreateEmbeddingDto, SearchPetDto
 from app.clients.qdrant_client import init_qdrant_collection
+from app.clients.rabbit_consumer import consume
 from app.clients.ai_model_client import AIModelClient
 
 ai_client: AIModelClient = None
@@ -14,6 +15,7 @@ async def lifespan(app: FastAPI):
     global ai_client
     ai_client = AIModelClient("finetuned_model/best_resnet50_hard_triplet.pth")
     init_qdrant_collection()
+    asyncio.create_task(consume()) # Iniciar consumidor RabbitMQ en segundo plano
     yield
 
 app = FastAPI(
@@ -21,9 +23,6 @@ app = FastAPI(
     description = "API to generate vector embeddings",
     lifespan=lifespan
 )
-
-# Iniciar consumidor RabbitMQ en segundo plano
-#start_in_background()
 
 @app.post("/vectors/create")
 async def create_vector(request: CreateEmbeddingDto):

@@ -1,0 +1,9 @@
+docker build -t search-api .
+docker run -p 8000:8000 search-api
+
+# sin docker
+cd search
+python 3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pyton3 -m app.main

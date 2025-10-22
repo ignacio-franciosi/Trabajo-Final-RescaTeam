@@ -13,4 +13,4 @@ numpy
 pillow # images
 qdrant-client # qdrant
 boto3 # s3
-pika # Rabbit MQ
+aio-pika # Rabbit MQ
