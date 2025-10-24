@@ -118,3 +118,7 @@ export const getSuspendedUsers = async () => {
   }
 };
 
+export async function getUserPublicById(userId) {
+  const { data } = await api.get(`/user/public/${userId}`);
+  return data; // { id_user, name, surname }
+}
