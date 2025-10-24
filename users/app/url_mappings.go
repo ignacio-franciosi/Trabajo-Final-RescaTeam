@@ -17,6 +17,7 @@ func mapUrls() {
 	router.POST("/login", userController.Login)
 	router.POST("/forgot-password", userController.ForgotPassword)
 	router.PATCH("/reset-password", userController.ResetPassword)
+	router.GET("/user/public/:id", userController.GetUserPublic)
 
 	// can access: Only if user is account OWNER (and authenticated)
 	router.GET("/user/email/:email", userController.GetUserByEmail)
@@ -30,7 +31,7 @@ func mapUrls() {
 	// can access: Only admin
 	router.PATCH("/user/suspend/:id", userController.SuspendUser)       //hace nuevo token con suspended true
 	router.PATCH("/user/reactivate/:id", userController.ReactivateUser) //hace nuevo token con suspended false
-    router.GET("/user/suspended", userController.GetAllSuspendedUsers)
+	router.GET("/user/suspended", userController.GetAllSuspendedUsers)
 	//router.GET("/reports", userController.ViewReports)
 
 	/*

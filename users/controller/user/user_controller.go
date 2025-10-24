@@ -1,8 +1,10 @@
 package userController
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	dto "users/dto"
 	service "users/services/user"
 	authhelper "users/utils/auth"
@@ -238,7 +240,7 @@ func DeleteUser(c *gin.Context) {
 	// Obtener información del usuario que realiza la acción
 	requestUserId, _ := c.Get("userId")
 	isAdmin, _ := c.Get("isAdmin")
-	
+
 	// Pasar toda la información al servicio para que maneje internamente el envío de email
 	err = service.UserService.DeleteUser(id, requestUserId.(int), isAdmin.(bool))
 	if err != nil {
@@ -312,4 +314,59 @@ func GetAllSuspendedUsers(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, usersDto)
+}
+
+func GetUserPublic(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+
+	userDto, err := service.UserService.GetUserById(id)
+	if err != nil {
+		// Mantener comportamiento: si no existe devolver 404
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	// Serializar dinámicamente a map para leer distintas claves posibles
+	var m map[string]interface{}
+	if b, err := json.Marshal(userDto); err == nil {
+		_ = json.Unmarshal(b, &m)
+	}
+
+	getString := func(keys ...string) string {
+		for _, k := range keys {
+			if v, ok := m[k]; ok {
+				if s, ok2 := v.(string); ok2 && s != "" {
+					return s
+				}
+			}
+		}
+		return ""
+	}
+
+	name := getString("name", "firstName", "firstname", "first_name", "fullName", "fullname")
+	surname := getString("surname", "lastName", "lastname", "last_name", "last")
+
+	// si sólo hay fullName, separar
+	if name == "" {
+		if full, ok := m["fullName"].(string); ok && full != "" {
+			parts := strings.Fields(full)
+			if len(parts) > 0 {
+				name = parts[0]
+				if len(parts) > 1 && surname == "" {
+					surname = strings.Join(parts[1:], " ")
+				}
+			}
+		}
+	}
+
+	resp := dto.PublicUserNameDto{
+		UserId:  id,
+		Name:    name,
+		Surname: surname,
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
