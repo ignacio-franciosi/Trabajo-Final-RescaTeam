@@ -1,5 +1,17 @@
 import apiAdoption from './axiosConfigPost';
 
+function safeBaseURL() {
+  return (apiAdoption?.defaults?.baseURL || '').replace(/\/+$/, '');
+}
+
+export function buildPostImageUrl(filepath) {
+  if (!filepath) return '';
+  if (/^https?:\/\//i.test(filepath)) return filepath;
+  const base = safeBaseURL();
+  const path = filepath.startsWith('/') ? filepath : `/${filepath}`;
+  return `${base}${path}`;
+}
+
 export const createPost = async (formData) => {
   try {
     const token = localStorage.getItem('token');
@@ -218,3 +230,13 @@ export const getFilteredPosts = async (filters) => {
     return { success: false, message: err.response?.data?.error || 'Error al filtrar mascotas' };
   }
 };
+
+export async function getPostByIdForChat(postId) {
+  const { data } = await apiAdoption.get(`/post/${postId}`);
+  return data;
+}
+
+export async function getImagesByPostIdForChat(postId) {
+  const { data } = await apiAdoption.get(`/post/images/${postId}`);
+  return Array.isArray(data) ? data : [];
+}
