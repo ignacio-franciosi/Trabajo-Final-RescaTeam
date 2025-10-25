@@ -1,3 +1,4 @@
+// src/components/chat/ChatWindow.jsx
 import { useContext, useEffect, useMemo, useRef } from 'react';
 import { ChatContext } from '../../context/ChatContext';
 import ChatBubble from './ChatBubble';
@@ -6,78 +7,123 @@ import { AuthContext } from '../../context/AuthContext';
 import { useAutoScroll } from '../../hooks/useAutoScroll';
 
 export default function ChatWindow({ chatId }) {
-  const { messagesByChat, sendMessage, markRead } = useContext(ChatContext);
+  const {
+    messagesByChat,
+    sendMessage,
+    markRead,
+    chats,
+    getChatById,
+    nameMap,
+    sendEvent,
+  } = useContext(ChatContext);
   const { user } = useContext(AuthContext);
+
+  // Chat activo enriquecido (displayName/otherId si existen)
+  const activeChat = useMemo(() => {
+    if (typeof getChatById === 'function') return getChatById(chatId);
+    return chats.find(c => c.chatId === chatId) || null;
+  }, [chatId, chats, getChatById]);
+
+  // Derivar "otro usuario" y su nombre legible
+  const myId = String(user?.userId ?? '');
+  const otherId =
+    activeChat?.otherId ??
+    (activeChat?.participants || []).find(p => String(p) !== myId);
+
+  const otherName =
+    activeChat?.displayName ||
+    (otherId ? nameMap?.[otherId] : '') ||
+    otherId ||
+    'Chat';
+
+  // Mensajes del chat
   const msgs = messagesByChat[chatId] || [];
 
-  // auto-scroll inteligente
-  const { containerRef, atBottom, scrollToBottom, onNewContent } = useAutoScroll({ threshold: 140 });
+  // Auto-scroll inteligente
+  const { containerRef, atBottom, scrollToBottom, onNewContent } =
+    useAutoScroll({ threshold: 140 });
 
-  // Dispara autoscroll solo cuando llegan mensajes nuevos
   useEffect(() => {
     onNewContent();
   }, [msgs.length, onNewContent]);
 
-  // Debounce para markRead (evita spam si llegan muchos mensajes rápido)
+  useEffect(() => {
+    // si ChatContext todavía no expone sendEvent, salteá esto
+    if (typeof sendEvent === 'function' && chatId) {
+      sendEvent('chat:active', { chatId });
+    }
+  }, [chatId, sendEvent]);
+
+  // Debounce para markRead
   const markTimerRef = useRef(null);
   const lastMarkedCountRef = useRef(0);
 
   useEffect(() => {
-    // Condiciones: chat visible (pestaña activa), tenemos mensajes, y estamos razonablemente abajo
     if (document.visibilityState !== 'visible') return;
     if (msgs.length === 0) return;
-
-    // No vuelvas a marcar si no hay diferencia respecto a la última vez
     if (lastMarkedCountRef.current === msgs.length) return;
 
-    // Pequeño delay para “juntar” múltiples llegadas
     clearTimeout(markTimerRef.current);
     markTimerRef.current = setTimeout(async () => {
       try {
         await markRead(chatId);
         lastMarkedCountRef.current = msgs.length;
       } catch {
-        // ignorar error en UI
+        /* noop */
       }
     }, 250);
 
     return () => clearTimeout(markTimerRef.current);
   }, [chatId, msgs.length, markRead]);
 
-  // Botón flotante para bajar al final si el usuario scrolleó hacia arriba
-  const JumpToBottomBtn = useMemo(() => {
-    if (atBottom) return null;
-    return (
-      <button
-        onClick={scrollToBottom}
-        className="absolute bottom-20 right-4 bg-blue-600 text-white text-sm px-3 py-1 rounded-full shadow hover:bg-blue-700"
-      >
-        Ir al último
-      </button>
-    );
-  }, [atBottom, scrollToBottom]);
-
   const handleSend = (text) => {
     if (!text?.trim()) return;
     sendMessage({ chatId, content: text });
-    // opcional: si yo envío, scrolleo
     scrollToBottom();
   };
 
+  // Avatar redondo con inicial (simple y rápido)
+  const initial = (otherName || '')
+    .trim()
+    .charAt(0)
+    .toUpperCase();
+
   return (
-    <div className="h-full flex flex-col relative">
+    <div className="h-full flex flex-col relative bg-white">
+      {/* Header del chat: nombre del otro usuario */}
+      <header className="flex items-center gap-3 px-4 py-3 border-b">
+        <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-semibold">
+          {initial || 'U'}
+        </div>
+        <div className="min-w-0">
+          <div className="font-medium text-gray-900 truncate">{otherName}</div>
+          {/* Subtítulo opcional (estado, etc.). Dejalo por si luego sumamos presencia. */}
+          {/* <div className="text-xs text-gray-500">en línea</div> */}
+        </div>
+      </header>
+
+      {/* Lista de mensajes */}
       <div ref={containerRef} className="flex-1 overflow-auto p-4 space-y-2">
         {msgs.map((m) => (
           <ChatBubble
             key={m.messageId}
             message={m}
-            isMine={String(m.senderId) === String(user?.userId)}
+            isMine={String(m.senderId) === myId}
           />
         ))}
       </div>
 
-      {JumpToBottomBtn}
+      {/* Botón flotante para ir al final si el usuario scrolleó hacia arriba */}
+      {!atBottom && (
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-24 right-4 bg-blue-600 text-white text-sm px-3 py-1 rounded-full shadow hover:bg-blue-700"
+        >
+          Ir al último
+        </button>
+      )}
 
+      {/* Input de mensaje */}
       <div className="border-t p-3">
         <ChatMessageInput onSend={handleSend} />
       </div>

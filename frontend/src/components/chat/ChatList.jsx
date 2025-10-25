@@ -11,10 +11,7 @@ export default function ChatList({
   if (!Array.isArray(chats)) chats = [];
 
   return (
-    <aside className="w-full sm:w-80 border-r border-gray-200 bg-white">
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold">Mensajes</h2>
-      </div>
+    <aside className=" h-full flex flex-col">
 
       <ul className="divide-y divide-gray-100">
         {chats.length === 0 && (
@@ -32,8 +29,6 @@ export default function ChatList({
             title = other || 'Chat';
           }
 
-          const subtitle = `Post: ${ch.postId ?? "-"}`;
-
           return (
             <li
               key={ch.chatId}
@@ -43,7 +38,6 @@ export default function ChatList({
               <div className="flex items-start justify-between">
                 <div>
                   <div className="text-sm font-medium text-gray-900">{title}</div>
-                  <div className="text-xs text-gray-500">{subtitle}</div>
                   {ch.lastMessage ? (
                     <div className="mt-1 text-sm text-gray-700 line-clamp-1">
                       {ch.lastMessage}

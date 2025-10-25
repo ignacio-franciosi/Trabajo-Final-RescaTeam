@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 // Layout
@@ -50,11 +50,11 @@ const PrivateRoute = ({ children }) => {
   return children;
 };
 
-const AppRouter = () => {
-  // const { token, logout } = useAuth();
+function AppContent() {
+  const location = useLocation();
+  const isChatRoute = location.pathname.startsWith("/chat");
 
   return (
-    <Router>
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1">
@@ -189,8 +189,14 @@ const AppRouter = () => {
         </main>
         <Footer />
       </div>
+  );
+
+}
+
+export default function AppRouter() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
-};
-
-export default AppRouter;
+}

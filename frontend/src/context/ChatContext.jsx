@@ -8,7 +8,7 @@ export const ChatContext = createContext(null);
 
 export function ChatProvider({ children }) {
   const { token } = useAuth();
-  const { status, events, sendMessage } = useWebSocketChat(token);
+  const { status, events, sendMessage, sendEvent } = useWebSocketChat(token);
 
   const [chats, setChats] = useState([]);                   // [{chatId, participants, postId, ... , displayName}]
   const [messagesByChat, setMessagesByChat] = useState({}); // { chatId: [msgs...] }
@@ -110,6 +110,7 @@ export function ChatProvider({ children }) {
     chats,
     messagesByChat,
     sendMessage,
+    sendEvent,
     nameMap,
     getChatById,
     reloadChats: async () => {
@@ -127,7 +128,7 @@ export function ChatProvider({ children }) {
       if (!token) return;
       await ChatService.markRead(token, chatId);
     },
-  }), [status, chats, messagesByChat, sendMessage, token, nameMap, getChatById]);
+  }), [status, chats, messagesByChat, sendMessage, sendEvent, token, nameMap, getChatById]);
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 }
