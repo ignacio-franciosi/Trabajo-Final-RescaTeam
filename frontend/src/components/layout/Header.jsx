@@ -18,6 +18,7 @@ const Header = () => {
 
   const profileOptions = [
     { label: 'Ver mi perfil', action: 'profile' },
+    { label: 'Mensajes', action: 'chat' }, 
     { label: 'Mis publicaciones', action: 'mis-publicaciones' },
     ...(user?.type ? [{ label: 'Ver reportes', action: 'admin/reportes' }] : []),
     { label: 'Cerrar Sesión', action: 'logout' },
