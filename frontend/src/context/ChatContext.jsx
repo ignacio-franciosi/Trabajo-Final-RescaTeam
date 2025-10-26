@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useState,
   useCallback,
-  useRef,            // <-- IMPORTANTE: agregamos useRef
+  useRef,
 } from 'react';
 import { useWebSocketChat } from '../hooks/useWebSocketChat';
 import ChatService from '../services/ChatService';
@@ -175,6 +175,13 @@ export function ChatProvider({ children }) {
     try { await ChatService.markRead(token, chatId); } catch { /* noop */ }
     await safeFetchMessages(chatId);
   }, [token, safeFetchMessages]);
+
+  // publicar total de no leídos para el Header
+  useEffect(() => {
+    const total = Object.values(unreadByChat).reduce((a, b) => a + (Number(b) || 0), 0);
+    localStorage.setItem('chat_unread_total', String(total));
+    window.dispatchEvent(new CustomEvent('chat:unread', { detail: { total } }));
+  }, [unreadByChat]);
 
   const value = useMemo(() => ({
     status,

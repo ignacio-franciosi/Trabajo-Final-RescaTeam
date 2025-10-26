@@ -4,8 +4,8 @@ const DropdownMenu = ({ options, onSelect, label = 'Perfil', compact = false }) 
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef(null);
 
-  const handleSelect = (option) => {
-    onSelect(option);
+  const handleSelect = (action) => {
+    onSelect(action);
     setIsOpen(false);
   };
 
@@ -41,6 +41,7 @@ const DropdownMenu = ({ options, onSelect, label = 'Perfil', compact = false }) 
                 onClick={() => handleSelect(option.action)}
                 className="block w-full text-left px-4 py-2 text-sm hover:bg-neutral-700/80"
               >
+                {/* option.label puede ser string o ReactNode */}
                 {option.label}
               </button>
             ))}

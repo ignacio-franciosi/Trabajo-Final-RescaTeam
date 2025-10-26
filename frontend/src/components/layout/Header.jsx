@@ -16,9 +16,35 @@ const Header = () => {
   const isLoggedIn = !!token;
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // === total de no leídos para el badge de "Mensajes" ===
+  const [unreadTotal, setUnreadTotal] = useState(() => {
+    const v = Number(localStorage.getItem('chat_unread_total') || '0');
+    return Number.isFinite(v) ? v : 0;
+  });
+  useEffect(() => {
+    const update = (e) => {
+      const next = e?.detail?.total ?? Number(localStorage.getItem('chat_unread_total') || '0');
+      setUnreadTotal(Number(next) || 0);
+    };
+    window.addEventListener('chat:unread', update);
+    return () => window.removeEventListener('chat:unread', update);
+  }, []);
+  // ===
+
+  const MensajesLabel = () => (
+    <span className="flex items-center justify-between w-full">
+      <span>Mensajes</span>
+      {unreadTotal > 0 && (
+        <span className="ml-2 inline-flex min-w-[1.25rem] h-5 px-1.5 items-center justify-center rounded-full bg-blue-600 text-white text-[11px] font-semibold">
+          {unreadTotal > 99 ? '99+' : unreadTotal}
+        </span>
+      )}
+    </span>
+  );
+
   const profileOptions = [
     { label: 'Ver mi perfil', action: 'profile' },
-    { label: 'Mensajes', action: 'chat' }, 
+    { label: <MensajesLabel />, action: 'chat' }, // ← con badge
     { label: 'Mis publicaciones', action: 'mis-publicaciones' },
     ...(user?.type ? [{ label: 'Ver reportes', action: 'admin/reportes' }] : []),
     { label: 'Cerrar Sesión', action: 'logout' },
@@ -32,7 +58,6 @@ const Header = () => {
   const handleProfileSelect = (action) => {
     if (action === 'logout') {
       setIsLoggingOut(true);
-      // realizar logout inmediato y mostrar un spinner breve antes de redirigir a login
       logout();
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => navigate('/login'), 300);
@@ -41,21 +66,14 @@ const Header = () => {
     navigate(`/${action}`);
   };
 
-  // Si el token desaparece (logout completado), ocultar spinner
   useEffect(() => {
-    if (!token) {
-      setIsLoggingOut(false);
-    }
+    if (!token) setIsLoggingOut(false);
   }, [token]);
 
-  // Al llegar a /login, asegurarse de ocultar spinner
   useEffect(() => {
-    if (location.pathname === '/login') {
-      setIsLoggingOut(false);
-    }
+    if (location.pathname === '/login') setIsLoggingOut(false);
   }, [location.pathname]);
 
-  // Limpiar timeout al desmontar
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -138,12 +156,10 @@ const Header = () => {
           <nav className="hidden md:flex items-center gap-1">
             <Link
               to="/"
-              className={`group relative px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive('/') ? 'text-white' : 'text-white/80 hover:text-white'
-                }`}
+              className={`group relative px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive('/') ? 'text-white' : 'text-white/80 hover:text-white'}`}
             >
               Home
-              <span className={`pointer-events-none absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full transition-all ${isActive('/') ? 'bg-blue-500' : 'bg-blue-500/0 group-hover:bg-blue-500'
-                }`} />
+              <span className={`pointer-events-none absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full transition-all ${isActive('/') ? 'bg-blue-500' : 'bg-blue-500/0 group-hover:bg-blue-500'}`} />
             </Link>
             <button
               onClick={goToPets}
@@ -167,10 +183,9 @@ const Header = () => {
             <button
               onClick={() => handleProtectedAction('publicar')}
               disabled={!!user?.suspended}
-              className={`ml-1 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${user?.suspended
-                ? 'bg-neutral-700 text-white/50 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-500'
-                }`}
+              className={`ml-1 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
+                user?.suspended ? 'bg-neutral-700 text-white/50 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500'
+              }`}
               title={user?.suspended ? 'Cuenta suspendida: no puedes publicar' : ''}
             >
               Publicar Mascota
@@ -257,10 +272,9 @@ const Header = () => {
           <button
             onClick={() => handleProtectedAction('publicar')}
             disabled={!!user?.suspended}
-            className={`block w-full text-left rounded-md px-3 py-2 text-sm ${user?.suspended
-              ? 'text-white/40 bg-neutral-700 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-500'
-              }`}
+            className={`block w-full text-left rounded-md px-3 py-2 text-sm ${
+              user?.suspended ? 'text-white/40 bg-neutral-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500'
+            }`}
             title={user?.suspended ? 'Cuenta suspendida: no puedes publicar' : ''}
           >
             Publicar Mascota

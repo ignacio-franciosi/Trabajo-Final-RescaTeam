@@ -4,11 +4,12 @@ import { useAuth } from '../../context/AuthContext';
 import ReportPostModal from '../reports/ReportPostModal';
 import { searchBarrioOverpassPoint } from '../../services/overpass';
 import MiniLeafletMap from '../map/MiniLeafletMap';
-import { ChatService } from '../../services/ChatService';
+// ⬇️ Import correcto: default export
+import ChatService from '../../services/ChatService';
 
 const PetDetail = ({ pet }) => {
   const navigate = useNavigate();
-  const { user, token} = useAuth();
+  const { user, token } = useAuth();
   const [currentImage, setCurrentImage] = useState(0);
   const hasImages = pet.imagenes && pet.imagenes.length > 0;
   const location = useLocation();
@@ -65,20 +66,28 @@ const PetDetail = ({ pet }) => {
       setStartingChat(true);
       setStartError(null);
 
-      const { data } = await ChatService.startChat(token, {
-        receiverId: ownerId, // DTO backend acepta string/number (StringOrNumber)
+      // Normalizamos a string para el DTO del backend
+      const payload = {
+        receiverId: String(ownerId),
         postId: String(postId),
-      });
+      };
 
-      // data.chatId del backend
+      const { data } = await ChatService.startChat(token, payload);
+
       if (data?.chatId) {
         navigate(`/chat/${data.chatId}`);
       } else {
         setStartError('No se obtuvo el chatId del servidor.');
       }
     } catch (err) {
+      // Mostramos el mensaje específico si viene del backend
+      const apiMsg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        'No se pudo iniciar el chat.';
       console.error('[chat/start] error:', err);
-      setStartError(err?.response?.data?.error || 'No se pudo iniciar el chat.');
+      setStartError(apiMsg);
     } finally {
       setStartingChat(false);
     }
@@ -126,11 +135,11 @@ const PetDetail = ({ pet }) => {
     setMapError(null);
     setBarrioPoint(null);
     setMapLoading(true);
-    // Mensaje suave si tarda más de 7s (un poco más de tiempo)
+    // Mensaje suave si tarda más de 7s
     softId = setTimeout(() => {
       setMapError((prev) => prev || 'Tarda más de lo normal en ubicar el barrio…');
     }, 7000);
-    // Corte duro a los ~15s para no dejar colgado el UI pero dar más margen
+    // Corte duro a los ~15s
     hardId = setTimeout(() => {
       controller.abort();
     }, 15000);
@@ -138,7 +147,7 @@ const PetDetail = ({ pet }) => {
       try {
         const res = await searchBarrioOverpassPoint(cleaned, { signal: controller.signal });
         setBarrioPoint(res);
-        setMapError(null); // limpiar el mensaje si finalmente llegó
+        setMapError(null);
       } catch (e) {
         if (e?.name === 'AbortError') return;
         setMapError('No se pudo cargar el barrio en el mapa.');
@@ -178,7 +187,6 @@ const PetDetail = ({ pet }) => {
     pushDetail('Collar', pet.collar ? 'Sí' : 'No');
     pushDetail('Color collar', pet.collarColor);
   }
-  // Add Zona and Publicado to the grid for better balance
   pushDetail('Zona', pet.zone);
   if (pet.postType !== 'adoption' && pet.date) {
     pushDetail('Publicado', formatDate(pet.date));
@@ -264,20 +272,19 @@ const PetDetail = ({ pet }) => {
                 ))}
               </div>
             </div>
-            {/* Zona y Publicado ahora se muestran en el grid superior */}
-
-            {/* Se removió teléfono de contacto como fue solicitado */}
 
             <p className="text-sm text-gray-500">Descripción</p>
             <p className="whitespace-pre-line">{pet.description}</p>
             {!user?.suspended && (
-              <div className="pt-4">
+              <div className="pt-4 flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={() => setReportOpen(true)}
                   className="bg-red-600 hover:bg-red-700 text-white text-sm px-5 py-2 rounded shadow"
-                >Reportar publicación</button>
-                
+                >
+                  Reportar publicación
+                </button>
+
                 {canStartChat && (
                   <button
                     type="button"
@@ -346,7 +353,6 @@ const DetailItem = ({ label, value }) => (
 function formatDate(dateStr) {
   try {
     if (!dateStr) return '';
-    // Intentar parsear (si viene en ISO: 2025-10-04)
     const parts = dateStr.includes('T') ? new Date(dateStr) : new Date(dateStr);
     if (isNaN(parts.getTime())) return dateStr;
     const d = String(parts.getDate()).padStart(2, '0');
