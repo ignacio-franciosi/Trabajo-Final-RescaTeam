@@ -10,13 +10,17 @@ import { useAuth } from '../context/AuthContext';
 export default function ChatPage() {
   const { chatId: paramChatId } = useParams();
   const navigate = useNavigate();
-  const { chats, fetchMessages, nameMap, getChatById } = useContext(ChatContext);
+  const { chats, fetchMessages, nameMap, getChatById, setActiveChat, unreadByChat } = useContext(ChatContext);
   const { user } = useAuth();
 
   const [activeId, setActiveId] = useState(paramChatId || null);
 
   useEffect(() => { if (paramChatId) setActiveId(paramChatId); }, [paramChatId]);
-  useEffect(() => { if (activeId) fetchMessages(activeId); }, [activeId, fetchMessages]);
+  // cada vez que cambia el activo → avisar al contexto y cargar mensajes
+  useEffect(() => {
+    if (!activeId) return;
+    setActiveChat(activeId);
+  }, [activeId, setActiveChat]);
 
   const activeChat = useMemo(
     () => (activeId && typeof getChatById === 'function' ? getChatById(activeId) : null),
@@ -53,6 +57,7 @@ export default function ChatPage() {
               onSelect={setActiveId}
               currentUserId={String(user?.userId ?? '')}
               nameMap={nameMap}
+              unreadByChat={unreadByChat} 
             />
           </div>
         </div>

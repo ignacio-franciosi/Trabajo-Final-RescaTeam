@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,            // <-- IMPORTANTE: agregamos useRef
+} from 'react';
 import { useWebSocketChat } from '../hooks/useWebSocketChat';
 import ChatService from '../services/ChatService';
 import { useAuth } from './AuthContext';
@@ -10,31 +18,35 @@ export function ChatProvider({ children }) {
   const { token } = useAuth();
   const { status, events, sendMessage, sendEvent } = useWebSocketChat(token);
 
-  const [chats, setChats] = useState([]);                   // [{chatId, participants, postId, ... , displayName}]
-  const [messagesByChat, setMessagesByChat] = useState({}); // { chatId: [msgs...] }
+  const [chats, setChats] = useState([]);
+  const [messagesByChat, setMessagesByChat] = useState({});
+  const [activeChatId, setActiveChatId] = useState(null);
+  const [unreadByChat, setUnreadByChat] = useState({});
 
-  // cache nombres para /user/public/:id
-  const nameCache = React.useRef(new Map()); // id -> "Nombre Apellido"
+  // caches/estado interno
+  const nameCache = useRef(new Map());     // id -> "Nombre Apellido"
+  const inflightFetch = useRef(new Map()); // chatId -> Promise
+  const lastFetchAt = useRef({});          // chatId -> timestamp (ms)
+
+  const myId = useMemo(() => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      return savedUser ? String(JSON.parse(savedUser)?.userId ?? '') : '';
+    } catch {
+      return '';
+    }
+  }, []);
 
   async function enrichChatsWithNames(rawChats) {
     if (!Array.isArray(rawChats)) return [];
-
-    let myId = '';
-    try {
-      const savedUser = localStorage.getItem('user');
-      myId = savedUser ? String(JSON.parse(savedUser)?.userId ?? '') : '';
-    } catch {}
-
     const out = [];
     for (const ch of rawChats) {
       const participants = Array.isArray(ch.participants) ? ch.participants : [];
       const otherId =
         participants.find((p) => String(p) !== String(myId)) ??
-        participants[0] ??
-        '';
+        participants[0] ?? '';
 
       let displayName = otherId || 'Chat';
-
       if (otherId) {
         if (nameCache.current.has(otherId)) {
           displayName = nameCache.current.get(otherId);
@@ -47,11 +59,10 @@ export function ChatProvider({ children }) {
               nameCache.current.set(otherId, full);
             }
           } catch {
-            // fallback al id si falla
+            // fallback: id
           }
         }
       }
-
       out.push({ ...ch, otherId, displayName });
     }
     return out;
@@ -65,6 +76,11 @@ export function ChatProvider({ children }) {
         const { data } = await ChatService.listChats(token);
         const enriched = await enrichChatsWithNames(data);
         setChats(enriched);
+        setUnreadByChat((prev) => {
+          const next = { ...prev };
+          for (const ch of enriched) if (next[ch.chatId] == null) next[ch.chatId] = 0;
+          return next;
+        });
       } catch {
         setChats([]);
       }
@@ -72,7 +88,46 @@ export function ChatProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  // eventos WS -> mensajes/preview
+  // --- Helper: fetch de mensajes con de-dupe + throttle + retry 429 ---
+  const safeFetchMessages = useCallback(async (chatId) => {
+    if (!token || !chatId) return;
+
+    // si ya hay una request en vuelo para este chat, reusar
+    const inFlight = inflightFetch.current.get(chatId);
+    if (inFlight) return inFlight;
+
+    // throttle: mínimo 1s entre lecturas del mismo chat
+    const now = Date.now();
+    const last = lastFetchAt.current[chatId] || 0;
+    if (now - last < 1000) return;
+
+    const p = ChatService.listMessages(token, chatId)
+      .then(({ data }) => {
+        setMessagesByChat((prev) => ({ ...prev, [chatId]: data }));
+        const count = Array.isArray(data)
+          ? data.filter((m) => !m.viewed && String(m.senderId) !== String(myId)).length
+          : 0;
+        setUnreadByChat((prev) => ({ ...prev, [chatId]: count }));
+        lastFetchAt.current[chatId] = Date.now();
+      })
+      .catch((err) => {
+        if (err?.response?.status === 429) {
+          setTimeout(() => {
+            lastFetchAt.current[chatId] = 0;
+            safeFetchMessages(chatId);
+          }, 1200);
+          return;
+        }
+      })
+      .finally(() => {
+        inflightFetch.current.delete(chatId);
+      });
+
+    inflightFetch.current.set(chatId, p);
+    return p;
+  }, [token, myId]);
+
+  // eventos WS -> mensajes/preview/contadores
   useEffect(() => {
     if (!events.length) return;
     const evt = events[events.length - 1];
@@ -90,45 +145,69 @@ export function ChatProvider({ children }) {
             : c
         )
       );
+      if (String(msg.senderId) !== String(myId)) {
+        setUnreadByChat((prev) => {
+          const current = prev[msg.chatId] ?? 0;
+          if (msg.chatId === activeChatId && document.visibilityState === 'visible') {
+            return { ...prev, [msg.chatId]: 0 };
+          }
+          return { ...prev, [msg.chatId]: current + 1 };
+        });
+      }
     }
-  }, [events]);
+  }, [events, myId, activeChatId]);
 
-  // función pedida por ChatPage
   const getChatById = useCallback(
     (id) => chats.find((c) => c.chatId === id) || null,
     [chats]
   );
 
-  // exponer un nameMap (opcional)
   const nameMap = useMemo(
     () => Object.fromEntries(nameCache.current),
-    [chats] // recalcula cuando cambian los chats; suficiente para UI
+    [chats]
   );
+
+  const setActiveChat = useCallback(async (chatId) => {
+    setActiveChatId(chatId);
+    if (!chatId) return;
+
+    setUnreadByChat((prev) => ({ ...prev, [chatId]: 0 }));
+    try { await ChatService.markRead(token, chatId); } catch { /* noop */ }
+    await safeFetchMessages(chatId);
+  }, [token, safeFetchMessages]);
 
   const value = useMemo(() => ({
     status,
     chats,
     messagesByChat,
+    unreadByChat,
+    activeChatId,
     sendMessage,
     sendEvent,
     nameMap,
     getChatById,
+    setActiveChat,
     reloadChats: async () => {
       if (!token) return;
       const { data } = await ChatService.listChats(token);
       const enriched = await enrichChatsWithNames(data);
       setChats(enriched);
+      setUnreadByChat((prev) => {
+        const next = { ...prev };
+        for (const ch of enriched) if (next[ch.chatId] == null) next[ch.chatId] = 0;
+        return next;
+      });
     },
-    fetchMessages: async (chatId) => {
-      if (!token) return;
-      const { data } = await ChatService.listMessages(token, chatId);
-      setMessagesByChat((prev) => ({ ...prev, [chatId]: data }));
-    },
+    fetchMessages: safeFetchMessages,
     markRead: async (chatId) => {
-      if (!token) return;
-      await ChatService.markRead(token, chatId);
+      if (!token || !chatId) return;
+      try { await ChatService.markRead(token, chatId); } catch { /* noop */ }
+      setUnreadByChat((prev) => ({ ...prev, [chatId]: 0 }));
     },
-  }), [status, chats, messagesByChat, sendMessage, sendEvent, token, nameMap, getChatById]);
+  }), [
+    status, chats, messagesByChat, unreadByChat, activeChatId,
+    sendMessage, sendEvent, token, nameMap, getChatById, setActiveChat, safeFetchMessages
+  ]);
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 }

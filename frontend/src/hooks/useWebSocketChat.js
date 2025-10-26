@@ -5,15 +5,26 @@ export function useWebSocketChat(token) {
   const [status, setStatus] = useState('idle'); // idle|connecting|open|closed
   const [events, setEvents] = useState([]);     // mensajes entrantes {type, payload}
 
+  // guards de reconexión
+  const reconnectAttemptRef = useRef(0);
+  const connectingRef = useRef(false);
+  const shouldReconnectRef = useRef(true);
+
   const connect = useCallback(() => {
     if (!token) return;
+    if (connectingRef.current) return; // evita conexiones simultáneas
+    connectingRef.current = true;
     setStatus('connecting');
 
     const WS_BASE = import.meta.env.VITE_CHAT_WS_URL || "ws://localhost:8083";
     const ws = new WebSocket(`${WS_BASE}/ws?token=${token}`);
     wsRef.current = ws;
 
-    ws.onopen = () => setStatus('open');
+    ws.onopen = () => {
+      setStatus('open');
+      reconnectAttemptRef.current = 0;       // reset backoff
+      connectingRef.current = false;
+    };
 
     ws.onmessage = (e) => {
       try {
@@ -27,8 +38,18 @@ export function useWebSocketChat(token) {
 
     ws.onclose = () => {
       setStatus('closed');
-      // reconectar
-      setTimeout(connect, 2000);
+      connectingRef.current = false;
+      if (!shouldReconnectRef.current) return;
+
+      // backoff exponencial con tope
+      const attempt = Math.min(reconnectAttemptRef.current + 1, 6);
+      reconnectAttemptRef.current = attempt;
+      const delay = Math.min(15000, 1000 * 2 ** attempt);
+
+      setTimeout(() => {
+        // si el hook sigue montado y hay token, reintentar
+        if (shouldReconnectRef.current && token) connect();
+      }, delay);
     };
 
     ws.onerror = () => {
@@ -37,8 +58,12 @@ export function useWebSocketChat(token) {
   }, [token]);
 
   useEffect(() => {
+    shouldReconnectRef.current = true;
     connect();
-    return () => wsRef.current?.close();
+    return () => {
+      shouldReconnectRef.current = false;
+      try { wsRef.current?.close(); } catch {}
+    };
   }, [connect]);
 
   // Enviar "eventos" al WS con el wrapper que espera el backend

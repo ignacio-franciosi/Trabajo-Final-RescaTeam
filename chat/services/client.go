@@ -107,7 +107,7 @@ func (c *Client) ReadPump() {
 
 // WritePump escucha el canal `send` y escribe al WebSocket
 func (c *Client) WritePump() {
-	ticker := time.NewTicker(30 * time.Second) // ping cada 30s
+	ticker := time.NewTicker(55 * time.Second) // ping cada 55s
 	defer func() {
 		ticker.Stop()
 		_ = c.conn.Close()

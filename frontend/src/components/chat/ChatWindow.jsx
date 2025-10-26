@@ -48,7 +48,6 @@ export default function ChatWindow({ chatId }) {
   }, [msgs.length, onNewContent]);
 
   useEffect(() => {
-    // si ChatContext todavía no expone sendEvent, salteá esto
     if (typeof sendEvent === 'function' && chatId) {
       sendEvent('chat:active', { chatId });
     }
@@ -82,7 +81,7 @@ export default function ChatWindow({ chatId }) {
     scrollToBottom();
   };
 
-  // Avatar redondo con inicial (simple y rápido)
+  // Avatar redondo con inicial
   const initial = (otherName || '')
     .trim()
     .charAt(0)
@@ -97,23 +96,28 @@ export default function ChatWindow({ chatId }) {
         </div>
         <div className="min-w-0">
           <div className="font-medium text-gray-900 truncate">{otherName}</div>
-          {/* Subtítulo opcional (estado, etc.). Dejalo por si luego sumamos presencia. */}
-          {/* <div className="text-xs text-gray-500">en línea</div> */}
         </div>
       </header>
 
       {/* Lista de mensajes */}
       <div ref={containerRef} className="flex-1 overflow-auto p-4 space-y-2">
-        {msgs.map((m) => (
-          <ChatBubble
-            key={m.messageId}
-            message={m}
-            isMine={String(m.senderId) === myId}
-          />
-        ))}
+        {msgs.map((m, i) => {
+          // key única: combina messageId, senderId, timestamp y el índice
+          const key =
+            m.messageId
+              ? `msg-${m.messageId}-${i}`
+              : `${chatId}-${m.senderId}-${m.timestamp || i}`;
+          return (
+            <ChatBubble
+              key={key}
+              message={m}
+              isMine={String(m.senderId) === myId}
+            />
+          );
+        })}
       </div>
 
-      {/* Botón flotante para ir al final si el usuario scrolleó hacia arriba */}
+      {/* Botón flotante para volver al final */}
       {!atBottom && (
         <button
           onClick={scrollToBottom}

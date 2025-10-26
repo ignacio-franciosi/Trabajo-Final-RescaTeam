@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"chat/clients/push"
+	"chat/dto"
 	"chat/model"
 	"chat/repositories"
 	"net/http"
@@ -33,14 +34,24 @@ func (ctl *PushController) Subscribe(c *gin.Context) {
 		return
 	}
 
-	var sub model.PushSubscription
-	if err := c.ShouldBindJSON(&sub); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// IMPORTANTE: el frontend envía dto.PushSubscription (con base64url)
+	var in dto.PushSubscription
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "json inválido"})
 		return
 	}
 
-	if err := ctl.repo.SaveSubscription(c.Request.Context(), userID, sub); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo guardar la subscription"})
+	sub := model.PushSubscription{
+		Endpoint: in.Endpoint,
+		Keys: model.PushSubscriptionKeys{
+			P256dh: in.Keys.P256dh,
+			Auth:   in.Keys.Auth,
+		},
+		// CreatedAt / UpdatedAt se setean en repo (upsert)
+	}
+
+	if err := ctl.repo.UpsertSubscriptionByEndpoint(c.Request.Context(), userID, sub); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo guardar la suscripción"})
 		return
 	}
 

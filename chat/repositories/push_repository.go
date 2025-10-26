@@ -64,3 +64,26 @@ func (r *PushRepository) DeleteSubscriptions(ctx context.Context, endpoints []st
 	_, err := r.col.DeleteMany(ctx, bson.M{"endpoint": bson.M{"$in": endpoints}})
 	return err
 }
+
+// UpsertSubscriptionByEndpoint: inserta/actualiza por endpoint (idempotente)
+func (r *PushRepository) UpsertSubscriptionByEndpoint(ctx context.Context, userID string, sub model.PushSubscription) error {
+	now := time.Now()
+
+	filter := bson.M{"endpoint": sub.Endpoint}
+	update := bson.M{
+		"$set": bson.M{
+			"userId":      userID,
+			"endpoint":    sub.Endpoint,
+			"keys.p256dh": sub.Keys.P256dh,
+			"keys.auth":   sub.Keys.Auth,
+			"updatedAt":   now,
+		},
+		"$setOnInsert": bson.M{
+			"createdAt": now,
+		},
+	}
+
+	opts := options.Update().SetUpsert(true)
+	_, err := r.col.UpdateOne(ctx, filter, update, opts)
+	return err
+}
