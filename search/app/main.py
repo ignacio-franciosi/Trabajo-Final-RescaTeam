@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
 from contextlib import asynccontextmanager
@@ -7,6 +8,7 @@ from app.dto.dtos import CreateEmbeddingDto, SearchPetDto
 from app.clients.qdrant_client import init_qdrant_collection
 from app.clients.rabbit_consumer import consume
 from app.clients.ai_model_client import AIModelClient
+from config.settings import FRONTEND_BASE_URL
 
 ai_client: AIModelClient = None
 
@@ -22,6 +24,14 @@ app = FastAPI(
     title = "RescaTeam search API",
     description = "API to generate vector embeddings",
     lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[FRONTEND_BASE_URL],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.post("/vectors/create")
