@@ -6,6 +6,7 @@ import { searchBarrioOverpassPoint } from '../../services/overpass';
 import MiniLeafletMap from '../map/MiniLeafletMap';
 // ⬇️ Import correcto: default export
 import ChatService from '../../services/ChatService';
+import SimilarPetsCarousel from './SimilarPetsCarousel';
 
 const PetDetail = ({ pet }) => {
   const navigate = useNavigate();
@@ -338,6 +339,13 @@ const PetDetail = ({ pet }) => {
         onClose={() => setReportOpen(false)}
         onSuccess={() => setReportOpen(false)}
       />
+      {/* Carrusel de mascotas similares */}
+      {pet.postId && pet.postType && (
+        <div className="mt-10">
+          <SimilarPetsCarousel postId={pet.postId} postType={pet.postType} />
+        </div>
+      )}
+
     </div>
   );
 };
