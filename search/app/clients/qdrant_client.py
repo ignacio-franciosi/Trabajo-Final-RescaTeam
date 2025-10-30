@@ -80,6 +80,7 @@ def get_embedding_by_post_id(post_id: str):
 def search_embedding(request: SearchPetDto):
     vector = get_embedding_by_post_id(request.post_id)
     #print("vector:", vector)
+    print("norma ", np.linalg.norm(vector))
     if vector is None:
         return []
     
@@ -99,7 +100,9 @@ def search_embedding(request: SearchPetDto):
         collection_name=QDRANT_COLLECTION,
         query_vector=vector.tolist(),
         limit=1000,
-        score_threshold=0.3,  # max distance
+        score_threshold=0.45,  # max distance
         query_filter=q_filter
     )
+    for r in results:
+        print(r.score, r.payload)
     return results
