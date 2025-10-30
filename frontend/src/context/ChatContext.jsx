@@ -41,7 +41,7 @@ export function ChatProvider({ children }) {
     if (!Array.isArray(rawChats)) return [];
     const out = [];
     for (const ch of rawChats) {
-      const participants = Array.isArray(ch.participants) ? ch.participants : [];
+      const participants = Array.isArray(ch.participants) ? ch.participants.map(p => String(p)) : [];
       const otherId =
         participants.find((p) => String(p) !== String(myId)) ??
         participants[0] ?? '';

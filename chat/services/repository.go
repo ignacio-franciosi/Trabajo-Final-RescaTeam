@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -51,37 +52,78 @@ func sortedPair(a, b string) [2]string {
 	return [2]string{p[0], p[1]}
 }
 
-// 1) Buscar chat por (participants + postID) o crearlo
+func pairKey(parts [2]string) string {
+	return parts[0] + "#" + parts[1]
+}
+
+// helper para detectar duplicate-key de Mongo
+func isMongoDuplicateKeyErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	// mongo.WriteException
+	if we, ok := err.(mongo.WriteException); ok {
+		for _, e := range we.WriteErrors {
+			if e.Code == 11000 {
+				return true
+			}
+		}
+	}
+	// mongo.CommandError
+	var cmdErr mongo.CommandError
+	if errors.As(err, &cmdErr) && cmdErr.Code == 11000 {
+		return true
+	}
+	// fallback por contenido
+	l := strings.ToLower(err.Error())
+	return strings.Contains(l, "e11000") || strings.Contains(l, "duplicate key")
+}
+
+// 1) Buscar chat por (participantsKey + postID) o crearlo (upsert atómico)
 func (r *MongoRepository) FindOrCreateChat(ctx context.Context, me, other, postID string) (model.Chat, error) {
 	parts := sortedPair(me, other)
+	key := pairKey(parts)
 
-	// Buscamos por igualdad exacta del array (como lo guardamos ordenado)
 	filter := bson.M{
-		"participants": parts,
-		"postId":       postID,
+		"participantsKey": key,
+		"postId":          postID,
 	}
+
+	now := time.Now()
+	newID := primitive.NewObjectID()
+
+	update := bson.M{
+		"$setOnInsert": bson.M{
+			"_id":             newID,
+			"participants":    parts,
+			"participantsKey": key,
+			"postId":          postID,
+			"lastUpdate":      now,
+			"lastMessage":     "",
+			"lastSenderId":    "",
+		},
+	}
+
+	opts := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
 
 	var chat model.Chat
-	err := r.chatsCol.FindOne(ctx, filter).Decode(&chat)
-	if err == mongo.ErrNoDocuments {
-		now := time.Now()
-		chat = model.Chat{
-			ID:           primitive.NewObjectID(),
-			Participants: parts,
-			PostID:       postID,
-			LastUpdate:   now,
-			LastMessage:  "",
-			LastSenderID: "",
-		}
-		if _, err := r.chatsCol.InsertOne(ctx, chat); err != nil {
-			return model.Chat{}, err
-		}
+	err := r.chatsCol.FindOneAndUpdate(ctx, filter, update, opts).Decode(&chat)
+	if err == nil {
 		return chat, nil
 	}
-	if err != nil {
+
+	// Carreras: si otro proceso insertó justo antes, recuperamos el chat exacto
+	if isMongoDuplicateKeyErr(err) {
+		if findErr := r.chatsCol.FindOne(ctx, filter).Decode(&chat); findErr == nil {
+			return chat, nil
+		}
 		return model.Chat{}, err
 	}
-	return chat, nil
+
+	if err == mongo.ErrNoDocuments {
+		return model.Chat{}, errors.New("no se pudo crear/recuperar chat")
+	}
+	return model.Chat{}, err
 }
 
 // 2) Traer un chat por su _id
@@ -105,7 +147,7 @@ func (r *MongoRepository) ListChats(ctx context.Context, me string, limit int64)
 		opts.SetLimit(limit)
 	}
 
-	// match donde el array 'participants' contenga 'me'
+	// participants contiene 'me'
 	cur, err := r.chatsCol.Find(ctx, bson.M{"participants": me}, opts)
 	if err != nil {
 		return nil, err
@@ -121,7 +163,6 @@ func (r *MongoRepository) ListChats(ctx context.Context, me string, limit int64)
 
 // 4) Guardar mensaje y actualizar metadatos del chat
 func (r *MongoRepository) SaveMessage(ctx context.Context, m model.Message) (model.Message, error) {
-	// Asegurar IDs/timestamp
 	if m.ID.IsZero() {
 		m.ID = primitive.NewObjectID()
 	}
@@ -133,7 +174,6 @@ func (r *MongoRepository) SaveMessage(ctx context.Context, m model.Message) (mod
 		return model.Message{}, err
 	}
 
-	// Actualizar cabecera del chat
 	_, _ = r.chatsCol.UpdateByID(ctx, m.ChatID, bson.M{
 		"$set": bson.M{
 			"lastUpdate":   m.Timestamp,
@@ -145,14 +185,13 @@ func (r *MongoRepository) SaveMessage(ctx context.Context, m model.Message) (mod
 	return m, nil
 }
 
-// 5) Listar mensajes de un chat (últimos N → en orden cronológico)
+// 5) Listar mensajes (orden cronológico)
 func (r *MongoRepository) ListMessages(ctx context.Context, chatID string, limit int64) ([]model.Message, error) {
 	objID, err := primitive.ObjectIDFromHex(chatID)
 	if err != nil {
 		return nil, errors.New("chatId inválido")
 	}
 
-	// Traemos descendente para obtener los más recientes y luego invertimos
 	opts := options.Find().SetSort(bson.D{{Key: "timestamp", Value: -1}})
 	if limit > 0 {
 		opts.SetLimit(limit)
@@ -169,14 +208,13 @@ func (r *MongoRepository) ListMessages(ctx context.Context, chatID string, limit
 		return nil, err
 	}
 
-	// Invertimos para devolver de más antiguo → más nuevo
 	for i, j := 0, len(msgs)-1; i < j; i, j = i+1, j-1 {
 		msgs[i], msgs[j] = msgs[j], msgs[i]
 	}
 	return msgs, nil
 }
 
-// 6) Marcar mensajes como leídos para un usuario (los que NO envió él)
+// 6) Marcar leídos
 func (r *MongoRepository) MarkRead(ctx context.Context, chatID, userID string) error {
 	objID, err := primitive.ObjectIDFromHex(chatID)
 	if err != nil {
@@ -195,20 +233,16 @@ func (r *MongoRepository) MarkRead(ctx context.Context, chatID, userID string) e
 	return err
 }
 
-/* -------- Push subscriptions (persistencia) -------- */
+/* -------- Push subscriptions -------- */
 
-// SaveSubscription guarda una suscripción en la colección "push_subscriptions"
 func (r *MongoRepository) SaveSubscription(ctx context.Context, sub model.PushSubscription) error {
-	// aseguramos ID / CreatedAt
 	if sub.ID.IsZero() {
 		sub.ID = primitive.NewObjectID()
 	}
 	if sub.CreatedAt.IsZero() {
 		sub.CreatedAt = time.Now()
 	}
-
 	_, err := r.pushCol.InsertOne(ctx, sub)
-	// ignorar duplicados por endpoint (11000)
 	if we, ok := err.(mongo.WriteException); ok {
 		for _, e := range we.WriteErrors {
 			if e.Code == 11000 {

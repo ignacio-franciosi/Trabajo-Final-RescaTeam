@@ -32,6 +32,11 @@ func (s *ChatService) StartChat(ctx context.Context, me, other, postID string) (
 	return s.repo.FindOrCreateChat(ctx, me, other, postID)
 }
 
+// helper: verificar pertenencia al chat (robusto, sin depender del hub)
+func userBelongsToChat(userID string, chat model.Chat) bool {
+	return chat.Participants[0] == userID || chat.Participants[1] == userID
+}
+
 // SendMessage: guarda mensaje y lo distribuye por WS/Push
 func (s *ChatService) SendMessage(ctx context.Context, senderID string, in dto.WSMessage) (model.Message, error) {
 	var chat model.Chat
@@ -62,8 +67,8 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID string, in dto.W
 		return model.Message{}, errors.New("faltan datos: chatId o (receiverId + postId)")
 	}
 
-	// Validar que el remitente pertenezca al chat
-	if !s.hub.IsUserInChat(senderID, chat) {
+	// Validar que el remitente pertenezca al chat (no dependemos sólo del hub)
+	if !userBelongsToChat(senderID, chat) {
 		return model.Message{}, errors.New("no tienes permiso en este chat")
 	}
 
@@ -95,12 +100,15 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID string, in dto.W
 		receiver = chat.Participants[0]
 	}
 
-	// Notificar por WS
+	// Notificar por WS al receptor
 	out := dto.WSOutgoing{
 		Type:    "message",
 		Payload: dto.ToMessageResponse(&saved),
 	}
 	s.hub.SendToUser(receiver, out)
+
+	// (Opcional) eco al emisor para asegurar consistencia de UI en clientes no queuados por WS
+	// s.hub.SendToUser(senderID, out)
 
 	// Fallback Push si receptor no está conectado
 	if !s.hub.HasConnections(receiver) {
