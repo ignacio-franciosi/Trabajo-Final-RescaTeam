@@ -46,6 +46,21 @@ func (cc *ChatController) Subscribe(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "suscripción registrada"})
 }
 
+func (cc *ChatController) Unsubscribe(c *gin.Context) {
+	var req struct {
+		Endpoint string `json:"endpoint" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "json inválido"})
+		return
+	}
+	if err := cc.Service.RepoDeleteSubscription(c.Request.Context(), req.Endpoint); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo borrar la suscripción"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
 // StartChat crea o busca un chat entre dos usuarios respecto a un post
 func (cc *ChatController) StartChat(c *gin.Context) {
 	var req dto.StartChatRequest

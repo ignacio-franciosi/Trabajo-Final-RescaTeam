@@ -5,6 +5,7 @@ import DropdownMenu from './DropdownMenu';
 import { useAuth } from '../../context/AuthContext';
 import favicon from '../../assets/favicon.png';
 import { getUserById } from '../../services/UserService';
+import { subscribePush } from '../../push/pushClient';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -102,6 +103,17 @@ const Header = () => {
     };
     fetchName();
   }, [token, user?.userId]);
+
+  // Suscribirse a WebPush cuando hay sesión
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!token) return;
+        await subscribePush(token);
+      } catch (e) {
+      }
+    })();
+  }, [token]);
 
   const handleProtectedAction = (action) => {
     if (!isLoggedIn) {

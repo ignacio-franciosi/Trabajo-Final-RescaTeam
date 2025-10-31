@@ -107,15 +107,19 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID string, in dto.W
 	}
 	s.hub.SendToUser(receiver, out)
 
-	// (Opcional) eco al emisor para asegurar consistencia de UI en clientes no queuados por WS
-	// s.hub.SendToUser(senderID, out)
+	// --------- PUSH ---------
+	sendPushEvenIfOnline := false // ponelo true si querés probar push siempre
+	online := s.hub.HasConnections(receiver)
 
-	// Fallback Push si receptor no está conectado
-	if !s.hub.HasConnections(receiver) {
+	if sendPushEvenIfOnline || !online {
 		subs, err := s.repo.ListSubscriptions(ctx, receiver)
-		if err == nil && len(subs) > 0 {
+		if err != nil {
+			// log sin romper el flujo
+			fmt.Printf("[PUSH] error ListSubscriptions(%s): %v\n", receiver, err)
+		}
+		if len(subs) > 0 {
 			payload := map[string]interface{}{
-				"title": "Nuevo mensaje",
+				"title": "Nuevo mensaje en RescaTeam",
 				"body":  saved.Content,
 				"data": map[string]string{
 					"chatId":   saved.ChatID.Hex(),
@@ -125,10 +129,19 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID string, in dto.W
 			data, _ := json.Marshal(payload)
 
 			failed := s.pushClient.SendNotifications(ctx, subs, data)
-			for _, ep := range failed {
-				_ = s.repo.DeleteSubscription(ctx, ep)
+			if len(failed) > 0 {
+				fmt.Printf("[PUSH] endpoints fallidos (%d): %v\n", len(failed), failed)
+				for _, ep := range failed {
+					_ = s.repo.DeleteSubscription(ctx, ep)
+				}
+			} else {
+				fmt.Printf("[PUSH] enviadas a %d subs del user %s (online=%v)\n", len(subs), receiver, online)
 			}
+		} else {
+			fmt.Printf("[PUSH] user %s sin subs registradas (online=%v)\n", receiver, online)
 		}
+	} else {
+		fmt.Printf("[PUSH] receptor %s online por WS; no se envía push\n", receiver)
 	}
 
 	return saved, nil
@@ -154,8 +167,8 @@ func (s *ChatService) MarkRead(ctx context.Context, chatID, userID string) error
 
 // SavePushSubscription guarda la suscripción en DB (llamada desde controller)
 func (s *ChatService) SavePushSubscription(ctx context.Context, userID string, in dto.PushSubscription) error {
+	// OJO: ahora delega en el upsert del repo para endpoint
 	sub := model.PushSubscription{
-		ID:       primitive.NewObjectID(),
 		UserID:   userID,
 		Endpoint: in.Endpoint,
 		Keys: model.PushSubscriptionKeys{
@@ -170,4 +183,8 @@ func (s *ChatService) SavePushSubscription(ctx context.Context, userID string, i
 // Devuelve la instancia de PushClient
 func (s *ChatService) GetPushClient() *push.PushClient {
 	return s.pushClient
+}
+
+func (s *ChatService) RepoDeleteSubscription(ctx context.Context, endpoint string) error {
+	return s.repo.DeleteSubscription(ctx, endpoint)
 }

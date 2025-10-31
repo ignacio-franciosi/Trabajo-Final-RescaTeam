@@ -38,11 +38,19 @@ func RegisterRoutes(r *gin.Engine, db *mongo.Database, svc *services.ChatService
 
 	// Ruta pública: clave VAPID
 	r.GET("/push/public-key", pushCtl.PublicKey)
+	r.GET("/api/chat/push/public-key", pushCtl.PublicKey)
 
 	// Rutas protegidas: suscripción/unsub
 	grpPush := r.Group("/api/push", auth)
 	{
 		grpPush.POST("/subscribe", pushCtl.Subscribe)
 		grpPush.DELETE("/unsubscribe", pushCtl.Unsubscribe)
+	}
+
+	// Aliases equivalentes bajo /api/chat/push para que no dé 404 si el front usa ese prefijo
+	grpChatPush := r.Group("/api/chat/push", auth)
+	{
+		grpChatPush.POST("/subscribe", pushCtl.Subscribe)
+		grpChatPush.DELETE("/unsubscribe", pushCtl.Unsubscribe)
 	}
 }

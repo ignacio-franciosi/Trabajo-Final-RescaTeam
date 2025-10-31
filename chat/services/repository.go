@@ -235,21 +235,29 @@ func (r *MongoRepository) MarkRead(ctx context.Context, chatID, userID string) e
 
 /* -------- Push subscriptions -------- */
 
+// Upsert por endpoint: si existe, actualiza; si no, inserta.
 func (r *MongoRepository) SaveSubscription(ctx context.Context, sub model.PushSubscription) error {
-	if sub.ID.IsZero() {
-		sub.ID = primitive.NewObjectID()
+	now := time.Now()
+
+	update := bson.M{
+		"$set": bson.M{
+			"userId": sub.UserID,
+			"keys": bson.M{
+				"p256dh": sub.Keys.P256dh,
+				"auth":   sub.Keys.Auth,
+			},
+			// tener un updatedAt puede ayudar a debugging/limpieza
+			"updatedAt": now,
+		},
+		"$setOnInsert": bson.M{
+			"_id":       primitive.NewObjectID(),
+			"endpoint":  sub.Endpoint,
+			"createdAt": now,
+		},
 	}
-	if sub.CreatedAt.IsZero() {
-		sub.CreatedAt = time.Now()
-	}
-	_, err := r.pushCol.InsertOne(ctx, sub)
-	if we, ok := err.(mongo.WriteException); ok {
-		for _, e := range we.WriteErrors {
-			if e.Code == 11000 {
-				return nil
-			}
-		}
-	}
+
+	opts := options.Update().SetUpsert(true)
+	_, err := r.pushCol.UpdateOne(ctx, bson.M{"endpoint": sub.Endpoint}, update, opts)
 	return err
 }
 
