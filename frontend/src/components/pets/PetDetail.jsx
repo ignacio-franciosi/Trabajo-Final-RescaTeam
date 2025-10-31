@@ -198,15 +198,16 @@ const PetDetail = ({ pet }) => {
   const rightDetails = details.slice(mid);
 
   return (
-    <div className="relative max-w-5xl mx-auto p-4">
+  <div className="relative max-w-5xl mx-auto p-4">
       <button
         onClick={handleVolver}
-        className="absolute top-2 left-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        className="absolute top-2 left-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition z-20"
       >
         ← Volver al listado
       </button>
 
-      <div className="mt-12 p-6 bg-white rounded-lg shadow-md">
+      {/* Add top padding to avoid header overlap */}
+      <div className="mt-12 pt-10 p-6 bg-white rounded-lg shadow-md">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Imágenes */}
           <div className="md:w-1/2 relative">
@@ -305,7 +306,7 @@ const PetDetail = ({ pet }) => {
           </div>
         </div>
         {pet.zone && (
-          <div className="mt-6">
+          <div className="mt-6 relative z-0">
             <h3 className="text-lg font-semibold mb-2">Mapa de la zona</h3>
             {mapLoading && !mapError && (
               <p className="text-sm mb-2 inline-flex items-center gap-2 text-blue-700">
@@ -328,6 +329,7 @@ const PetDetail = ({ pet }) => {
                       ? 'Zona de la mascota en adopción'
                       : 'Barrio'
               }
+              className="z-0"
             />
           </div>
         )}
