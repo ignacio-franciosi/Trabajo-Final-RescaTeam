@@ -90,17 +90,19 @@ export default function MiniLeafletMap({ barrioPoint, userPos, height = '360px',
     }, [barrioPoint?.lat, barrioPoint?.lon, userPos?.[0], userPos?.[1]]);
 
     return (
-        <div>
-            <div ref={ref} style={{ width: '100%', height }} />
-            <div className="mt-2 text-xs text-gray-500">
-                <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-1">
-                        <span style={{ width: 10, height: 10, background: '#2563eb', display: 'inline-block', borderRadius: 999 }} /> {userLabel}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                        <span style={{ width: 10, height: 10, background: '#e11d48', display: 'inline-block', borderRadius: 999 }} /> {barrioLabel}
-                    </span>
-                    <span className="opacity-70">Mapa por OpenStreetMap</span>
+        <div className="relative z-0">
+            <div>
+                <div ref={ref} style={{ width: '100%', height }} />
+                <div className="mt-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-3">
+                        <span className="inline-flex items-center gap-1">
+                            <span style={{ width: 10, height: 10, background: '#2563eb', display: 'inline-block', borderRadius: 999 }} /> {userLabel}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                            <span style={{ width: 10, height: 10, background: '#e11d48', display: 'inline-block', borderRadius: 999 }} /> {barrioLabel}
+                        </span>
+                        <span className="opacity-70">Mapa por OpenStreetMap</span>
+                    </div>
                 </div>
             </div>
         </div>
