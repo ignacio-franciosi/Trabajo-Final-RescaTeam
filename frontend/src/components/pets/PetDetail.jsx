@@ -342,7 +342,7 @@ const PetDetail = ({ pet }) => {
         onSuccess={() => setReportOpen(false)}
       />
       {/* Carrusel de mascotas similares */}
-      {pet.postId && pet.postType && (
+      {pet.postId && (pet.postType === 'lost' || pet.postType === 'found') && (
         <div className="mt-10">
           <SimilarPetsCarousel postId={pet.postId} postType={pet.postType} />
         </div>
