@@ -11,6 +11,9 @@ venv/
 # Environment variables
 *.env
 
+# Test coverage
+coverage.out
+
 # Logs
 *.log
 
