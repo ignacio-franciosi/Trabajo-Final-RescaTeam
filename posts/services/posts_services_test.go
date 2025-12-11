@@ -493,3 +493,390 @@ func TestDeletePost_NotFound(t *testing.T) {
 
 	mockClient.AssertExpectations(t)
 }
+
+// TESTS GetAllPosts - Casos adicionales
+func TestGetAllPosts_EmptyResult(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	mockClient.On("GetAllPosts", "lost").Return(model.Posts{})
+
+	result, err := services.PostsService.GetAllPosts("lost")
+
+	assert.Nil(t, err)
+	assert.Len(t, result, 0)
+	mockClient.AssertExpectations(t)
+}
+
+func TestGetAllPosts_MultipleTypes(t *testing.T) {
+	tests := []struct {
+		name     string
+		postType string
+	}{
+		{"adoption", "adoption"},
+		{"lost", "lost"},
+		{"found", "found"},
+		{"empty_type", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := new(mockPostClient)
+			clients.PostClient = mockClient
+
+			posts := model.Posts{
+				{PostId: primitive.NewObjectID(), PostType: tt.postType, UserId: 1},
+			}
+			mockClient.On("GetAllPosts", tt.postType).Return(posts)
+
+			result, err := services.PostsService.GetAllPosts(tt.postType)
+
+			assert.Nil(t, err)
+			assert.Len(t, result, 1)
+			assert.Equal(t, tt.postType, result[0].PostType)
+			mockClient.AssertExpectations(t)
+		})
+	}
+}
+
+// TESTS UpdatePost - Casos adicionales
+func TestUpdatePost_Error_UpdateFailed(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	id := primitive.NewObjectID()
+	existing := model.Post{PostId: id, UserId: 10, PostType: "adoption"}
+
+	mockClient.On("GetPostById", id.Hex()).Return(existing, nil)
+	mockClient.On("UpdatePostById", id.Hex(), mock.Anything).Return(model.Post{}, errors.New("db error"))
+
+	inputDto := dto.PostDto{PostId: id.Hex(), Name: stringPtr("New")}
+	_, err := services.PostsService.UpdatePost(inputDto)
+
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "error updating")
+	mockClient.AssertExpectations(t)
+}
+
+func TestUpdatePost_PartialUpdate(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	id := primitive.NewObjectID()
+	existing := model.Post{
+		PostId:   id,
+		UserId:   10,
+		PostType: "adoption",
+		Name:     stringPtr("Old Name"),
+		Species:  stringPtr("Perro"),
+	}
+
+	updated := existing
+	updated.Name = stringPtr("New Name")
+
+	inputDto := dto.PostDto{
+		PostId:  id.Hex(),
+		Name:    stringPtr("New Name"),
+		Species: existing.Species, // Mantener especie original
+	}
+
+	mockClient.On("GetPostById", id.Hex()).Return(existing, nil)
+	mockClient.On("UpdatePostById", id.Hex(), mock.Anything).Return(updated, nil)
+
+	result, err := services.PostsService.UpdatePost(inputDto)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "New Name", *result.Name)
+	assert.Equal(t, existing.UserId, result.UserId)
+	mockClient.AssertExpectations(t)
+}
+
+// TESTS GetFilteredPosts - Casos adicionales con table-driven tests
+func TestGetFilteredPosts_TableDriven(t *testing.T) {
+	tests := []struct {
+		name          string
+		filters       map[string]string
+		mockPosts     []model.Post
+		mockError     error
+		expectedError bool
+		expectedCount int
+	}{
+		{
+			name:          "filter_by_species",
+			filters:       map[string]string{"species": "perro"},
+			mockPosts:     []model.Post{{PostId: primitive.NewObjectID(), Species: stringPtr("perro")}},
+			expectedCount: 1,
+		},
+		{
+			name:          "filter_by_zone",
+			filters:       map[string]string{"zone": "Córdoba"},
+			mockPosts:     []model.Post{{PostId: primitive.NewObjectID(), Zone: stringPtr("Córdoba")}},
+			expectedCount: 1,
+		},
+		{
+			name:          "multiple_filters",
+			filters:       map[string]string{"species": "gato", "zone": "Buenos Aires"},
+			mockPosts:     []model.Post{{PostId: primitive.NewObjectID(), Species: stringPtr("gato"), Zone: stringPtr("Buenos Aires")}},
+			expectedCount: 1,
+		},
+		{
+			name:          "empty_filters",
+			filters:       map[string]string{},
+			mockPosts:     []model.Post{},
+			expectedCount: 0,
+		},
+		{
+			name:          "no_results",
+			filters:       map[string]string{"species": "ave"},
+			mockError:     errors.New("no results"),
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := new(mockPostClient)
+			clients.PostClient = mockClient
+
+			mockClient.On("GetFilteredPosts", tt.filters).Return(tt.mockPosts, tt.mockError)
+
+			result, err := services.PostsService.GetFilteredPosts(tt.filters)
+
+			if tt.expectedError {
+				assert.NotNil(t, err)
+				assert.Nil(t, result)
+			} else {
+				assert.Nil(t, err)
+				assert.Len(t, result, tt.expectedCount)
+			}
+			mockClient.AssertExpectations(t)
+		})
+	}
+}
+
+// TESTS DeletePost - Casos adicionales
+func TestDeletePost_Error_DeleteFailed(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	id := "123"
+	post := model.Post{PostId: primitive.NewObjectID(), Name: stringPtr("Firulais")}
+
+	mockClient.On("GetPostById", id).Return(post, nil)
+	mockClient.On("DeletePost", post).Return(errors.New("database error"))
+
+	err := services.PostsService.DeletePost(id)
+
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "database error")
+	mockClient.AssertExpectations(t)
+}
+
+func TestDeleteImageById_ImageNotFound(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	mockClient.On("GetImageById", "bad-id").Return(model.Image{}, errors.New("not found"))
+
+	err := services.PostsService.DeleteImageById("bad-id")
+
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "imagen no encontrada")
+	mockClient.AssertExpectations(t)
+}
+
+// TESTS DeleteAllImagesByPostId
+func TestDeleteAllImagesByPostId_Success_NoImages(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	mockClient.On("GetImagesByPostId", "post123").Return([]model.Image{}, nil)
+
+	err := services.PostsService.DeleteAllImagesByPostId("post123")
+
+	assert.Nil(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestDeleteAllImagesByPostId_Error_GetImagesFailed(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	mockClient.On("GetImagesByPostId", "post123").Return([]model.Image{}, errors.New("db error"))
+
+	err := services.PostsService.DeleteAllImagesByPostId("post123")
+
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "error al obtener imágenes")
+	mockClient.AssertExpectations(t)
+}
+
+// TESTS DeleteAllImagesByUserId
+func TestDeleteAllImagesByUserId_Success_NoImages(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	mockClient.On("GetAllImagesByUserId", 5).Return([]model.Image{}, nil)
+	mockClient.On("DeleteAllImagesByUserId", 5).Return(nil)
+
+	err := services.PostsService.DeleteAllImagesByUserId(5)
+
+	assert.Nil(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestDeleteAllImagesByUserId_Error_GetImagesFailed(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	mockClient.On("GetAllImagesByUserId", 5).Return([]model.Image{}, errors.New("db error"))
+
+	err := services.PostsService.DeleteAllImagesByUserId(5)
+
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "error al obtener imagenes")
+	mockClient.AssertExpectations(t)
+}
+
+func TestDeleteAllImagesByUserId_Error_DeleteFailed(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	images := []model.Image{
+		{ImageId: primitive.NewObjectID(), Filepath: "https://s3/test.jpg"},
+	}
+
+	mockClient.On("GetAllImagesByUserId", 5).Return(images, nil)
+	mockClient.On("DeleteAllImagesByUserId", 5).Return(errors.New("db error"))
+
+	err := services.PostsService.DeleteAllImagesByUserId(5)
+
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "error al eliminar imagenes")
+	mockClient.AssertExpectations(t)
+}
+
+// TESTS InsertPost - Casos adicionales con diferentes tipos de posts
+func TestInsertPost_DifferentPostTypes(t *testing.T) {
+	tests := []struct {
+		name     string
+		postType string
+		userId   int
+	}{
+		{"adoption_post", "adoption", 1},
+		{"lost_post", "lost", 2},
+		{"found_post", "found", 3},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := new(mockPostClient)
+			clients.PostClient = mockClient
+
+			inputDto := dto.PostDto{
+				UserId:   tt.userId,
+				PostType: tt.postType,
+				Name:     stringPtr("Test"),
+			}
+
+			expectedModel := model.Post{
+				PostId:   primitive.NewObjectID(),
+				UserId:   tt.userId,
+				PostType: tt.postType,
+				Name:     stringPtr("Test"),
+			}
+
+			mockClient.On("InsertPost", mock.AnythingOfType("model.Post")).Return(expectedModel)
+
+			result, err := services.PostsService.InsertPost(inputDto)
+
+			assert.Nil(t, err)
+			assert.Equal(t, tt.postType, result.PostType)
+			assert.Equal(t, tt.userId, result.UserId)
+			mockClient.AssertExpectations(t)
+		})
+	}
+}
+
+// TESTS GetAllPostsByUserId - Casos adicionales
+func TestGetAllPostsByUserId_EmptyResult(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	mockClient.On("GetAllPostsByUserId", 99).Return(model.Posts{}, nil)
+
+	result, err := services.PostsService.GetAllPostsByUserId(99)
+
+	assert.Nil(t, err)
+	assert.Len(t, result, 0)
+	mockClient.AssertExpectations(t)
+}
+
+func TestGetAllPostsByUserId_MultiplePosts(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	posts := model.Posts{
+		{PostId: primitive.NewObjectID(), UserId: 10, Name: stringPtr("Post 1")},
+		{PostId: primitive.NewObjectID(), UserId: 10, Name: stringPtr("Post 2")},
+		{PostId: primitive.NewObjectID(), UserId: 10, Name: stringPtr("Post 3")},
+	}
+
+	mockClient.On("GetAllPostsByUserId", 10).Return(posts, nil)
+
+	result, err := services.PostsService.GetAllPostsByUserId(10)
+
+	assert.Nil(t, err)
+	assert.Len(t, result, 3)
+	for i, post := range result {
+		assert.Equal(t, 10, post.UserId)
+		assert.Equal(t, posts[i].PostId.Hex(), post.PostId)
+	}
+	mockClient.AssertExpectations(t)
+}
+
+// TESTS HandleQueueMessage
+func TestHandleQueueMessage_DeleteMessage(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	messageDto := dto.QueueMessageDto{
+		Id:      42,
+		Message: "delete",
+	}
+
+	mockClient.On("DeleteAllPostsByUserId", 42).Return(nil)
+
+	err := services.HandleQueueMessage(messageDto)
+
+	assert.Nil(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestHandleQueueMessage_DeleteMessage_Error(t *testing.T) {
+	mockClient := new(mockPostClient)
+	clients.PostClient = mockClient
+
+	messageDto := dto.QueueMessageDto{
+		Id:      42,
+		Message: "delete",
+	}
+
+	mockClient.On("DeleteAllPostsByUserId", 42).Return(errors.New("db error"))
+
+	err := services.HandleQueueMessage(messageDto)
+
+	assert.NotNil(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestHandleQueueMessage_UnknownMessage(t *testing.T) {
+	messageDto := dto.QueueMessageDto{
+		Id:      42,
+		Message: "unknown",
+	}
+
+	err := services.HandleQueueMessage(messageDto)
+
+	assert.Nil(t, err) // Debería retornar nil para mensajes desconocidos
+}
