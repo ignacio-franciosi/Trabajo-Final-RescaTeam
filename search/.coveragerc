@@ -1,0 +1,20 @@
+[run]
+source = .
+omit = 
+    */tests/*
+    */test_*
+    */__pycache__/*
+    */venv/*
+    */__init__.py
+    */finetuned_model/*
+    */config/*
+    main.py
+
+[report]
+precision = 2
+show_missing = True
+skip_covered = False
+
+[html]
+directory = htmlcov
+

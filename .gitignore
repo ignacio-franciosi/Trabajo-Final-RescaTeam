@@ -13,6 +13,11 @@ venv/
 
 # Test coverage
 coverage.out
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+*.cover
 
 # Logs
 *.log
