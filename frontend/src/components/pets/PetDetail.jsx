@@ -13,6 +13,8 @@ const PetDetail = ({ pet }) => {
   const { user, token } = useAuth();
   const [currentImage, setCurrentImage] = useState(0);
   const hasImages = pet.imagenes && pet.imagenes.length > 0;
+  // Modal para imagen completa
+  const [showFullImage, setShowFullImage] = useState(false);
   const location = useLocation();
   const [reportOpen, setReportOpen] = useState(false);
 
@@ -198,7 +200,7 @@ const PetDetail = ({ pet }) => {
   const rightDetails = details.slice(mid);
 
   return (
-  <div className="relative max-w-5xl mx-auto p-4">
+    <div className="relative max-w-5xl mx-auto p-4">
       <button
         onClick={handleVolver}
         className="absolute top-2 left-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition z-20"
@@ -208,7 +210,17 @@ const PetDetail = ({ pet }) => {
 
       {/* Add top padding to avoid header overlap */}
       <div className="mt-12 pt-10 p-6 bg-white rounded-lg shadow-md">
-        <div className="flex flex-col md:flex-row gap-6">
+        {/* Título grande según tipo de publicación */}
+        <h1 className="text-4xl font-extrabold text-center mb-16 text-black">
+          {pet.postType === 'adoption'
+            ? 'Mascota en adopción'
+            : pet.postType === 'lost'
+              ? 'Mascota perdida'
+              : pet.postType === 'found'
+                ? 'Mascota encontrada'
+                : 'Mascota'}
+        </h1>
+        <div className="flex flex-col md:flex-row gap-6 md:items-center">
           {/* Imágenes */}
           <div className="md:w-1/2 relative">
             {hasImages ? (
@@ -220,7 +232,9 @@ const PetDetail = ({ pet }) => {
                       : `http://localhost:8090${(pet.imagenes[currentImage].filepath || '').startsWith('/') ? '' : '/'}${pet.imagenes[currentImage].filepath || ''}`
                   }
                   alt={`Mascota ${currentImage + 1}`}
-                  className="w-full rounded-lg object-cover h-72 max-h-[420px]"
+                  className="w-full rounded-lg object-cover h-72 max-h-[420px] cursor-pointer"
+                  onClick={() => setShowFullImage(true)}
+                  title="Ver imagen completa"
                 />
                 {pet.imagenes.length > 1 && (
                   <>
@@ -240,12 +254,33 @@ const PetDetail = ({ pet }) => {
                       {pet.imagenes.map((_, i) => (
                         <span
                           key={i}
-                          className={`w-2 h-2 rounded-full ${i === currentImage ? 'bg-blue-600' : 'bg-gray-300'
-                            }`}
+                          className={`w-2 h-2 rounded-full ${i === currentImage ? 'bg-blue-600' : 'bg-gray-300'}`}
                         ></span>
                       ))}
                     </div>
                   </>
+                )}
+                {/* Modal de imagen completa */}
+                {showFullImage && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80" onClick={() => setShowFullImage(false)}>
+                    <img
+                      src={
+                        pet.imagenes[currentImage].filepath && /^https?:\/\//i.test(pet.imagenes[currentImage].filepath)
+                          ? pet.imagenes[currentImage].filepath
+                          : `http://localhost:8090${(pet.imagenes[currentImage].filepath || '').startsWith('/') ? '' : '/'}${pet.imagenes[currentImage].filepath || ''}`
+                      }
+                      alt={`Mascota ${currentImage + 1}`}
+                      className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl border-4 border-white"
+                      style={{ objectFit: 'contain' }}
+                    />
+                    <button
+                      className="absolute top-6 right-8 text-white text-3xl font-bold bg-black bg-opacity-40 rounded-full px-3 py-1 hover:bg-opacity-70 transition"
+                      onClick={e => { e.stopPropagation(); setShowFullImage(false); }}
+                      title="Cerrar"
+                    >
+                      ×
+                    </button>
+                  </div>
                 )}
               </>
             ) : (
@@ -278,56 +313,81 @@ const PetDetail = ({ pet }) => {
             <p className="text-sm text-gray-500">Descripción</p>
             <p className="whitespace-pre-line">{pet.description}</p>
             {!user?.suspended && (
-              <div className="pt-4 flex items-center gap-2 flex-wrap">
+              <div className="pt-4 flex items-center gap-2 flex-wrap relative">
+                {/* Botón de reportar, ahora arriba a la derecha y más pequeño */}
                 <button
                   type="button"
                   onClick={() => setReportOpen(true)}
-                  className="bg-red-600 hover:bg-red-700 text-white text-sm px-5 py-2 rounded shadow"
+                  className="absolute top-0 right-0 border border-red-200 text-red-500 bg-white hover:bg-red-50 hover:border-red-400 transition text-xs px-2.5 py-1.5 rounded flex items-center gap-1 shadow-none font-medium"
+                  style={{ zIndex: 10 }}
+                  title="Reportar publicación"
                 >
-                  Reportar publicación
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-1.414-1.414A9 9 0 105.636 18.364l1.414 1.414A9 9 0 1018.364 5.636z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01" /></svg>
+                  Reportar
                 </button>
 
-                {canStartChat && (
-                  <button
-                    type="button"
-                    onClick={handleStartChat}
-                    disabled={startingChat}
-                    className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm px-5 py-2 rounded shadow"
-                  >
-                    {startingChat ? 'Creando chat…' : 'Iniciar chat'}
-                  </button>
-                )}
+                {/* Botón de chat y errores */}
+                <div className="flex items-center gap-2 flex-wrap w-full">
+                  {canStartChat && (
+                    <button
+                      type="button"
+                      onClick={handleStartChat}
+                      disabled={startingChat}
+                      className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 disabled:opacity-60 text-white text-lg px-7 py-3 rounded-xl shadow-lg font-bold flex items-center gap-2 transition-all duration-200"
+                      title={
+                        pet.postType === 'adoption'
+                          ? '¡Habla con el responsable de la adopción!'
+                          : pet.postType === 'lost'
+                            ? '¡Habla con el dueño de la mascota!'
+                            : pet.postType === 'found'
+                              ? '¡Habla con quien encontró la mascota!'
+                              : 'Iniciar chat'
+                      }
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8l-4 1 1-3.5A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                      {startingChat
+                        ? 'Creando chat…'
+                        : pet.postType === 'adoption'
+                          ? '¡Hablar con el responsable!'
+                          : pet.postType === 'lost'
+                            ? '¡Hablar con el dueño!'
+                            : pet.postType === 'found'
+                              ? 'Enviar mensaje'
+                              : 'Iniciar chat'}
+                    </button>
+                  )}
 
-                {startError && (
-                  <span className="text-sm text-red-600">{startError}</span>
-                )}
+                  {startError && (
+                    <span className="text-sm text-red-600">{startError}</span>
+                  )}
+                </div>
               </div>
             )}
           </div>
         </div>
         {pet.zone && (
           <div className="mt-6 relative z-0">
-            <h3 className="text-lg font-semibold mb-2">Mapa de la zona</h3>
+            <h3 className="text-2xl font-bold mb-2 text-black">Ubicación de la mascota en el mapa</h3>
             {mapLoading && !mapError && (
-              <p className="text-sm mb-2 inline-flex items-center gap-2 text-blue-700">
+              <p className="text-base mb-2 inline-flex items-center gap-2 text-blue-700">
                 <span className="inline-block w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
                 {barrioLoadingText}
               </p>
             )}
-            {mapError && <p className="text-sm text-red-600 mb-2">{mapError}</p>}
+            {mapError && <p className="text-base text-red-600 mb-2">{mapError}</p>}
             <MiniLeafletMap
               barrioPoint={barrioPoint}
               userPos={userPos}
               height="380px"
-              userLabel="Tu Ubicación"
+              userLabel={<span className="text-lg font-semibold text-black">Tu Ubicación</span>}
               barrioLabel={
                 pet.postType === 'lost'
-                  ? 'Zona de la mascota perdida'
+                  ? <span className="text-lg font-semibold text-black">Zona de la mascota perdida</span>
                   : pet.postType === 'found'
-                    ? 'Zona de la mascota encontrada'
+                    ? <span className="text-lg font-semibold text-black">Zona de la mascota encontrada</span>
                     : pet.postType === 'adoption'
-                      ? 'Zona de la mascota en adopción'
-                      : 'Barrio'
+                      ? <span className="text-lg font-semibold text-black">Zona de la mascota en adopción</span>
+                      : <span className="text-lg font-semibold text-black">Barrio</span>
               }
               className="z-0"
             />
