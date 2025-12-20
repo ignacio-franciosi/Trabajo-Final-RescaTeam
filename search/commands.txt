@@ -1,9 +1,17 @@
+# DOCKER
 docker build -t search-api .
 docker run -p 8000:8000 search-api
 
-# sin docker
-cd search
-python 3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-pyton3 -m app.main
+# SIN DOCKER - LINUX
+# cd search
+# python3 -m venv venv
+# source venv/bin/activate
+# pip install -r requirements.txt
+# python3 -m app.main
+
+# SIN DOCKER - WINDOWS
+# cd search
+# python -m venv venv
+# venv\Scripts\activate.bat
+# pip install -r requirements.txt
+# python -m app.main
