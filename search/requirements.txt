@@ -11,7 +11,7 @@ transformers
 numpy
 
 pillow # images
-qdrant-client # qdrant
+qdrant-client==1.15.1 # qdrant
 boto3 # s3
 aio-pika # Rabbit MQ
 
