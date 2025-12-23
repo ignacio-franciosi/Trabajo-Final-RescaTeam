@@ -6,7 +6,7 @@ import {
 } from '../../services/PostService';
 import { getSimilarPets } from '../../services/SearchService';
 
-const SimilarPetsCarousel = ({ postId, postType }) => {
+const SimilarPetsCarousel = ({ postId, postType, petName }) => {
   const [loading, setLoading] = useState(true);
   const [similarPets, setSimilarPets] = useState([]);
   const [error, setError] = useState(null);
@@ -67,33 +67,55 @@ const SimilarPetsCarousel = ({ postId, postType }) => {
   if (error) return <div className="mt-8 text-center text-red-600">{error}</div>;
   if (similarPets.length === 0) return <div className="mt-8 text-center text-gray-500">Nuestro asistente de IA aún no encontró mascotas parecidas.</div>;
 
-  return (
-    <div className="mt-10 relative">
-      <h3 className="text-xl font-semibold mb-4">Mascotas parecidas</h3>
-      {/* Flecha izquierda */}
-      <button
-        onClick={() => scroll('left')}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white bg-opacity-80 hover:bg-opacity-100 p-2 rounded-full shadow-md"
-      >
-        ◀
-      </button>
-      {/* Flecha derecha */}
-      <button
-        onClick={() => scroll('right')}
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white bg-opacity-80 hover:bg-opacity-100 p-2 rounded-full shadow-md"
-      >
-        ▶
-      </button>
+  const displayName = petName || 'esta mascota';
 
-      <div
-        ref={carouselRef}
-        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
-      >
-        {similarPets.map((pet) => (
-          <div key={pet.postId} className="flex-shrink-0 w-64">
-            <PetCard pet={pet} />
+  return (
+    <div className="mt-10 mb-16 w-full flex justify-center">
+      <div className="relative w-full max-w-5xl">
+        {/* Flecha izquierda alineada al borde del cuadro */}
+        <button
+          onClick={() => scroll('left')}
+          aria-label="Ver anteriores"
+          className="absolute left-0 top-1/2 -translate-y-1/2 bg-white bg-opacity-90 hover:bg-blue-100 text-blue-600 hover:text-blue-800 p-2 rounded-full shadow-lg border border-blue-200 transition-all duration-200 group z-10"
+          style={{ minWidth: 44, minHeight: 44 }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div
+          className="w-full flex flex-col"
+          style={{
+            backgroundColor: '#F2F7FF',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04)',
+            padding: '28px'
+          }}
+        >
+          <h3 className="text-2xl font-bold mb-2 text-black text-left">Mascotas parecidas a {displayName}</h3>
+          <p className="text-sm text-gray-500 mb-6">Otras mascotas que podrían coincidir</p>
+          <div
+            ref={carouselRef}
+            className="flex gap-8 overflow-x-auto pb-2 pt-2 scroll-smooth scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent"
+          >
+            {similarPets.map((pet) => (
+              <div key={pet.postId} className="flex-shrink-0 w-64">
+                <PetCard pet={pet} />
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+        {/* Flecha derecha alineada al borde del cuadro */}
+        <button
+          onClick={() => scroll('right')}
+          aria-label="Ver siguientes"
+          className="absolute right-0 top-1/2 -translate-y-1/2 bg-white bg-opacity-90 hover:bg-blue-100 text-blue-600 hover:text-blue-800 p-2 rounded-full shadow-lg border border-blue-200 transition-all duration-200 group z-10"
+          style={{ minWidth: 44, minHeight: 44 }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
     </div>
   );

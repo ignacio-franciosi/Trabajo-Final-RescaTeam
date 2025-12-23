@@ -211,7 +211,7 @@ const PetDetail = ({ pet }) => {
       {/* Add top padding to avoid header overlap */}
       <div className="mt-12 pt-10 p-6 bg-white rounded-lg shadow-md">
         {/* Título grande según tipo de publicación */}
-        <h1 className="text-4xl font-extrabold text-center mb-16 text-black">
+        <h1 className="text-4xl font-bold text-center mb-16 text-black tracking-tight" style={{ fontFamily: "'Poppins', sans-serif", letterSpacing: '-0.01em' }}>
           {pet.postType === 'adoption'
             ? 'Mascota en adopción'
             : pet.postType === 'lost'
@@ -310,10 +310,10 @@ const PetDetail = ({ pet }) => {
               </div>
             </div>
 
-            <p className="text-sm text-gray-500">Descripción</p>
+            <p className="text-xs text-gray-500" style={{ color: '#6B7280' }}>Descripción</p>
             <p className="whitespace-pre-line">{pet.description}</p>
             {!user?.suspended && (
-              <div className="pt-4 flex items-center gap-2 flex-wrap relative">
+              <div className="pt-8 pb-4 flex items-center gap-2 flex-wrap relative">
                 {/* Botón de reportar, ahora arriba a la derecha y más pequeño */}
                 <button
                   type="button"
@@ -367,7 +367,8 @@ const PetDetail = ({ pet }) => {
         </div>
         {pet.zone && (
           <div className="mt-6 relative z-0">
-            <h3 className="text-2xl font-bold mb-2 text-black">Ubicación de la mascota en el mapa</h3>
+            <h3 className="text-2xl font-bold mb-1 text-black">Ubicación de la mascota en el mapa</h3>
+            <p className="text-sm text-gray-500 mb-3">Ubicación aproximada</p>
             {mapLoading && !mapError && (
               <p className="text-base mb-2 inline-flex items-center gap-2 text-blue-700">
                 <span className="inline-block w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
@@ -404,7 +405,7 @@ const PetDetail = ({ pet }) => {
       {/* Carrusel de mascotas similares */}
       {pet.postId && (pet.postType === 'lost' || pet.postType === 'found') && (
         <div className="mt-10">
-          <SimilarPetsCarousel postId={pet.postId} postType={pet.postType} />
+          <SimilarPetsCarousel postId={pet.postId} postType={pet.postType} petName={pet.name} />
         </div>
       )}
 
@@ -414,8 +415,8 @@ const PetDetail = ({ pet }) => {
 
 const DetailItem = ({ label, value }) => (
   <div className="min-h-[48px]">
-    <p className="text-sm text-gray-500">{label}</p>
-    <p className="capitalize leading-snug">{value}</p>
+    <p className="text-xs text-gray-500" style={{ color: '#6B7280' }}>{label}</p>
+    <p className="capitalize leading-snug text-gray-900 font-semibold">{value}</p>
   </div>
 );
 
