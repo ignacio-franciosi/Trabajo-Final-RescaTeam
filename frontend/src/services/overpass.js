@@ -208,14 +208,17 @@ export async function searchBarrioOverpassPoint(rawName, opts = {}) {
     const names = collectNames(el.tags);
     const exact = names.includes(target) || names.includes(`barrio ${target}`);
     const partial = names.some((n) => n.includes(target));
-    const base = exact ? 3 : partial ? 1 : 0;
-  const effType = el.tags?.place || (el.tags?.boundary ? 'boundary' : undefined);
-  const tw = typeWeight[effType] || 0;
+    // Priorizar MUCHO más los matches exactos (10 puntos vs 1 para parciales)
+    const base = exact ? 10 : partial ? 1 : 0;
+    const effType = el.tags?.place || (el.tags?.boundary ? 'boundary' : undefined);
+    const tw = typeWeight[effType] || 0;
     const lat = el.center?.lat ?? el.lat;
     const lon = el.center?.lon ?? el.lon;
     const dist = (typeof lat === 'number' && typeof lon === 'number') ? haversineKm(lat, lon, CORDOBA_CENTER.lat, CORDOBA_CENTER.lon) : 999;
-    // Penaliza estar lejos del centro de Córdoba (reduce 1 punto cada 5 km aprox)
-    const score = base + tw - (dist / 5);
+    // Rechazar completamente si está a más de 25 km del centro (fuera de Córdoba Capital)
+    if (dist > 25) return { el, score: -999 };
+    // Penalizar más fuertemente la distancia: resta 2 puntos por cada 5 km
+    const score = base + tw - (dist / 2.5);
     return { el, score };
   }).filter(x => x.score > 0)
     .sort((a, b) => b.score - a.score);
@@ -268,13 +271,17 @@ export async function searchBarrioOverpassPoint(rawName, opts = {}) {
       const names = collectNames(el.tags);
       const exact = names.includes(target) || names.includes(`barrio ${target}`);
       const partial = names.some((n) => n.includes(target));
-      const base = exact ? 3 : partial ? 1 : 0;
-  const effType2 = el.tags?.place || (el.tags?.boundary ? 'boundary' : undefined);
-  const tw = typeWeight[effType2] || 0;
+      // Priorizar MUCHO más los matches exactos (10 puntos vs 1 para parciales)
+      const base = exact ? 10 : partial ? 1 : 0;
+      const effType2 = el.tags?.place || (el.tags?.boundary ? 'boundary' : undefined);
+      const tw = typeWeight[effType2] || 0;
       const lat = el.center?.lat ?? el.lat;
       const lon = el.center?.lon ?? el.lon;
       const dist = (typeof lat === 'number' && typeof lon === 'number') ? haversineKm(lat, lon, CORDOBA_CENTER.lat, CORDOBA_CENTER.lon) : 999;
-      const score = base + tw - (dist / 5);
+      // Rechazar completamente si está a más de 25 km del centro (fuera de Córdoba Capital)
+      if (dist > 25) return { el, score: -999 };
+      // Penalizar más fuertemente la distancia: resta 2 puntos por cada 5 km
+      const score = base + tw - (dist / 2.5);
       return { el, score };
     }).filter(x => x.score > 0)
       .sort((a, b) => b.score - a.score);
