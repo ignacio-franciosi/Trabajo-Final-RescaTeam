@@ -14,13 +14,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type ChatService struct {
-	repo       Repository
-	hub        *Hub
-	pushClient *push.PushClient
+// PushClientInterface define los métodos del PushClient para permitir mocking
+type PushClientInterface interface {
+	PublicKey() string
+	SendNotifications(ctx context.Context, subs []model.PushSubscription, payload []byte) []string
 }
 
-func NewChatService(r Repository, h *Hub, pc *push.PushClient) *ChatService {
+type ChatService struct {
+	repo       Repository
+	hub        HubInterface
+	pushClient PushClientInterface
+}
+
+func NewChatService(r Repository, h HubInterface, pc PushClientInterface) *ChatService {
 	return &ChatService{repo: r, hub: h, pushClient: pc}
 }
 
@@ -182,7 +188,10 @@ func (s *ChatService) SavePushSubscription(ctx context.Context, userID string, i
 
 // Devuelve la instancia de PushClient
 func (s *ChatService) GetPushClient() *push.PushClient {
-	return s.pushClient
+	if pc, ok := s.pushClient.(*push.PushClient); ok {
+		return pc
+	}
+	return nil
 }
 
 func (s *ChatService) RepoDeleteSubscription(ctx context.Context, endpoint string) error {

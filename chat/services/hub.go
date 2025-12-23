@@ -13,6 +13,15 @@ type Conn interface {
 	Close() error
 }
 
+// HubInterface define los métodos del Hub para permitir mocking
+type HubInterface interface {
+	SendToUser(userID string, v interface{})
+	HasConnections(userID string) bool
+	AddConnection(userID string, c Conn)
+	RemoveConnection(userID string, c Conn)
+	IsUserInChat(userID string, chat model.Chat) bool
+}
+
 type Hub struct {
 	mu    sync.RWMutex
 	conns map[string]map[Conn]struct{} // userID -> set de conexiones activas
