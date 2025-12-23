@@ -99,7 +99,8 @@ func (c *postClient) DeletePost(post model.Post) error {
 func (c *postClient) GetAllPosts(postType string) model.Posts {
 	collection := db.PostsCollection
 
-	filter := bson.M{}
+	// Filtrar por tipo de publicación (si se especifica) y solo publicaciones activas (postStatus != false)
+	filter := bson.M{"postStatus": bson.M{"$ne": false}}
 	if postType != "" {
 		filter["postType"] = postType
 	}
