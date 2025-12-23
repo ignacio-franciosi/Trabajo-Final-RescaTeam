@@ -348,7 +348,7 @@ const PetDetail = ({ pet }) => {
                       {startingChat
                         ? 'Creando chat…'
                         : pet.postType === 'adoption'
-                          ? '¡Hablar con el responsable!'
+                          ? '¡Enviar mensaje!'
                           : pet.postType === 'lost'
                             ? '¡Hablar con el dueño!'
                             : pet.postType === 'found'
