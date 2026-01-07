@@ -103,7 +103,7 @@ const MyPetsPage = () => {
         // Actualizar el estado local de la publicación marcada como resuelta
         setPets(prev => prev.map(p =>
           p.postId === petSelected.postId
-            ? { ...p, postStatus: false, adopted: true }
+            ? { ...p, postStatus: true, adopted: true }
             : p
         ));
       }
@@ -120,8 +120,8 @@ const MyPetsPage = () => {
   if (error) return <p className="text-center text-red-500">{error}</p>;
 
   // Separar publicaciones activas y resueltas
-  const activePets = pets.filter(pet => pet.postStatus !== false);
-  const resolvedPets = pets.filter(pet => pet.postStatus === false);
+  const activePets = pets.filter(pet => pet.postStatus !== true);
+  const resolvedPets = pets.filter(pet => pet.postStatus === true);
 
   // Filtrar mascotas por tipo
   let filteredPets = [];
