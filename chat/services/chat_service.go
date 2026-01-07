@@ -114,7 +114,7 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID string, in dto.W
 	s.hub.SendToUser(receiver, out)
 
 	// --------- PUSH ---------
-	sendPushEvenIfOnline := false // ponelo true si querés probar push siempre
+	sendPushEvenIfOnline := true // ponelo true si querés probar push siempre
 	online := s.hub.HasConnections(receiver)
 
 	if sendPushEvenIfOnline || !online {
