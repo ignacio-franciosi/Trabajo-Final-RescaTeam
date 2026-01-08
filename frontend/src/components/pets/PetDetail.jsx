@@ -310,7 +310,7 @@ const PetDetail = ({ pet }) => {
               </div>
             </div>
 
-            <p className="text-xs text-gray-500" style={{ color: '#6B7280' }}>Descripción</p>
+            <p className="text-xs text-gray-500 font-semibold" style={{ color: '#6B7280' }}>Descripción</p>
             <p className="whitespace-pre-line">{pet.description}</p>
             {!user?.suspended && (
               <div className="pt-8 pb-4 flex items-center gap-2 flex-wrap relative">
@@ -415,8 +415,8 @@ const PetDetail = ({ pet }) => {
 
 const DetailItem = ({ label, value }) => (
   <div className="min-h-[48px]">
-    <p className="text-xs text-gray-500" style={{ color: '#6B7280' }}>{label}</p>
-    <p className="capitalize leading-snug text-gray-900 font-semibold">{value}</p>
+    <p className="text-xs text-gray-500 font-semibold" style={{ color: '#6B7280' }}>{label}</p>
+    <p className="capitalize leading-snug text-gray-900">{value}</p>
   </div>
 );
 

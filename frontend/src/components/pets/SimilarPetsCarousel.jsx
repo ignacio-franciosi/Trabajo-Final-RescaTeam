@@ -92,8 +92,8 @@ const SimilarPetsCarousel = ({ postId, postType, petName }) => {
             padding: '28px'
           }}
         >
-          <h3 className="text-2xl font-bold mb-2 text-black text-left">Mascotas parecidas a {displayName}</h3>
-          <p className="text-sm text-gray-500 mb-6">Otras mascotas que podrían coincidir</p>
+          <h3 className="text-xl font-bold mb-2 text-left" style={{ color: '#111827', fontSize: '22px' }}>Mascotas parecidas a {displayName}</h3>
+          <p className="font-medium mb-6" style={{ color: '#2563EB', fontSize: '16px' }}>Coincidencias detectadas con IA 🤖</p>
           <div
             ref={carouselRef}
             className="flex gap-8 overflow-x-auto pb-2 pt-2 scroll-smooth scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent"

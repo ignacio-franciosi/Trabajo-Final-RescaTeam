@@ -103,7 +103,7 @@ const CategoryCards = () => {
                 />
                 <Card
                     title="Encontrados"
-                    description="Publicá mascotas encontradas o revisá reportes para ayudar a que vuelvan a casa."
+                    description="Publicá mascotas que encontraste o revisá reportes para ayudar a que vuelvan a casa."
                     actionLabel="Ver encontrados"
                     to="/encontrados"
                     borderColor="border-blue-500"
