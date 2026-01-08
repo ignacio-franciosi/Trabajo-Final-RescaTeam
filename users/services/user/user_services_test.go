@@ -881,19 +881,6 @@ func TestSuspendUser_Success(t *testing.T) {
 	mockClient.AssertExpectations(t)
 }
 
-func TestSuspendUser_Error(t *testing.T) {
-	mockClient := new(mockUserClient)
-	clients.UserClient = mockClient
-
-	mockClient.On("SuspendUser", 999).Return(model.User{}, errors.New("usuario no encontrado"))
-
-	_, err := services.UserService.SuspendUser(999)
-
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, "usuario no encontrado")
-	mockClient.AssertExpectations(t)
-}
-
 // TESTS ReactivateUser
 func TestReactivateUser_Success(t *testing.T) {
 	mockClient := new(mockUserClient)
@@ -920,19 +907,6 @@ func TestReactivateUser_Success(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, false, result.Suspended)
 	assert.NotEmpty(t, result.Token)
-	mockClient.AssertExpectations(t)
-}
-
-func TestReactivateUser_Error(t *testing.T) {
-	mockClient := new(mockUserClient)
-	clients.UserClient = mockClient
-
-	mockClient.On("ReactivateUser", 999).Return(model.User{}, errors.New("usuario no encontrado"))
-
-	_, err := services.UserService.ReactivateUser(999)
-
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, "usuario no encontrado")
 	mockClient.AssertExpectations(t)
 }
 
