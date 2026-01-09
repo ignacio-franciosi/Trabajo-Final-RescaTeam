@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
-
+	"os"
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
 )
@@ -26,7 +26,12 @@ func init() {
 }
 
 func (q queueProducer) InitQueue() {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	url := os.Getenv("RABBITMQ_URL")
+	if url == "" {
+		log.Fatal("RABBITMQ_URL not set")
+	}
+
+	conn, err := amqp.Dial(url)
 	if err != nil {
 		log.Info("Failed to connect to RabbitMQ")
 		log.Fatal(err)

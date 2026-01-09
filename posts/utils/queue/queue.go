@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"posts/dto"
 	"time"
-
+	"os"
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
 )
@@ -20,7 +20,12 @@ type MessageHandler func(messageDto dto.QueueMessageDto) error
 var messageHandler MessageHandler
 
 func InitQueue() {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	url := os.Getenv("RABBITMQ_URL")
+	if url == "" {
+		log.Fatal("RABBITMQ_URL not set")
+	}
+
+	conn, err := amqp.Dial(url)
 	if err != nil {
 		log.Info("Failed to connect to RabbitMQ")
 		log.Fatal(err)
