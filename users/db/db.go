@@ -21,7 +21,7 @@ func init() {
 	// Cargamos las variables de entorno desde el archivo .env
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		log.Warn("No .env file found, using system environment variables")
 	}
 
 	// Obtenemos la cadena de conexión de la variable de entorno
