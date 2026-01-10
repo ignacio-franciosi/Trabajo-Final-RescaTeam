@@ -64,7 +64,19 @@ func SetupRouter() *gin.Engine {
 	}
 
 	config := cors.Config{
-		AllowOrigins:     allowedOrigins,
+		AllowOriginFunc: func(origin string) bool {
+			// Permitir origins específicos de la lista
+			for _, allowed := range allowedOrigins {
+				if origin == allowed {
+					return true
+				}
+			}
+			// También permitir cualquier origin de railway.app para facilitar deploys
+			if strings.HasSuffix(origin, ".railway.app") || strings.HasSuffix(origin, "railway.app") {
+				return true
+			}
+			return false
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
