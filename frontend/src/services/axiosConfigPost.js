@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiAdoption = axios.create({
-  baseURL: 'http://localhost:8090', // puerto del microservicio de POSTS
+  baseURL: import.meta.env.VITE_POSTS_API_URL || 'http://localhost:8090',
 });
 
 apiAdoption.interceptors.request.use((config) => {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiSearch = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_SEARCH_API_URL || 'http://localhost:8000',
 });
 
 // Agregar token a todas las requests (si existe)
