@@ -1,6 +1,8 @@
 package app
 
 import (
+	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -49,9 +51,19 @@ func RateLimitMiddleware() gin.HandlerFunc {
 func SetupRouter() *gin.Engine {
 	router := gin.Default()
 
-	// Configuración de CORS
+	// Configuración de CORS - obtener orígenes permitidos desde variable de entorno
+	allowedOrigins := []string{"http://localhost:5173"} // default para desarrollo
+
+	// Si hay ALLOWED_ORIGINS en env, agregar esos orígenes
+	if envOrigins := os.Getenv("ALLOWED_ORIGINS"); envOrigins != "" {
+		origins := strings.Split(envOrigins, ",")
+		for _, origin := range origins {
+			allowedOrigins = append(allowedOrigins, strings.TrimSpace(origin))
+		}
+	}
+
 	config := cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // frontend Vite
+		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
