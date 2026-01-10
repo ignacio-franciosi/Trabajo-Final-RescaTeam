@@ -25,11 +25,12 @@ export default function PostSideCard({ post }) {
   };
 
   // Intento de imagen si tu backend la trae dentro de `imagenes`
+  const baseUrl = import.meta.env.VITE_POSTS_API_URL || 'http://localhost:8090';
   const imgUrl = Array.isArray(post.imagenes) && post.imagenes[0]?.filepath
-    ? ( /^https?:\/\//i.test(post.imagenes[0].filepath)
-        ? post.imagenes[0].filepath
-        : `http://localhost:8090${post.imagenes[0].filepath.startsWith('/') ? '' : '/'}${post.imagenes[0].filepath}`
-      )
+    ? (/^https?:\/\//i.test(post.imagenes[0].filepath)
+      ? post.imagenes[0].filepath
+      : `${baseUrl}${post.imagenes[0].filepath.startsWith('/') ? '' : '/'}${post.imagenes[0].filepath}`
+    )
     : null;
 
   return (

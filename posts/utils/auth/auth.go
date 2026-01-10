@@ -37,9 +37,8 @@ func VerifyTokenAndAuthorize(c *gin.Context, allowAdmin bool, allowOwner bool) (
 
 	reqBody, _ := json.Marshal(TokenRequest{Token: token})
 
-	authUrl := "http://localhost:8082/verify"
-	//authUrl := "http://rescateam-auth:8082/verify" //docker
-	//authUrl := "https://auth-production-1ceb.up.railway.app/verify"
+	//authUrl := "http://localhost:8082/verify"
+	authUrl := "https://auth-ms.up.railway.app/verify"
 	resp, err := http.Post(authUrl, "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		fmt.Println("===> Error al llamar al auth:", err)

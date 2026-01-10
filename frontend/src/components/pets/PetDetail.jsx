@@ -229,7 +229,7 @@ const PetDetail = ({ pet }) => {
                   src={
                     pet.imagenes[currentImage].filepath && /^https?:\/\//i.test(pet.imagenes[currentImage].filepath)
                       ? pet.imagenes[currentImage].filepath
-                      : `http://localhost:8090${(pet.imagenes[currentImage].filepath || '').startsWith('/') ? '' : '/'}${pet.imagenes[currentImage].filepath || ''}`
+                      : `${import.meta.env.VITE_POSTS_API_URL || 'http://localhost:8090'}${(pet.imagenes[currentImage].filepath || '').startsWith('/') ? '' : '/'}${pet.imagenes[currentImage].filepath || ''}`
                   }
                   alt={`Mascota ${currentImage + 1}`}
                   className="w-full rounded-lg object-cover h-72 max-h-[420px] cursor-pointer"
@@ -267,7 +267,7 @@ const PetDetail = ({ pet }) => {
                       src={
                         pet.imagenes[currentImage].filepath && /^https?:\/\//i.test(pet.imagenes[currentImage].filepath)
                           ? pet.imagenes[currentImage].filepath
-                          : `http://localhost:8090${(pet.imagenes[currentImage].filepath || '').startsWith('/') ? '' : '/'}${pet.imagenes[currentImage].filepath || ''}`
+                          : `${import.meta.env.VITE_POSTS_API_URL || 'http://localhost:8090'}${(pet.imagenes[currentImage].filepath || '').startsWith('/') ? '' : '/'}${pet.imagenes[currentImage].filepath || ''}`
                       }
                       alt={`Mascota ${currentImage + 1}`}
                       className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl border-4 border-white"

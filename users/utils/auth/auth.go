@@ -94,8 +94,7 @@ func VerifyAuthentication(c *gin.Context) bool {
 }
 
 func verifyTokenExternally(token string) (*TokenVerificationResponse, error) {
-	url := "http://localhost:8082/verify"
-	//url := "http://rescateam-auth:8082/verify" // Docker
+	url := "https://auth-ms.up.railway.app/verify"
 
 	payload, _ := json.Marshal(map[string]string{
 		"token": token,

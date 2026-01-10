@@ -199,7 +199,7 @@ func DeletePost(c *gin.Context) {
 	// Si la acción la realizó un admin, enviamos un mail al owner informando la eliminación
 	if isAdmin {
 		// obtenemos datos del usuario desde users service (forward token para autorizar)
-		usersUrl := fmt.Sprintf("http://localhost:8080/user/%d", postDto.UserId)
+		usersUrl := fmt.Sprintf("https://users-ms.up.railway.app/user/%d", postDto.UserId)
 		req, _ := http.NewRequest("GET", usersUrl, nil)
 		if t := c.GetHeader("Authorization"); t != "" {
 			req.Header.Set("Authorization", t)
