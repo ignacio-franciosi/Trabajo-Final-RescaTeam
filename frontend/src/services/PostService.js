@@ -22,7 +22,7 @@ export const createPost = async (formData) => {
       },
     });
     return { success: true, data: res.data };
-    } catch {
+    } catch (error) {
     return { 
       success: false,
       message: error.response?.data?.error || 'Error al publicar la mascota',
@@ -41,7 +41,7 @@ export const autocompletePostFromImage = async (imageFile) => {
       },
     });
     return { success: true, data: res.data };
-    } catch {
+    } catch (error) {
     return { 
       success: false,
       message: error.response?.data?.error || 'No se pudo autocompletar con la imagen',
@@ -53,7 +53,7 @@ export const getPostById = async (id) => {
   try {
     const res = await apiAdoption.get(`/post/${id}`);
     return { success: true, data: res.data };
-    } catch {
+    } catch (error) {
     return { 
       success: false,
       message: 'Error al obtener publicación',
@@ -67,7 +67,7 @@ export const getAllPosts = async (type) => {
       ? await apiAdoption.get(`/post?type=${encodeURIComponent(type)}`)
       : await apiAdoption.get('/post');
     return { success: true, data: res.data };
-    } catch {
+    } catch (error) {
     return { 
       success: false,
       message: error.response?.data?.error || 'Error al obtener publicaciones',
@@ -79,7 +79,7 @@ export const getImagesByPostId = async (postId) => {
   try {
     const res = await apiAdoption.get(`/post/images/${postId}`);
     return { success: true, data: res.data };
-    } catch {
+    } catch (error) {
     return { 
       success: false,
       message: 'Error al obtener imágenes',

@@ -10,7 +10,7 @@ export const createPost = async (formData) => {
       },
     });
     return { success: true, data: res.data };
-  } catch {
+  } catch (error) {
       return { 
       success: false,
       message: error.response?.data?.error || 'Error al publicar la mascota',
