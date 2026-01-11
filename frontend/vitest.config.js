@@ -17,12 +17,12 @@ export default defineConfig({
         'src/pages/**',
 
         // UI compleja
-        'src/components/auth/**',
+        //'src/components/auth/**',
         'src/components/chat/**',
         'src/components/home/**',
         'src/components/layout/**',
         'src/components/map/**',
-        'src/components/pets/**',
+        //'src/components/pets/**',
         'src/components/profile/**',
         'src/components/reports/**',
 

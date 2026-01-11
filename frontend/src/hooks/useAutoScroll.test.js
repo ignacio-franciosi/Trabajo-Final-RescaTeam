@@ -1,13 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { renderHook } from '@testing-library/react'
 import { useAutoScroll } from './useAutoScroll'
 
 describe('useAutoScroll', () => {
   let mockContainer
-  let rafCallbacks = []
 
   beforeEach(() => {
-    // Create a mock DOM element
     mockContainer = {
       scrollHeight: 1000,
       scrollTop: 0,
@@ -17,51 +15,39 @@ describe('useAutoScroll', () => {
       removeEventListener: vi.fn(),
     }
 
-    // Mock requestAnimationFrame
-    rafCallbacks = []
     global.requestAnimationFrame = vi.fn((cb) => {
-      rafCallbacks.push(cb)
+      cb()
       return 1
     })
-
-    vi.useFakeTimers()
   })
 
   afterEach(() => {
-    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
-  it('should initialize with atBottom as true', () => {
+  it('initializes with atBottom = true', () => {
     const { result } = renderHook(() => useAutoScroll())
-    
+
     expect(result.current.atBottom).toBe(true)
     expect(result.current.containerRef.current).toBe(null)
   })
 
-  it('should provide scrollToBottom function', () => {
+  it('exposes public API', () => {
     const { result } = renderHook(() => useAutoScroll())
-    
-    expect(typeof result.current.scrollToBottom).toBe('function')
-    expect(typeof result.current.onNewContent).toBe('function')
+
+    expect(result.current).toMatchObject({
+      containerRef: expect.any(Object),
+      atBottom: expect.any(Boolean),
+      scrollToBottom: expect.any(Function),
+      onNewContent: expect.any(Function),
+    })
   })
 
-  it('should scroll to bottom when scrollToBottom is called', () => {
+  it('scrolls to bottom when scrollToBottom is called', () => {
     const { result } = renderHook(() => useAutoScroll())
-    
-    // Set a ref manually for testing
-    act(() => {
-      result.current.containerRef.current = mockContainer
-    })
 
-    act(() => {
-      result.current.scrollToBottom()
-    })
-
-    // Execute requestAnimationFrame callbacks
-    act(() => {
-      rafCallbacks.forEach(cb => cb())
-    })
+    result.current.containerRef.current = mockContainer
+    result.current.scrollToBottom()
 
     expect(mockContainer.scrollTo).toHaveBeenCalledWith({
       top: mockContainer.scrollHeight,
@@ -69,27 +55,24 @@ describe('useAutoScroll', () => {
     })
   })
 
-  it('should attach scroll event listener', () => {
-    renderHook(() => useAutoScroll())
-    
-    // The hook should set up event listeners when ref is attached
-    // This is tested implicitly through integration
-  })
-
-  it('should provide containerRef, atBottom, scrollToBottom, and onNewContent', () => {
+  it('onNewContent scrolls when at bottom', () => {
     const { result } = renderHook(() => useAutoScroll())
-    
-    expect(result.current).toHaveProperty('containerRef')
-    expect(result.current).toHaveProperty('atBottom')
-    expect(result.current).toHaveProperty('scrollToBottom')
-    expect(result.current).toHaveProperty('onNewContent')
+
+    // Set up container to be near bottom (within threshold of 120)
+    // scrollHeight: 1000, clientHeight: 500, so scrollTop should be >= 880
+    // to be within 120px of bottom (1000 - 880 - 500 = 20 <= 120)
+    mockContainer.scrollTop = 880
+    result.current.containerRef.current = mockContainer
+    result.current.onNewContent()
+
+    expect(mockContainer.scrollTo).toHaveBeenCalled()
   })
 
-  it('should accept custom threshold value', () => {
-    const { result } = renderHook(() => useAutoScroll({ threshold: 200 }))
-    
-    expect(result.current).toBeDefined()
+  it('accepts custom threshold', () => {
+    const { result } = renderHook(() =>
+      useAutoScroll({ threshold: 200 })
+    )
+
     expect(result.current.containerRef).toBeDefined()
   })
 })
-

@@ -1,295 +1,371 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { AuthProvider, useAuth } from './AuthContext'
-import api from '../services/axiosConfigUsers'
-import { initPush } from '../services/PushService'
 
-// Mock dependencies
+// Mocks
+const mockInitPush = vi.fn()
+const mockApiPost = vi.fn()
+
+vi.mock('../services/PushService', () => ({
+  initPush: (token) => mockInitPush(token),
+}))
+
 vi.mock('../services/axiosConfigUsers', () => ({
   default: {
-    post: vi.fn(),
+    post: (url, data) => mockApiPost(url, data),
   },
 }))
 
-vi.mock('../services/PushService', () => ({
-  initPush: vi.fn().mockResolvedValue(undefined),
-}))
+// Helper component to test the context
+const TestComponent = ({ children }) => {
+  return <AuthProvider>{children}</AuthProvider>
+}
 
-// Mock localStorage
-const localStorageMock = (() => {
-  let store = {}
-  return {
-    getItem: vi.fn((key) => store[key] || null),
-    setItem: vi.fn((key, value) => { store[key] = value.toString() }),
-    removeItem: vi.fn((key) => { delete store[key] }),
-    clear: vi.fn(() => { store = {} }),
-  }
-})()
-
-global.localStorage = localStorageMock
-
+// Tests
 describe('AuthContext', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    localStorageMock.clear()
+    localStorage.clear()
+    mockInitPush.mockResolvedValue(undefined)
   })
 
-  describe('AuthProvider', () => {
-    it('should provide auth context', () => {
-      const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>
-      const { result } = renderHook(() => useAuth(), { wrapper })
-
-      expect(result.current).toBeDefined()
-      expect(result.current).toHaveProperty('user')
-      expect(result.current).toHaveProperty('token')
-      expect(result.current).toHaveProperty('login')
-      expect(result.current).toHaveProperty('logout')
-      expect(result.current).toHaveProperty('register')
-      expect(result.current).toHaveProperty('initialized')
-    })
-
-    it('should initialize from localStorage', async () => {
-      const savedToken = 'saved-token'
-      const savedUser = { userId: '123', type: 'user', suspended: false }
-      
-      localStorageMock.getItem.mockImplementation((key) => {
-        if (key === 'token') return savedToken
-        if (key === 'user') return JSON.stringify(savedUser)
-        return null
-      })
-
-      const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>
-      const { result } = renderHook(() => useAuth(), { wrapper })
-
-      await waitFor(() => {
-        expect(result.current.initialized).toBe(true)
-      })
-
-      expect(result.current.token).toBe(savedToken)
-      expect(result.current.user).toEqual(savedUser)
-    })
-
-    it('should initialize as false when no saved data', async () => {
-      localStorageMock.getItem.mockReturnValue(null)
-
-      const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>
-      const { result } = renderHook(() => useAuth(), { wrapper })
-
-      await waitFor(() => {
-        expect(result.current.initialized).toBe(true)
-      })
-
-      expect(result.current.token).toBe(null)
-      expect(result.current.user).toBe(null)
-    })
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
-  describe('login', () => {
-    it('should login successfully', async () => {
-      const loginData = { email: 'test@example.com', password: 'password123' }
-      const mockResponse = {
-        data: {
-          token: 'token123',
-          id_user: 'user123',
-          type: 'user',
-          suspended: false,
-        },
-      }
-      api.post.mockResolvedValue(mockResponse)
-
-      const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>
-      const { result } = renderHook(() => useAuth(), { wrapper })
-
-      await waitFor(() => {
-        expect(result.current.initialized).toBe(true)
-      })
-
-      let loginResult
-      await act(async () => {
-        loginResult = await result.current.login(loginData)
-      })
-
-      expect(loginResult.success).toBe(true)
-      expect(result.current.token).toBe('token123')
-      expect(result.current.user).toEqual({
-        userId: 'user123',
-        type: 'user',
-        suspended: false,
-      })
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('token', 'token123')
-      expect(initPush).toHaveBeenCalledWith('token123')
+  it('provides initial state when no token in localStorage', async () => {
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: TestComponent,
     })
 
-    it('should handle login errors', async () => {
-      const loginData = { email: 'test@example.com', password: 'wrong' }
-      const error = {
-        response: {
-          data: { message: 'Invalid credentials' },
-        },
-      }
-      api.post.mockRejectedValue(error)
-
-      const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>
-      const { result } = renderHook(() => useAuth(), { wrapper })
-
-      await waitFor(() => {
-        expect(result.current.initialized).toBe(true)
-      })
-
-      let loginResult
-      await act(async () => {
-        loginResult = await result.current.login(loginData)
-      })
-
-      expect(loginResult.success).toBe(false)
-      expect(loginResult.message).toBe('Invalid credentials')
+    await waitFor(() => {
+      expect(result.current.initialized).toBe(true)
     })
+
+    expect(result.current.user).toBe(null)
+    expect(result.current.token).toBe(null)
+    expect(result.current.login).toBeDefined()
+    expect(result.current.logout).toBeDefined()
+    expect(result.current.register).toBeDefined()
+    expect(result.current.setAuth).toBeDefined()
+    expect(mockInitPush).not.toHaveBeenCalled()
   })
 
-  describe('register', () => {
-    it('should register successfully', async () => {
-      const registerData = {
-        email: 'new@example.com',
+  it('initializes from localStorage on mount', async () => {
+    const savedToken = 'test-token-123'
+    const savedUser = { userId: '123', type: false, suspended: false }
+    localStorage.setItem('token', savedToken)
+    localStorage.setItem('user', JSON.stringify(savedUser))
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: TestComponent,
+    })
+
+    await waitFor(() => {
+      expect(result.current.initialized).toBe(true)
+    })
+
+    expect(result.current.token).toBe(savedToken)
+    expect(result.current.user).toEqual(savedUser)
+    expect(mockInitPush).toHaveBeenCalledWith(savedToken)
+  })
+
+  it('login sets token and user on success', async () => {
+    const mockToken = 'new-token-456'
+    const mockUserData = { id_user: '456', type: true, suspended: false }
+    mockApiPost.mockResolvedValue({
+      data: {
+        token: mockToken,
+        ...mockUserData,
+      },
+    })
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: TestComponent,
+    })
+
+    await waitFor(() => {
+      expect(result.current.initialized).toBe(true)
+    })
+
+    await act(async () => {
+      const response = await result.current.login({
+        email: 'test@example.com',
         password: 'password123',
-        name: 'John',
-        surname: 'Doe',
-      }
-      const mockResponse = {
+      })
+
+      expect(response.success).toBe(true)
+    })
+
+    expect(mockApiPost).toHaveBeenCalledWith('/login', {
+      email: 'test@example.com',
+      password: 'password123',
+    })
+
+    await waitFor(() => {
+      expect(result.current.token).toBe(mockToken)
+      expect(result.current.user).toEqual({
+        userId: mockUserData.id_user,
+        type: mockUserData.type,
+        suspended: mockUserData.suspended,
+      })
+      expect(localStorage.getItem('token')).toBe(mockToken)
+      expect(JSON.parse(localStorage.getItem('user'))).toEqual({
+        userId: mockUserData.id_user,
+        type: mockUserData.type,
+        suspended: mockUserData.suspended,
+      })
+    })
+
+    expect(mockInitPush).toHaveBeenCalledWith(mockToken)
+  })
+
+  it('login returns error on failure', async () => {
+    const errorMessage = 'Credenciales inválidas'
+    mockApiPost.mockRejectedValue({
+      response: {
         data: {
-          token: 'token456',
-          id_user: 'user456',
-          type: 'user',
-          suspended: false,
+          message: errorMessage,
         },
-      }
-      api.post.mockResolvedValue(mockResponse)
-
-      const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>
-      const { result } = renderHook(() => useAuth(), { wrapper })
-
-      await waitFor(() => {
-        expect(result.current.initialized).toBe(true)
-      })
-
-      let registerResult
-      await act(async () => {
-        registerResult = await result.current.register(registerData)
-      })
-
-      expect(registerResult.success).toBe(true)
-      expect(result.current.token).toBe('token456')
-      expect(initPush).toHaveBeenCalledWith('token456')
+      },
     })
 
-    it('should handle registration errors', async () => {
-      const registerData = { email: 'invalid' }
-      const error = {
-        response: {
-          data: { message: 'Email already exists' },
-        },
-      }
-      api.post.mockRejectedValue(error)
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: TestComponent,
+    })
 
-      const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>
-      const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => {
+      expect(result.current.initialized).toBe(true)
+    })
 
-      await waitFor(() => {
-        expect(result.current.initialized).toBe(true)
+    await act(async () => {
+      const response = await result.current.login({
+        email: 'test@example.com',
+        password: 'wrongpassword',
       })
 
-      let registerResult
-      await act(async () => {
-        registerResult = await result.current.register(registerData)
+      expect(response.success).toBe(false)
+      expect(response.message).toBe(errorMessage)
+    })
+
+    expect(result.current.token).toBe(null)
+    expect(result.current.user).toBe(null)
+    expect(localStorage.getItem('token')).toBeNull()
+  })
+
+  it('login returns default error message when no error message provided', async () => {
+    mockApiPost.mockRejectedValue({})
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: TestComponent,
+    })
+
+    await waitFor(() => {
+      expect(result.current.initialized).toBe(true)
+    })
+
+    await act(async () => {
+      const response = await result.current.login({
+        email: 'test@example.com',
+        password: 'wrongpassword',
       })
 
-      expect(registerResult.success).toBe(false)
-      expect(registerResult.message).toBe('Email already exists')
+      expect(response.success).toBe(false)
+      expect(response.message).toBe('Error al iniciar sesión.')
     })
   })
 
-  describe('logout', () => {
-    it('should logout and clear state', async () => {
-      const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>
-      const { result } = renderHook(() => useAuth(), { wrapper })
+  it('register sets token and user on success', async () => {
+    const mockToken = 'register-token-789'
+    const mockUserData = { id_user: '789', type: false, suspended: false }
+    mockApiPost.mockResolvedValue({
+      data: {
+        token: mockToken,
+        ...mockUserData,
+      },
+    })
 
-      await waitFor(() => {
-        expect(result.current.initialized).toBe(true)
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: TestComponent,
+    })
+
+    await waitFor(() => {
+      expect(result.current.initialized).toBe(true)
+    })
+
+    const registerData = {
+      name: 'Juan',
+      surname: 'Pérez',
+      dni: 12345678,
+      email: 'juan@example.com',
+      password: 'Password123',
+    }
+
+    await act(async () => {
+      const response = await result.current.register(registerData)
+
+      expect(response.success).toBe(true)
+    })
+
+    expect(mockApiPost).toHaveBeenCalledWith('/register', registerData)
+
+    await waitFor(() => {
+      expect(result.current.token).toBe(mockToken)
+      expect(result.current.user).toEqual({
+        userId: mockUserData.id_user,
+        type: mockUserData.type,
+        suspended: mockUserData.suspended,
+      })
+      expect(localStorage.getItem('token')).toBe(mockToken)
+    })
+
+    expect(mockInitPush).toHaveBeenCalledWith(mockToken)
+  })
+
+  it('register returns error on failure', async () => {
+    const errorMessage = 'Email ya registrado'
+    mockApiPost.mockRejectedValue({
+      response: {
+        data: {
+          message: errorMessage,
+        },
+      },
+    })
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: TestComponent,
+    })
+
+    await waitFor(() => {
+      expect(result.current.initialized).toBe(true)
+    })
+
+    await act(async () => {
+      const response = await result.current.register({
+        email: 'test@example.com',
+        password: 'Password123',
       })
 
-      // Set some auth state first
-      await act(async () => {
-        api.post.mockResolvedValue({
-          data: {
-            token: 'token123',
-            id_user: 'user123',
-            type: 'user',
-            suspended: false,
-          },
-        })
-        await result.current.login({ email: 'test@example.com', password: 'pass' })
+      expect(response.success).toBe(false)
+      expect(response.message).toBe(errorMessage)
+    })
+
+    expect(result.current.token).toBe(null)
+    expect(result.current.user).toBe(null)
+  })
+
+  it('register returns default error message when no error message provided', async () => {
+    mockApiPost.mockRejectedValue({})
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: TestComponent,
+    })
+
+    await waitFor(() => {
+      expect(result.current.initialized).toBe(true)
+    })
+
+    await act(async () => {
+      const response = await result.current.register({
+        email: 'test@example.com',
+        password: 'Password123',
       })
 
-      expect(result.current.token).toBeTruthy()
-
-      // Now logout
-      act(() => {
-        result.current.logout()
-      })
-
-      expect(result.current.token).toBe(null)
-      expect(result.current.user).toBe(null)
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('token')
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('user')
+      expect(response.success).toBe(false)
+      expect(response.message).toBe('Error al registrarse.')
     })
   })
 
-  describe('setAuth', () => {
-    it('should update token and user', async () => {
-      const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>
-      const { result } = renderHook(() => useAuth(), { wrapper })
+  it('logout clears token and user', async () => {
+    const savedToken = 'test-token-123'
+    const savedUser = { userId: '123', type: false, suspended: false }
+    localStorage.setItem('token', savedToken)
+    localStorage.setItem('user', JSON.stringify(savedUser))
 
-      await waitFor(() => {
-        expect(result.current.initialized).toBe(true)
-      })
-
-      act(() => {
-        result.current.setAuth('new-token', { userId: 'user789', type: 'admin' })
-      })
-
-      expect(result.current.token).toBe('new-token')
-      expect(result.current.user).toEqual({ userId: 'user789', type: 'admin' })
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('token', 'new-token')
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: TestComponent,
     })
 
-    it('should update only token if user not provided', async () => {
-      const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>
-      const { result } = renderHook(() => useAuth(), { wrapper })
-
-      await waitFor(() => {
-        expect(result.current.initialized).toBe(true)
-      })
-
-      act(() => {
-        result.current.setAuth('token-only', null)
-      })
-
-      expect(result.current.token).toBe('token-only')
+    await waitFor(() => {
+      expect(result.current.initialized).toBe(true)
+      expect(result.current.token).toBe(savedToken)
     })
 
-    it('should update only user if token not provided', async () => {
-      const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>
-      const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(() => {
+      result.current.logout()
+    })
 
-      await waitFor(() => {
-        expect(result.current.initialized).toBe(true)
-      })
+    expect(result.current.token).toBe(null)
+    expect(result.current.user).toBe(null)
+    expect(localStorage.getItem('token')).toBeNull()
+    expect(localStorage.getItem('user')).toBeNull()
+  })
 
-      act(() => {
-        result.current.setAuth(null, { userId: 'user999' })
-      })
+  it('setAuth updates token and user', async () => {
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: TestComponent,
+    })
 
-      expect(result.current.user).toEqual({ userId: 'user999' })
+    await waitFor(() => {
+      expect(result.current.initialized).toBe(true)
+    })
+
+    const newToken = 'new-token-999'
+    const newUser = { userId: '999', type: true, suspended: false }
+
+    await act(() => {
+      result.current.setAuth(newToken, newUser)
+    })
+
+    await waitFor(() => {
+      expect(result.current.token).toBe(newToken)
+      expect(result.current.user).toEqual(newUser)
+      expect(localStorage.getItem('token')).toBe(newToken)
+      expect(JSON.parse(localStorage.getItem('user'))).toEqual(newUser)
+    })
+
+    expect(mockInitPush).toHaveBeenCalledWith(newToken)
+  })
+
+  it('setAuth updates only token when user is not provided', async () => {
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: TestComponent,
+    })
+
+    await waitFor(() => {
+      expect(result.current.initialized).toBe(true)
+    })
+
+    const newToken = 'new-token-only'
+
+    await act(() => {
+      result.current.setAuth(newToken, null)
+    })
+
+    await waitFor(() => {
+      expect(result.current.token).toBe(newToken)
+      expect(localStorage.getItem('token')).toBe(newToken)
+    })
+  })
+
+  it('setAuth updates only user when token is not provided', async () => {
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: TestComponent,
+    })
+
+    await waitFor(() => {
+      expect(result.current.initialized).toBe(true)
+    })
+
+    const newUser = { userId: '888', type: false, suspended: false }
+
+    await act(() => {
+      result.current.setAuth(null, newUser)
+    })
+
+    await waitFor(() => {
+      expect(result.current.user).toEqual(newUser)
+      expect(JSON.parse(localStorage.getItem('user'))).toEqual(newUser)
     })
   })
 })
-

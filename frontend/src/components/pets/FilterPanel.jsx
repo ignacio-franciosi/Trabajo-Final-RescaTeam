@@ -47,21 +47,21 @@ const FilterPanel = ({ onFilterChange, postType }) => {
     <div className="p-4 bg-white rounded-lg shadow-md space-y-4">
       <h3 className="text-lg font-bold mb-2">Filtrar Mascotas</h3>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Especie</label>
-        <select name="especie" value={filters.especie} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
+        <label htmlFor="especie" className="block text-sm font-medium text-gray-700">Especie</label>
+        <select id="especie" name="especie" value={filters.especie} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
           <option value="">Todas</option>
           <option value="perro">Perro</option>
           <option value="gato">Gato</option>
         </select>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Raza</label>
-        <input name="raza" value={filters.raza} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Opcional" />
+        <label htmlFor="raza" className="block text-sm font-medium text-gray-700">Raza</label>
+        <input id="raza" name="raza" value={filters.raza} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Opcional" />
       </div>
       {postType === 'adoption' && (
         <div>
-          <label className="block text-sm font-medium text-gray-700">Edad</label>
-          <select name="edad" value={filters.edad} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
+          <label htmlFor="edad" className="block text-sm font-medium text-gray-700">Edad</label>
+          <select id="edad" name="edad" value={filters.edad} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
             <option value="">Cualquiera</option>
             <option value="0-1">0-1 año</option>
             <option value="2-3">2-3 años</option>
@@ -71,8 +71,8 @@ const FilterPanel = ({ onFilterChange, postType }) => {
         </div>
       )}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Tamaño</label>
-        <select name="tamaño" value={filters.tamaño} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
+        <label htmlFor="tamaño" className="block text-sm font-medium text-gray-700">Tamaño</label>
+        <select id="tamaño" name="tamaño" value={filters.tamaño} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
           <option value="">Cualquiera</option>
           <option value="pequeño">Pequeño</option>
           <option value="mediano">Mediano</option>
@@ -80,8 +80,8 @@ const FilterPanel = ({ onFilterChange, postType }) => {
         </select>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Sexo</label>
-        <select name="sexo" value={filters.sexo} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
+        <label htmlFor="sexo" className="block text-sm font-medium text-gray-700">Sexo</label>
+        <select id="sexo" name="sexo" value={filters.sexo} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
           <option value="">Cualquiera</option>
           <option value="macho">Macho</option>
           <option value="hembra">Hembra</option>
@@ -90,16 +90,16 @@ const FilterPanel = ({ onFilterChange, postType }) => {
       {postType === 'adoption' && (
         <>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Castrado</label>
-            <select name="castrado" value={filters.castrado} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
+            <label htmlFor="castrado" className="block text-sm font-medium text-gray-700">Castrado</label>
+            <select id="castrado" name="castrado" value={filters.castrado} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
               <option value="">Cualquiera</option>
               <option value="true">Sí</option>
               <option value="false">No</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Vacunas completas</label>
-            <select name="vacunas" value={filters.vacunas} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
+            <label htmlFor="vacunas" className="block text-sm font-medium text-gray-700">Vacunas completas</label>
+            <select id="vacunas" name="vacunas" value={filters.vacunas} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
               <option value="">Cualquiera</option>
               <option value="true">Sí</option>
               <option value="false">No</option>
@@ -110,12 +110,12 @@ const FilterPanel = ({ onFilterChange, postType }) => {
       {postType !== 'adoption' && (
         <>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Estado de salud</label>
-            <input name="estadoSalud" value={filters.estadoSalud} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Ej: herido" />
+            <label htmlFor="estadoSalud" className="block text-sm font-medium text-gray-700">Estado de salud</label>
+            <input id="estadoSalud" name="estadoSalud" value={filters.estadoSalud} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Ej: herido" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Color del collar</label>
-            <input name="colorCollar" value={filters.colorCollar} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Opcional" />
+            <label htmlFor="colorCollar" className="block text-sm font-medium text-gray-700">Color del collar</label>
+            <input id="colorCollar" name="colorCollar" value={filters.colorCollar} onChange={handleChange} className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Opcional" />
           </div>
         </>
       )}

@@ -34,8 +34,12 @@ const LoginForm = () => {
       <h2 className="text-2xl font-bold mb-6 text-center">Iniciar Sesión</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Correo electrónico</label>
+          <label 
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700"
+          >Correo electrónico</label>
           <input
+            id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -44,8 +48,12 @@ const LoginForm = () => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Contraseña</label>
+          <label 
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700"
+          >Contraseña</label>
           <input
+            id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

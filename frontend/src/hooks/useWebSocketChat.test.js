@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook, waitFor, act } from '@testing-library/react'
 import { useWebSocketChat } from './useWebSocketChat'
 
-// Mock WebSocket
+/* -------------------- Mock WebSocket -------------------- */
+
 class MockWebSocket {
   constructor(url) {
     this.url = url
@@ -15,33 +16,44 @@ class MockWebSocket {
 
   close() {
     this.readyState = WebSocket.CLOSED
-    if (this.onclose) this.onclose()
+    this.onclose?.()
   }
 
-  send(data) {
-    if (this.readyState !== WebSocket.OPEN) return
-    // Mock send
-  }
+  send() {}
 }
 
 global.WebSocket = vi.fn((url) => {
   const ws = new MockWebSocket(url)
-  // Auto-connect immediately on next tick
   Promise.resolve().then(() => {
     ws.readyState = WebSocket.OPEN
-    if (ws.onopen) ws.onopen()
+    ws.onopen?.()
   })
   return ws
 })
 
-// Add WebSocket constants
-global.WebSocket.CONNECTING = 0
-global.WebSocket.OPEN = 1
-global.WebSocket.CLOSING = 2
-global.WebSocket.CLOSED = 3
+Object.assign(global.WebSocket, {
+  CONNECTING: 0,
+  OPEN: 1,
+  CLOSING: 2,
+  CLOSED: 3,
+})
 
-// Mock environment variable
-vi.stubGlobal('import.meta', { env: { VITE_CHAT_WS_URL: 'ws://localhost:8083' } })
+vi.stubGlobal('import.meta', {
+  env: { VITE_CHAT_WS_URL: 'ws://localhost:8083' },
+})
+
+// Helpers
+
+const renderOpenHook = async () => {
+  const hook = renderHook(() => useWebSocketChat('test-token'))
+  await waitFor(() => expect(hook.result.current.status).toBe('open'))
+  return hook
+}
+
+const getLastWS = () =>
+  vi.mocked(WebSocket).mock.results.at(-1)?.value
+
+// Tests
 
 describe('useWebSocketChat', () => {
   beforeEach(() => {
@@ -52,164 +64,105 @@ describe('useWebSocketChat', () => {
     vi.restoreAllMocks()
   })
 
-  it('should initialize with idle status when no token', () => {
+  it('initializes idle when no token', () => {
     const { result } = renderHook(() => useWebSocketChat(null))
-    
+
     expect(result.current.status).toBe('idle')
     expect(result.current.events).toEqual([])
   })
 
-  it('should connect when token is provided', async () => {
-    const { result } = renderHook(() => useWebSocketChat('test-token'))
-    
-    await waitFor(() => {
-      expect(result.current.status).toBe('open')
-    }, { timeout: 2000 })
+  it('connects when token is provided', async () => {
+    const { result } = await renderOpenHook()
+    expect(result.current.status).toBe('open')
   })
 
-  it('should update status to connecting', async () => {
-    const { result } = renderHook(() => useWebSocketChat('test-token'))
-    
-    // Initially should be connecting
-    expect(['idle', 'connecting']).toContain(result.current.status)
-    
-    await waitFor(() => {
-      expect(result.current.status).toBe('open')
-    }, { timeout: 2000 })
+  it('handles incoming messages', async () => {
+    const { result } = await renderOpenHook()
+    const ws = getLastWS()
+
+    act(() => {
+      ws.onmessage({
+        data: JSON.stringify({ type: 'test', payload: { message: 'hello' } }),
+      })
+    })
+
+    await waitFor(() =>
+      expect(result.current.events).toEqual([
+        { type: 'test', payload: { message: 'hello' } },
+      ])
+    )
   })
 
-  it('should handle incoming messages', async () => {
-    const { result } = renderHook(() => useWebSocketChat('test-token'))
-    
-    await waitFor(() => {
-      expect(result.current.status).toBe('open')
-    }, { timeout: 2000 })
+  it('ignores invalid JSON messages', async () => {
+    const { result } = await renderOpenHook()
+    const ws = getLastWS()
 
-    // Get the WebSocket instance and simulate a message
-    const wsInstances = vi.mocked(WebSocket).mock.results
-    const ws = wsInstances[wsInstances.length - 1].value
-    
-    const messageEvent = { data: JSON.stringify({ type: 'test', payload: { message: 'hello' } }) }
-    if (ws.onmessage) {
-      ws.onmessage(messageEvent)
-    }
-
-    await waitFor(() => {
-      expect(result.current.events.length).toBeGreaterThan(0)
-      expect(result.current.events[0]).toEqual({ type: 'test', payload: { message: 'hello' } })
-    }, { timeout: 2000 })
-  })
-
-  it('should ignore invalid JSON messages', async () => {
-    const { result } = renderHook(() => useWebSocketChat('test-token'))
-    
-    await waitFor(() => {
-      expect(result.current.status).toBe('open')
-    }, { timeout: 2000 })
-
-    const wsInstances = vi.mocked(WebSocket).mock.results
-    const ws = wsInstances[wsInstances.length - 1].value
-    
-    // Invalid JSON should not crash
-    if (ws.onmessage) {
+    act(() => {
       ws.onmessage({ data: 'invalid json' })
-    }
+    })
 
-    // Events should still be in initial state (no crash)
-    expect(result.current.events.length).toBe(0)
+    expect(result.current.events).toHaveLength(0)
   })
 
-  it('should provide sendMessage function', async () => {
-    const { result } = renderHook(() => useWebSocketChat('test-token'))
-    
-    await waitFor(() => {
-      expect(result.current.status).toBe('open')
-    }, { timeout: 2000 })
-
-    expect(typeof result.current.sendMessage).toBe('function')
-    expect(typeof result.current.sendEvent).toBe('function')
-  })
-
-  it('should send messages when WebSocket is open', async () => {
-    const { result } = renderHook(() => useWebSocketChat('test-token'))
-    
-    await waitFor(() => {
-      expect(result.current.status).toBe('open')
-    }, { timeout: 2000 })
-
-    const wsInstances = vi.mocked(WebSocket).mock.results
-    const ws = wsInstances[wsInstances.length - 1].value
+  it('sends message when socket is open', async () => {
+    const { result } = await renderOpenHook()
+    const ws = getLastWS()
     const sendSpy = vi.spyOn(ws, 'send')
 
     result.current.sendMessage({
       chatId: '123',
       receiverId: '456',
       postId: '789',
-      content: 'Hello'
+      content: 'Hello',
     })
 
-    expect(sendSpy).toHaveBeenCalled()
-    const callArg = sendSpy.mock.calls[0][0]
-    const parsed = JSON.parse(callArg)
-    expect(parsed.type).toBe('send_message')
-    expect(parsed.payload).toEqual({
-      chatId: '123',
-      receiverId: '456',
-      postId: '789',
-      content: 'Hello'
+    expect(sendSpy).toHaveBeenCalledOnce()
+
+    const payload = JSON.parse(sendSpy.mock.calls[0][0])
+    expect(payload).toEqual({
+      type: 'send_message',
+      payload: {
+        chatId: '123',
+        receiverId: '456',
+        postId: '789',
+        content: 'Hello',
+      },
     })
   })
 
-  it('should not send messages when WebSocket is not open', () => {
+  it('does not send message when socket is closed', () => {
     const { result } = renderHook(() => useWebSocketChat(null))
-    
-    const wsInstances = vi.mocked(WebSocket).mock.results
-    if (wsInstances.length > 0) {
-      const ws = wsInstances[wsInstances.length - 1].value
-      ws.readyState = WebSocket.CLOSED
-      const sendSpy = vi.spyOn(ws, 'send')
+    const ws = getLastWS()
 
-      result.current.sendMessage({ chatId: '123', content: 'Hello' })
-      
-      // Should not send when closed
-      expect(sendSpy).not.toHaveBeenCalled()
-    }
+    if (!ws) return
+
+    ws.readyState = WebSocket.CLOSED
+    const sendSpy = vi.spyOn(ws, 'send')
+
+    result.current.sendMessage({ content: 'Hello' })
+    expect(sendSpy).not.toHaveBeenCalled()
   })
 
-  it('should cleanup WebSocket on unmount', async () => {
-    const { result, unmount } = renderHook(() => useWebSocketChat('test-token'))
-    
-    await waitFor(() => {
-      expect(result.current.status).toBe('open')
-    }, { timeout: 2000 })
-
-    const wsInstances = vi.mocked(WebSocket).mock.results
-    const ws = wsInstances[wsInstances.length - 1].value
+  it('cleans up WebSocket on unmount', async () => {
+    const { unmount } = await renderOpenHook()
+    const ws = getLastWS()
     const closeSpy = vi.spyOn(ws, 'close')
 
     unmount()
-
-    expect(closeSpy).toHaveBeenCalled()
+    expect(closeSpy).toHaveBeenCalledOnce()
   })
 
-  it('should handle sendEvent with custom type and payload', async () => {
-    const { result } = renderHook(() => useWebSocketChat('test-token'))
-    
-    await waitFor(() => {
-      expect(result.current.status).toBe('open')
-    }, { timeout: 2000 })
-
-    const wsInstances = vi.mocked(WebSocket).mock.results
-    const ws = wsInstances[wsInstances.length - 1].value
+  it('sends custom event with sendEvent', async () => {
+    const { result } = await renderOpenHook()
+    const ws = getLastWS()
     const sendSpy = vi.spyOn(ws, 'send')
 
     result.current.sendEvent('custom_type', { foo: 'bar' })
 
-    expect(sendSpy).toHaveBeenCalled()
-    const callArg = sendSpy.mock.calls[0][0]
-    const parsed = JSON.parse(callArg)
-    expect(parsed.type).toBe('custom_type')
-    expect(parsed.payload).toEqual({ foo: 'bar' })
+    const payload = JSON.parse(sendSpy.mock.calls[0][0])
+    expect(payload).toEqual({
+      type: 'custom_type',
+      payload: { foo: 'bar' },
+    })
   })
 })
-
