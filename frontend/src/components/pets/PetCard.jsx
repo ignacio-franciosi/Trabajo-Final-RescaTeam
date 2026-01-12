@@ -1,9 +1,16 @@
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const PetCard = ({ pet }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleClick = () => {
+    // Si el usuario está suspendido, no permitir navegación
+    if (user?.suspended) {
+      return;
+    }
+
     const id = pet.postId || pet.id;
     if (!id) return;
     const currentPath = window.location.pathname;
@@ -62,7 +69,7 @@ const PetCard = ({ pet }) => {
   return (
     <div
       onClick={handleClick}
-      className={`cursor-pointer bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow ${typeStyles.border}`}
+      className={`${user?.suspended ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:shadow-lg'} bg-white rounded-lg shadow-md overflow-hidden transition-shadow ${typeStyles.border}`}
     >
       <div className="relative w-full aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden">
         {/* Badge tipo de publicación */}

@@ -153,32 +153,122 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-neutral-800/95 backdrop-blur supports-[backdrop-filter]:bg-neutral-800/80 border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between">
-          {/* Brand */}
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-2 group">
-              <img src={favicon} alt="RescaTeam" className="h-10 w-10 rounded-full ring-1 ring-white/20 group-hover:ring-blue-500/50 transition" />
-              <span className="text-xl font-semibold tracking-tight text-white">RescaTeam</span>
-            </Link>
-          </div>
+    <>
+      <header className="sticky top-0 z-40 bg-neutral-800/95 backdrop-blur supports-[backdrop-filter]:bg-neutral-800/80 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex h-20 items-center justify-between">
+            {/* Brand */}
+            <div className="flex items-center gap-3">
+              <Link to="/" className="flex items-center gap-2 group">
+                <img src={favicon} alt="RescaTeam" className="h-10 w-10 rounded-full ring-1 ring-white/20 group-hover:ring-blue-500/50 transition" />
+                <span className="text-xl font-semibold tracking-tight text-white">RescaTeam</span>
+              </Link>
+            </div>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
+            {/* Desktop nav */}
+            <nav className="hidden md:flex items-center gap-1">
+              <Link
+                to="/"
+                className={`group relative px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive('/') ? 'text-white' : 'text-white/80 hover:text-white'}`}
+              >
+                Home
+                <span className={`pointer-events-none absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full transition-all ${isActive('/') ? 'bg-blue-500' : 'bg-blue-500/0 group-hover:bg-blue-500'}`} />
+              </Link>
+              <button
+                onClick={goToPets}
+                className="group relative px-3 py-2 rounded-md text-sm font-medium text-white/80 hover:text-white transition-colors"
+              >
+                Ver mascotas
+                <span className="pointer-events-none absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full bg-blue-500/0 group-hover:bg-blue-500 transition-all" />
+              </button>
+              <button
+                onClick={() => {
+                  const aboutSection = document.getElementById('about');
+                  if (aboutSection) {
+                    aboutSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="group relative px-3 py-2 rounded-md text-sm font-medium text-white/80 hover:text-white transition-colors"
+              >
+                About
+                <span className="pointer-events-none absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full bg-blue-500/0 group-hover:bg-blue-500 transition-all" />
+              </button>
+              <button
+                onClick={() => handleProtectedAction('publicar')}
+                disabled={!!user?.suspended}
+                className={`ml-1 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${user?.suspended ? 'bg-neutral-700 text-white/50 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500'
+                  }`}
+                title={user?.suspended ? 'Cuenta suspendida: no puedes publicar' : ''}
+              >
+                Publicar Mascota
+              </button>
+            </nav>
+
+            {/* Profile / Auth */}
+            <div className="hidden md:block">
+              {isLoggingOut ? (
+                <div className="flex items-center text-white">
+                  <svg className="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                  </svg>
+                  <span>Cerrando sesión…</span>
+                </div>
+              ) : (
+                <DropdownMenu
+                  options={isLoggedIn ? profileOptions : guestOptions}
+                  onSelect={handleProfileSelect}
+                  label={isLoggedIn ? displayName : 'Perfil'}
+                />
+              )}
+            </div>
+
+            {/* Mobile: Menu button */}
+            <div className="md:hidden flex items-center gap-2">
+              {isLoggingOut ? (
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+              ) : (
+                <DropdownMenu
+                  options={isLoggedIn ? profileOptions : guestOptions}
+                  onSelect={handleProfileSelect}
+                  label={isLoggedIn ? displayName : 'Perfil'}
+                  compact
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => setMobileOpen((v) => !v)}
+                className="inline-flex items-center justify-center rounded-md p-2 text-white hover:bg-neutral-700/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-controls="primary-navigation"
+                aria-expanded={mobileOpen}
+              >
+                <span className="sr-only">Abrir menú</span>
+                {mobileOpen ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile menu */}
+        <div
+          id="primary-navigation"
+          className={`md:hidden overflow-hidden transition-[max-height,opacity] duration-300 ${mobileOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
+        >
+          <div className="px-4 pb-4 pt-2 space-y-2 border-t border-white/10 bg-neutral-800/95">
             <Link
               to="/"
-              className={`group relative px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive('/') ? 'text-white' : 'text-white/80 hover:text-white'}`}
+              className={`block rounded-md px-3 py-2 text-sm ${isActive('/') ? 'bg-neutral-700 text-white' : 'text-white/90 hover:bg-neutral-700 hover:text-white'}`}
             >
               Home
-              <span className={`pointer-events-none absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full transition-all ${isActive('/') ? 'bg-blue-500' : 'bg-blue-500/0 group-hover:bg-blue-500'}`} />
             </Link>
             <button
               onClick={goToPets}
-              className="group relative px-3 py-2 rounded-md text-sm font-medium text-white/80 hover:text-white transition-colors"
+              className="block w-full text-left rounded-md px-3 py-2 text-sm text-white/90 hover:bg-neutral-700 hover:text-white"
             >
               Ver mascotas
-              <span className="pointer-events-none absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full bg-blue-500/0 group-hover:bg-blue-500 transition-all" />
             </button>
             <button
               onClick={() => {
@@ -187,113 +277,39 @@ const Header = () => {
                   aboutSection.scrollIntoView({ behavior: 'smooth' });
                 }
               }}
-              className="group relative px-3 py-2 rounded-md text-sm font-medium text-white/80 hover:text-white transition-colors"
+              className="block w-full text-left rounded-md px-3 py-2 text-sm text-white/90 hover:bg-neutral-700 hover:text-white"
             >
               About
-              <span className="pointer-events-none absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full bg-blue-500/0 group-hover:bg-blue-500 transition-all" />
             </button>
             <button
               onClick={() => handleProtectedAction('publicar')}
               disabled={!!user?.suspended}
-              className={`ml-1 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-                user?.suspended ? 'bg-neutral-700 text-white/50 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500'
-              }`}
+              className={`block w-full text-left rounded-md px-3 py-2 text-sm ${user?.suspended ? 'text-white/40 bg-neutral-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500'
+                }`}
               title={user?.suspended ? 'Cuenta suspendida: no puedes publicar' : ''}
             >
               Publicar Mascota
             </button>
-          </nav>
-
-          {/* Profile / Auth */}
-          <div className="hidden md:block">
-            {isLoggingOut ? (
-              <div className="flex items-center text-white">
-                <svg className="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-                <span>Cerrando sesión…</span>
-              </div>
-            ) : (
-              <DropdownMenu
-                options={isLoggedIn ? profileOptions : guestOptions}
-                onSelect={handleProfileSelect}
-                label={isLoggedIn ? displayName : 'Perfil'}
-              />
-            )}
           </div>
+        </div>
+      </header>
 
-          {/* Mobile: Menu button */}
-          <div className="md:hidden flex items-center gap-2">
-            {isLoggingOut ? (
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      {/* Banner de cuenta suspendida */}
+      {user?.suspended && (
+        <div className="sticky top-20 z-30 bg-red-600 text-white shadow-lg">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-center gap-2 text-sm font-medium">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
-            ) : (
-              <DropdownMenu
-                options={isLoggedIn ? profileOptions : guestOptions}
-                onSelect={handleProfileSelect}
-                label={isLoggedIn ? displayName : 'Perfil'}
-                compact
-              />
-            )}
-            <button
-              type="button"
-              onClick={() => setMobileOpen((v) => !v)}
-              className="inline-flex items-center justify-center rounded-md p-2 text-white hover:bg-neutral-700/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-controls="primary-navigation"
-              aria-expanded={mobileOpen}
-            >
-              <span className="sr-only">Abrir menú</span>
-              {mobileOpen ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
-            </button>
+              <span>
+                Tu cuenta está suspendida. Puedes ver mascotas pero no interactuar con ellas ni crear publicaciones.
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Mobile menu */}
-      <div
-        id="primary-navigation"
-        className={`md:hidden overflow-hidden transition-[max-height,opacity] duration-300 ${mobileOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
-      >
-        <div className="px-4 pb-4 pt-2 space-y-2 border-t border-white/10 bg-neutral-800/95">
-          <Link
-            to="/"
-            className={`block rounded-md px-3 py-2 text-sm ${isActive('/') ? 'bg-neutral-700 text-white' : 'text-white/90 hover:bg-neutral-700 hover:text-white'}`}
-          >
-            Home
-          </Link>
-          <button
-            onClick={goToPets}
-            className="block w-full text-left rounded-md px-3 py-2 text-sm text-white/90 hover:bg-neutral-700 hover:text-white"
-          >
-            Ver mascotas
-          </button>
-          <button
-            onClick={() => {
-              const aboutSection = document.getElementById('about');
-              if (aboutSection) {
-                aboutSection.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-            className="block w-full text-left rounded-md px-3 py-2 text-sm text-white/90 hover:bg-neutral-700 hover:text-white"
-          >
-            About
-          </button>
-          <button
-            onClick={() => handleProtectedAction('publicar')}
-            disabled={!!user?.suspended}
-            className={`block w-full text-left rounded-md px-3 py-2 text-sm ${
-              user?.suspended ? 'text-white/40 bg-neutral-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500'
-            }`}
-            title={user?.suspended ? 'Cuenta suspendida: no puedes publicar' : ''}
-          >
-            Publicar Mascota
-          </button>
-        </div>
-      </div>
-    </header>
+      )}
+    </>
   );
 };
 

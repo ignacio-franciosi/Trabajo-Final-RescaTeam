@@ -53,7 +53,6 @@ const RegisterForm = () => {
         dni: parseInt(formData.dni),
         email: formData.email,
         password: formData.password,
-        // phone eliminado
         type: false,
         suspended: false
       };
@@ -80,10 +79,13 @@ const RegisterForm = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         {requiredFields.map((field) => (
           <div key={field}>
-            <label className="block text-sm font-medium text-gray-700 capitalize">
+            <label 
+              htmlFor={field}
+              className="block text-sm font-medium text-gray-700 capitalize">
               {field}
             </label>
             <input
+              id={field}
               type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
               name={field}
               value={formData[field]}

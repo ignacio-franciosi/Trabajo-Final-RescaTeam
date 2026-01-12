@@ -1,16 +1,4 @@
-import apiAdoption from './axiosConfigPost';
-
-function safeBaseURL() {
-  return (apiAdoption?.defaults?.baseURL || '').replace(/\/+$/, '');
-}
-
-export function buildPostImageUrl(filepath) {
-  if (!filepath) return '';
-  if (/^https?:\/\//i.test(filepath)) return filepath;
-  const base = safeBaseURL();
-  const path = filepath.startsWith('/') ? filepath : `/${filepath}`;
-  return `${base}${path}`;
-}
+import apiAdoption from './axiosConfigAdoption';
 
 export const createPost = async (formData) => {
   try {
@@ -22,29 +10,10 @@ export const createPost = async (formData) => {
       },
     });
     return { success: true, data: res.data };
-    } catch (error) {
-    return { 
+  } catch (error) {
+      return { 
       success: false,
       message: error.response?.data?.error || 'Error al publicar la mascota',
-    };
-  }
-};
-
-export const autocompletePostFromImage = async (imageFile) => {
-  try {
-    const form = new FormData();
-    // Backend acepta 'image' o 'file'; usamos 'image'
-    form.append('image', imageFile);
-    const res = await apiAdoption.post('/post/autocomplete', form, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return { success: true, data: res.data };
-    } catch (error) {
-    return { 
-      success: false,
-      message: error.response?.data?.error || 'No se pudo autocompletar con la imagen',
     };
   }
 };
@@ -53,22 +22,22 @@ export const getPostById = async (id) => {
   try {
     const res = await apiAdoption.get(`/post/${id}`);
     return { success: true, data: res.data };
-    } catch (error) {
-    return { 
+  } catch {
+      return { 
       success: false,
       message: 'Error al obtener publicación',
     };
   }
 };
 
-export const getAllPosts = async (type) => {
+export const getAllPosts = async (type = 'adoption') => {
   try {
     const res = type
       ? await apiAdoption.get(`/post?type=${encodeURIComponent(type)}`)
       : await apiAdoption.get('/post');
     return { success: true, data: res.data };
-    } catch (error) {
-    return { 
+  } catch (error) {
+      return { 
       success: false,
       message: error.response?.data?.error || 'Error al obtener publicaciones',
     };
@@ -79,8 +48,8 @@ export const getImagesByPostId = async (postId) => {
   try {
     const res = await apiAdoption.get(`/post/images/${postId}`);
     return { success: true, data: res.data };
-    } catch (error) {
-    return { 
+  } catch (error) {
+      return { 
       success: false,
       message: 'Error al obtener imágenes',
     };
@@ -102,7 +71,7 @@ export const getPostsByUserId = async (userId) => {
 
     return { success: true, data: res.data };
   } catch (error) {
-    return {
+      return { 
       success: false,
       message: error.response?.data?.error || 'Error al obtener tus publicaciones.',
     };
@@ -123,7 +92,7 @@ export const getAllPostsByUserId = async (userId) => {
 
     return { success: true, data };
   } catch (err) {
-    return {
+      return { 
       success: false,
       message:
         err.response?.data?.error || 'Error al obtener publicaciones del usuario.',
@@ -136,7 +105,7 @@ export const updatePost = async (id, data) => {
     const res = await apiAdoption.put(`/post/${id}`, data);
     return { success: true, data: res.data };
   } catch (err) {
-    return {
+      return { 
       success: false,
       message: err.response?.data?.error || 'Error al actualizar la publicación'
     };
@@ -158,7 +127,7 @@ export const uploadImage = async (postId, imageFile) => {
 
     return { success: true, data: res.data };
   } catch (err) {
-    return {
+      return { 
       success: false,
       message: err.response?.data?.error || 'Error al subir la imagen'
     };
@@ -170,7 +139,7 @@ export const deleteImageById = async (imageId) => {
     const res = await apiAdoption.delete(`/post/images/${imageId}`);
     return { success: true, data: res.data };
   } catch (err) {
-    return {
+      return { 
       success: false,
       message: err.response?.data?.error || 'Error al eliminar la imagen'
     };
@@ -182,7 +151,7 @@ export const deletePost = async (id) => {
     const res = await apiAdoption.delete(`/post/${id}`);
     return { success: true, data: res.data };
   } catch (err) {
-    return { success: false, message: err.response?.data?.error || 'Error al eliminar publicación' };
+     return { success: false, message: err.response?.data?.error || 'Error al eliminar publicación' };
   }
 };
 
@@ -191,7 +160,7 @@ export const deleteAllImagesByPostId = async (postId) => {
     const res = await apiAdoption.delete(`/post/images/deleteall/${postId}`);
     return { success: true, data: res.data };
   } catch (err) {
-    return { success: false, message: err.response?.data?.error || 'Error al eliminar imágenes' };
+     return { success: false, message: err.response?.data?.error || 'Error al eliminar imágenes' };
   }
 };
 
@@ -200,7 +169,7 @@ export const markAsResolved = async (postId) => {
     const res = await apiAdoption.put(`/post/resolved/${postId}`);
     return { success: true, data: res.data };
   } catch (err) {
-    return { success: false, message: err.response?.data?.error || 'Error al marcar como adoptada' };
+     return { success: false, message: err.response?.data?.error || 'Error al marcar como adoptada' };
   }
 };
 
@@ -208,8 +177,8 @@ export const getFilteredPosts = async (filters) => {
   try {
     const queryParams = new URLSearchParams();
 
-    // postType: solo si fue provisto, sino traer todos los tipos
-    const postType = filters.postType || filters.tipo;
+    // postType: usar el provisto o por defecto 'adoption' para mantener compatibilidad
+    const postType = filters.postType || filters.tipo || 'adoption';
     if (postType) queryParams.append('postType', postType);
 
     if (filters.especie || filters.species) queryParams.append('species', filters.especie || filters.species);
@@ -218,7 +187,7 @@ export const getFilteredPosts = async (filters) => {
     if (filters.sexo || filters.sex) queryParams.append('sex', filters.sexo || filters.sex);
     if (filters.castrado || filters.neutered) queryParams.append('neutered', filters.castrado || filters.neutered);
     if (filters.vacunas || filters.completeVaccines) queryParams.append('completeVaccines', filters.vacunas || filters.completeVaccines);
-  if (filters.zona || filters.zone) queryParams.append('zone', (filters.zona || filters.zone));
+    if (filters.zona || filters.zone) queryParams.append('zone', (filters.zona || filters.zone).replace(/\s/g, '%'));
     // Filtros adicionales soportados por el backend
     if (filters.healthStatus || filters.estadoSalud) queryParams.append('healthStatus', filters.healthStatus || filters.estadoSalud);
     if (filters.collarColor || filters.colorCollar) queryParams.append('collarColor', filters.collarColor || filters.colorCollar);
@@ -227,16 +196,6 @@ export const getFilteredPosts = async (filters) => {
     const res = await apiAdoption.get(`/post/filter?${queryParams.toString()}`);
     return { success: true, data: res.data };
   } catch (err) {
-    return { success: false, message: err.response?.data?.error || 'Error al filtrar mascotas' };
+     return { success: false, message: err.response?.data?.error || 'Error al filtrar mascotas' };
   }
 };
-
-export async function getPostByIdForChat(postId) {
-  const { data } = await apiAdoption.get(`/post/${postId}`);
-  return data;
-}
-
-export async function getImagesByPostIdForChat(postId) {
-  const { data } = await apiAdoption.get(`/post/images/${postId}`);
-  return Array.isArray(data) ? data : [];
-}

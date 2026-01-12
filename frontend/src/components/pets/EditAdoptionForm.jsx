@@ -2,10 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { updatePost, uploadImage, deleteImageById } from '../../services/PostService';
 import ZoneSelect from './ZoneSelect';
+import { useAuth } from '../../context/AuthContext';
+import SuspendedNotice from '../common/SuspendedNotice';
 
 // Formulario de edición para publicaciones de adopción
 // Props: post (objeto completo con campos + imagenes), onSuccess (callback opcional)
 const EditAdoptionForm = ({ post, onSuccess }) => {
+    const { user } = useAuth();
     const errorRef = useRef(null);
     const navigate = useNavigate();
 
@@ -112,6 +115,10 @@ const EditAdoptionForm = ({ post, onSuccess }) => {
     };
 
     const inputClass = (f) => `w-full mt-1 px-3 py-2 border rounded-md text-sm ${errors[f] ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-blue-500`;
+
+    if (user?.suspended) {
+        return <SuspendedNotice />;
+    }
 
     return (
         <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow mt-8">
