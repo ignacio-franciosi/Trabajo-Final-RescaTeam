@@ -285,40 +285,64 @@ func sendEmailWithTLS(to, subject, body string) error {
 	pass := os.Getenv("MAIL_PASS")
 
 	if from == "" || pass == "" {
-		log.Error("MAIL_USER o MAIL_PASS no configurados en variables de entorno")
+		log.Error("MAIL_USER o MAIL_PASS no configurados")
 		return errors.New("MAIL_USER o MAIL_PASS no configurados")
 	}
 
-	// Construir mensaje con formato MIME correcto
-	headers := make(map[string]string)
-	headers["From"] = from
-	headers["To"] = to
-	headers["Subject"] = subject
-	headers["MIME-Version"] = "1.0"
-	headers["Content-Type"] = "text/plain; charset=\"utf-8\""
+	msg := "From: " + from + "\r\n" +
+		"To: " + to + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n" +
+		body
 
-	message := ""
-	for k, v := range headers {
-		message += fmt.Sprintf("%s: %s\r\n", k, v)
-	}
-	message += "\r\n" + body
+	addr := smtpServer + ":" + smtpPort
 
-	log.Info("Intentando enviar email a:", to)
-	log.Debug("SMTP Server:", smtpServer, "Puerto:", smtpPort)
-
-	// Configurar autenticación
 	auth := smtp.PlainAuth("", from, pass, smtpServer)
 
-	// Intentar enviar usando smtp.SendMail con STARTTLS automático
-	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{to}, []byte(message))
+	// 🔴 Conexión explícita
+	c, err := smtp.Dial(addr)
 	if err != nil {
-		log.Error("Error al enviar email a", to, ":", err)
+		log.Error("SMTP dial error:", err)
+		return err
+	}
+	defer c.Close()
+
+	// 🔐 Forzar STARTTLS
+	if err = c.StartTLS(nil); err != nil {
+		log.Error("STARTTLS error:", err)
 		return err
 	}
 
-	log.Info("✅ Email enviado exitosamente a:", to)
-	return nil
+	if err = c.Auth(auth); err != nil {
+		log.Error("SMTP auth error:", err)
+		return err
+	}
+
+	if err = c.Mail(from); err != nil {
+		return err
+	}
+	if err = c.Rcpt(to); err != nil {
+		return err
+	}
+
+	w, err := c.Data()
+	if err != nil {
+		return err
+	}
+	_, err = w.Write([]byte(msg))
+	if err != nil {
+		return err
+	}
+	err = w.Close()
+	if err != nil {
+		return err
+	}
+
+	log.Info("✅ Email enviado correctamente a:", to)
+	return c.Quit()
 }
+
 
 func (s *userService) SendPasswordResetEmail(email string) error {
 
@@ -442,21 +466,19 @@ func (s *userService) SuspendUser(userId int) (dto.TokenDto, error) {
 		return tokenDto, err
 	}
 
-	// Enviar email de forma asíncrona para no bloquear la respuesta
+	// Enviar email de forma SINCRÓNICA (producción-safe)
 	reason := "Violación de los términos de servicio"
-	go func() {
-		err := s.SendSuspensionNotificationEmail(userId, reason)
-		if err != nil {
-			log.Error("Error al enviar notificación de suspensión:", err)
-		} else {
-			log.Info("Email de suspensión enviado correctamente a usuario:", userId)
-		}
-	}()
+	err = s.SendSuspensionNotificationEmail(userId, reason)
+	if err != nil {
+		log.Error("Error al enviar notificación de suspensión:", err)
+	} else {
+		log.Info("Email de suspensión enviado correctamente a usuario:", userId)
+	}
 
 	// Generar nuevo token con el estado actualizado
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id_user":   updatedUser.UserId,
-		"type":      updatedUser.Type,
+		"type":     updatedUser.Type,
 		"suspended": updatedUser.Suspended,
 	})
 	tokenString, _ := token.SignedString(jwtKey)
@@ -468,6 +490,7 @@ func (s *userService) SuspendUser(userId int) (dto.TokenDto, error) {
 
 	return tokenDto, nil
 }
+
 
 func (s *userService) ReactivateUser(userId int) (dto.TokenDto, error) {
 	var tokenDto dto.TokenDto
@@ -477,20 +500,19 @@ func (s *userService) ReactivateUser(userId int) (dto.TokenDto, error) {
 		return tokenDto, err
 	}
 
-	// Enviar email de forma asíncrona para no bloquear la respuesta
-	go func() {
-		err := s.SendReactivationNotificationEmail(userId)
-		if err != nil {
-			log.Error("Error al enviar notificación de reactivación:", err)
-		} else {
-			log.Info("Email de reactivación enviado correctamente a usuario:", userId)
-		}
-	}()
+	// Enviar email de forma SINCRÓNICA (producción-safe)
+	err = s.SendReactivationNotificationEmail(userId)
+	if err != nil {
+		log.Error("Error al enviar notificación de reactivación:", err)
+		
+	} else {
+		log.Info("Email de reactivación enviado correctamente a usuario:", userId)
+	}
 
 	// Generar nuevo token con el estado actualizado
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id_user":   updatedUser.UserId,
-		"type":      updatedUser.Type,
+		"type":     updatedUser.Type,
 		"suspended": updatedUser.Suspended,
 	})
 	tokenString, _ := token.SignedString(jwtKey)
@@ -502,6 +524,7 @@ func (s *userService) ReactivateUser(userId int) (dto.TokenDto, error) {
 
 	return tokenDto, nil
 }
+
 
 func (s *userService) SendSuspensionNotificationEmail(userId int, reason string) error {
 	user := userClient.UserClient.GetUserById(userId)
