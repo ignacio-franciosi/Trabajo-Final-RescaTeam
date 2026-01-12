@@ -186,34 +186,34 @@ const AdoptionForm = () => {
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-sm font-medium">Nombre (opcional)</label>
-                        <input name="name" value={formData.name} onChange={handleChange} className={inputClass('name')} placeholder="Ej: Lola" />
+                        <label htmlFor="name" className="text-sm font-medium">Nombre (opcional)</label>
+                        <input id="name" name="name" value={formData.name} onChange={handleChange} className={inputClass('name')} placeholder="Ej: Lola" />
                     </div>
                     <div>
-                        <label className="text-sm font-medium">Especie <span className="text-red-500">*</span></label>
-                        <select name="species" value={formData.species} onChange={handleChange} className={inputClass('species')}>
+                        <label htmlFor="species" className="text-sm font-medium">Especie <span className="text-red-500">*</span></label>
+                        <select id="species" name="species" value={formData.species} onChange={handleChange} className={inputClass('species')}>
                             <option value="perro">Perro</option>
                             <option value="gato">Gato</option>
                         </select>
                         {errors.species && <p className="text-xs text-red-500">{errors.species}</p>}
                     </div>
                     <div>
-                        <label className="text-sm font-medium">Edad <span className="text-red-500">*</span></label>
-                        <input type="number" name="age" value={formData.age} onChange={handleChange} className={inputClass('age')} />
+                        <label htmlFor="age" className="text-sm font-medium">Edad <span className="text-red-500">*</span></label>
+                        <input id="age" type="number" name="age" value={formData.age} onChange={handleChange} className={inputClass('age')} />
                         {errors.age && <p className="text-xs text-red-500">{errors.age}</p>}
                     </div>
                     <div>
-                        <label className="text-sm font-medium">Raza (opcional)</label>
-                        <input name="breed" value={formData.breed} onChange={handleChange} className={inputClass('breed')} placeholder="Mestizo" />
+                        <label htmlFor="breed" className="text-sm font-medium">Raza (opcional)</label>
+                        <input id="breed" name="breed" value={formData.breed} onChange={handleChange} className={inputClass('breed')} placeholder="Mestizo" />
                     </div>
                     <div>
-                        <label className="text-sm font-medium">Color <span className="text-red-500">*</span></label>
-                        <input name="color" value={formData.color} onChange={handleChange} className={inputClass('color')} />
+                        <label htmlFor="color" className="text-sm font-medium">Color <span className="text-red-500">*</span></label>
+                        <input id="color" name="color" value={formData.color} onChange={handleChange} className={inputClass('color')} />
                         {errors.color && <p className="text-xs text-red-500">{errors.color}</p>}
                     </div>
                     <div>
-                        <label className="text-sm font-medium">Tamaño <span className="text-red-500">*</span></label>
-                        <select name="size" value={formData.size} onChange={handleChange} className={inputClass('size')}>
+                        <label htmlFor="size" className="text-sm font-medium">Tamaño <span className="text-red-500">*</span></label>
+                        <select id="size" name="size" value={formData.size} onChange={handleChange} className={inputClass('size')}>
                             <option value="pequeño">Pequeño</option>
                             <option value="mediano">Mediano</option>
                             <option value="grande">Grande</option>
@@ -221,8 +221,8 @@ const AdoptionForm = () => {
                         {errors.size && <p className="text-xs text-red-500">{errors.size}</p>}
                     </div>
                     <div>
-                        <label className="text-sm font-medium">Sexo <span className="text-red-500">*</span></label>
-                        <select name="sex" value={formData.sex} onChange={handleChange} className={inputClass('sex')}>
+                        <label htmlFor="sex" className="text-sm font-medium">Sexo <span className="text-red-500">*</span></label>
+                        <select id="sex" name="sex" value={formData.sex} onChange={handleChange} className={inputClass('sex')}>
                             <option value="macho">Macho</option>
                             <option value="hembra">Hembra</option>
                         </select>
@@ -242,16 +242,16 @@ const AdoptionForm = () => {
                     </div>
                 </div>
                 <div>
-                    <label className="text-sm font-medium">Descripción (opcional)</label>
-                    <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className={inputClass('description')} />
+                    <label htmlFor="description" className="text-sm font-medium">Descripción (opcional)</label>
+                    <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={3} className={inputClass('description')} />
                 </div>
                 <div className="flex flex-wrap gap-6 text-sm">
-                    <label className="flex items-center gap-2">
-                        <input type="checkbox" name="neutered" checked={formData.neutered} onChange={handleChange} />
+                    <label htmlFor="neutered" className="flex items-center gap-2">
+                        <input id="neutered" type="checkbox" name="neutered" checked={formData.neutered} onChange={handleChange} />
                         Castrado
                     </label>
-                    <label className="flex items-center gap-2">
-                        <input type="checkbox" name="complete_vaccines" checked={formData.complete_vaccines} onChange={handleChange} />
+                    <label htmlFor="complete_vaccines" className="flex items-center gap-2">
+                        <input id="complete_vaccines" type="checkbox" name="complete_vaccines" checked={formData.complete_vaccines} onChange={handleChange} />
                         Vacunas completas
                     </label>
                 </div>
