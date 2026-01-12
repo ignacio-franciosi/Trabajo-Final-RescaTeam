@@ -1,6 +1,7 @@
 package services
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -277,7 +278,85 @@ func (s *userService) ChangePassword(changePasswordDto dto.ChangePasswordDto) er
 }
 
 var smtpServer = "smtp.gmail.com"
-var smtpPort = "587"
+var smtpPort = "465"
+
+// Helper function para enviar emails con TLS
+func sendEmailWithTLS(to, subject, body string) error {
+	from := os.Getenv("MAIL_USER")
+	pass := os.Getenv("MAIL_PASS")
+
+	if from == "" || pass == "" {
+		return errors.New("MAIL_USER o MAIL_PASS no configurados")
+	}
+
+	// Construir mensaje
+	msg := []byte("Subject: " + subject + "\r\n\r\n" + body)
+
+	// Configurar autenticación
+	auth := smtp.PlainAuth("", from, pass, smtpServer)
+
+	// Configurar TLS
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: false,
+		ServerName:         smtpServer,
+	}
+
+	// Conectar con TLS
+	conn, err := tls.Dial("tcp", smtpServer+":"+smtpPort, tlsConfig)
+	if err != nil {
+		log.Println("Error al conectar con TLS:", err)
+		return err
+	}
+	defer conn.Close()
+
+	client, err := smtp.NewClient(conn, smtpServer)
+	if err != nil {
+		log.Println("Error al crear cliente SMTP:", err)
+		return err
+	}
+	defer client.Close()
+
+	if err = client.Auth(auth); err != nil {
+		log.Println("Error de autenticación SMTP:", err)
+		return err
+	}
+
+	if err = client.Mail(from); err != nil {
+		log.Println("Error al establecer remitente:", err)
+		return err
+	}
+
+	if err = client.Rcpt(to); err != nil {
+		log.Println("Error al establecer destinatario:", err)
+		return err
+	}
+
+	w, err := client.Data()
+	if err != nil {
+		log.Println("Error al iniciar datos:", err)
+		return err
+	}
+
+	_, err = w.Write(msg)
+	if err != nil {
+		log.Println("Error al escribir mensaje:", err)
+		return err
+	}
+
+	err = w.Close()
+	if err != nil {
+		log.Println("Error al cerrar escritura:", err)
+		return err
+	}
+
+	err = client.Quit()
+	if err != nil {
+		log.Println("Error al cerrar conexión:", err)
+		return err
+	}
+
+	return nil
+}
 
 func (s *userService) SendPasswordResetEmail(email string) error {
 
@@ -300,22 +379,11 @@ func (s *userService) SendPasswordResetEmail(email string) error {
 	frontendURL := os.Getenv("FRONTEND_BASE_URL")                                 // ej: http://localhost:5173
 	resetLink := fmt.Sprintf("%s/reset-password?token=%s", frontendURL, tokenStr) // despues, url de front
 
-	// Email
-	subject := "Subject: Recuperación de contraseña\n"
+	// Enviar email con helper
+	subject := "Recuperación de contraseña"
 	body := fmt.Sprintf("Hola! Para restablecer tu contraseña, hacé clic en este enlace:\n\n%s", resetLink)
-	msg := []byte(subject + "\n" + body)
 
-	from := os.Getenv("MAIL_USER")
-	pass := os.Getenv("MAIL_PASS")
-
-	auth := smtp.PlainAuth("", from, pass, smtpServer)
-	err = smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{email}, msg)
-	if err != nil {
-		log.Println("Error al enviar mail:", err)
-		return err
-	}
-
-	return nil
+	return sendEmailWithTLS(email, subject, body)
 }
 
 func (s *userService) ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error {
@@ -470,21 +538,10 @@ func (s *userService) SendSuspensionNotificationEmail(userId int, reason string)
 	}
 
 	// Email de suspensión
-	subject := "Subject: Rescateam - Cuenta suspendida\n"
+	subject := "Rescateam - Cuenta suspendida"
 	body := fmt.Sprintf("Hola %s,\n\nTu cuenta ha sido suspendida por el siguiente motivo:\n%s\n\nSi consideras que esto es un error, puedes contactar con nuestro equipo de soporte.\n\nSaludos,\nEquipo de RescaTeam", user.Name, reason)
-	msg := []byte(subject + "\n" + body)
 
-	from := os.Getenv("MAIL_USER")
-	pass := os.Getenv("MAIL_PASS")
-
-	auth := smtp.PlainAuth("", from, pass, smtpServer)
-	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{user.Email}, msg)
-	if err != nil {
-		log.Println("Error al enviar mail de suspensión:", err)
-		return err
-	}
-
-	return nil
+	return sendEmailWithTLS(user.Email, subject, body)
 }
 
 func (s *userService) SendReactivationNotificationEmail(userId int) error {
@@ -494,34 +551,18 @@ func (s *userService) SendReactivationNotificationEmail(userId int) error {
 	}
 
 	// Email de reactivación
-	subject := "Subject: Rescateam - Cuenta reactivada\n"
+	subject := "Rescateam - Cuenta reactivada"
 	body := fmt.Sprintf("Hola %s,\n\n¡Buenas noticias! Tu cuenta ha sido reactivada y ya puedes volver a utilizar todos los servicios de RescaTeam. Te pedimos que a partir de ahora respetes las normas del sitio. \n\nGracias por tu paciencia.\n\nSaludos,\nEquipo de RescaTeam", user.Name)
-	msg := []byte(subject + "\n" + body)
 
-	from := os.Getenv("MAIL_USER")
-	pass := os.Getenv("MAIL_PASS")
-
-	auth := smtp.PlainAuth("", from, pass, smtpServer)
-	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{user.Email}, msg)
-	if err != nil {
-		log.Println("Error al enviar mail de reactivación:", err)
-		return err
-	}
-
-	return nil
+	return sendEmailWithTLS(user.Email, subject, body)
 }
 
 func (s *userService) SendAccountDeletionEmailWithUserData(user model.User, admin model.User) error {
 	// Email de notificación de eliminación de cuenta por admin
-	subject := "Subject: RescaTeam - Cuenta eliminada por administrador\n"
+	subject := "RescaTeam - Cuenta eliminada por administrador"
 	body := fmt.Sprintf("Hola %s,\n\nTu cuenta en RescaTeam ha sido eliminada por un administrador debido a violaciones de nuestros términos de servicio.\n\nSi consideras que esto es un error, puedes contactar con nuestro equipo de soporte.\n\nSaludos,\nEquipo de RescaTeam", user.Name)
-	msg := []byte(subject + "\n" + body)
 
-	from := os.Getenv("MAIL_USER")
-	pass := os.Getenv("MAIL_PASS")
-
-	auth := smtp.PlainAuth("", from, pass, smtpServer)
-	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{user.Email}, msg)
+	err := sendEmailWithTLS(user.Email, subject, body)
 	if err != nil {
 		log.Println("Error al enviar mail de eliminación de cuenta por admin:", err)
 		return err

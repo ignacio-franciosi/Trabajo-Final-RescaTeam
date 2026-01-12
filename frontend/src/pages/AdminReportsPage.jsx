@@ -179,19 +179,27 @@ const AdminReportsPage = () => {
             return;
         }
         if (!window.confirm(`¿Suspender la cuenta del usuario denunciado (${selected.complainingUserId}) y marcar el reporte como revisado?`)) return;
+
+        setSuspendLoading(true);
         try {
-            setSuspendLoading(true);
             const suspendRes = await suspendUser(selected.complainingUserId);
             if (!suspendRes.success) throw new Error(suspendRes.message);
+
             const payload = { adminComment: adminComment.trim(), reportStatus: 'revised' };
             const updRes = await updateReport(selected.reportId, payload);
             if (!updRes.success) throw new Error(updRes.message);
+
+            // Limpiar estado antes de recargar
             setSelected(null);
             setAdminComment('');
+
+            // Recargar reportes
             await fetchReports();
         } catch (e) {
+            console.error('Error en handleSuspendAndRevised:', e);
             alert(e.message || 'Error al suspender y actualizar el reporte');
         } finally {
+            // Asegurar que el loading se resetee siempre
             setSuspendLoading(false);
         }
     };
