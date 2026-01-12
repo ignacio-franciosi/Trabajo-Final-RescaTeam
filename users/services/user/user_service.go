@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/smtp"
 	"os"
 	"regexp"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"users/utils/queue"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/resend/resend-go/v2"
 	"golang.org/x/crypto/bcrypt"
 
 	log "github.com/sirupsen/logrus"
@@ -276,73 +276,32 @@ func (s *userService) ChangePassword(changePasswordDto dto.ChangePasswordDto) er
 	return nil
 }
 
-var smtpServer = "smtp.gmail.com"
-var smtpPort = "587"
-
-// Helper function para enviar emails con STARTTLS (puerto 587)
-func sendEmailWithTLS(to, subject, body string) error {
-	from := os.Getenv("MAIL_USER")
-	pass := os.Getenv("MAIL_PASS")
-
-	if from == "" || pass == "" {
-		log.Error("MAIL_USER o MAIL_PASS no configurados")
-		return errors.New("MAIL_USER o MAIL_PASS no configurados")
+// Helper function para enviar emails con Resend API
+func sendEmailWithResend(to, subject, body string) error {
+	apiKey := os.Getenv("RESEND_API_KEY")
+	if apiKey == "" {
+		log.Error("RESEND_API_KEY no configurada")
+		return errors.New("RESEND_API_KEY no configurada")
 	}
 
-	msg := "From: " + from + "\r\n" +
-		"To: " + to + "\r\n" +
-		"Subject: " + subject + "\r\n" +
-		"MIME-Version: 1.0\r\n" +
-		"Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n" +
-		body
+	client := resend.NewClient(apiKey)
 
-	addr := smtpServer + ":" + smtpPort
+	params := &resend.SendEmailRequest{
+		From:    "RescaTeam <rescateam2025@gmail.com>",
+		To:      []string{to},
+		Subject: subject,
+		Text:    body,
+	}
 
-	auth := smtp.PlainAuth("", from, pass, smtpServer)
-
-	// 🔴 Conexión explícita
-	c, err := smtp.Dial(addr)
+	sent, err := client.Emails.Send(params)
 	if err != nil {
-		log.Error("SMTP dial error:", err)
-		return err
-	}
-	defer c.Close()
-
-	// 🔐 Forzar STARTTLS
-	if err = c.StartTLS(nil); err != nil {
-		log.Error("STARTTLS error:", err)
+		log.Error("Error al enviar email via Resend:", err)
 		return err
 	}
 
-	if err = c.Auth(auth); err != nil {
-		log.Error("SMTP auth error:", err)
-		return err
-	}
-
-	if err = c.Mail(from); err != nil {
-		return err
-	}
-	if err = c.Rcpt(to); err != nil {
-		return err
-	}
-
-	w, err := c.Data()
-	if err != nil {
-		return err
-	}
-	_, err = w.Write([]byte(msg))
-	if err != nil {
-		return err
-	}
-	err = w.Close()
-	if err != nil {
-		return err
-	}
-
-	log.Info("✅ Email enviado correctamente a:", to)
-	return c.Quit()
+	log.Info("✅ Email enviado exitosamente via Resend. ID:", sent.Id, "| Destinatario:", to)
+	return nil
 }
-
 
 func (s *userService) SendPasswordResetEmail(email string) error {
 
@@ -365,11 +324,11 @@ func (s *userService) SendPasswordResetEmail(email string) error {
 	frontendURL := os.Getenv("FRONTEND_BASE_URL")                                 // ej: http://localhost:5173
 	resetLink := fmt.Sprintf("%s/reset-password?token=%s", frontendURL, tokenStr) // despues, url de front
 
-	// Enviar email con helper
+	// Enviar email con Resend
 	subject := "Recuperación de contraseña"
 	body := fmt.Sprintf("Hola! Para restablecer tu contraseña, hacé clic en este enlace:\n\n%s", resetLink)
 
-	return sendEmailWithTLS(email, subject, body)
+	return sendEmailWithResend(email, subject, body)
 }
 
 func (s *userService) ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error {
@@ -478,7 +437,7 @@ func (s *userService) SuspendUser(userId int) (dto.TokenDto, error) {
 	// Generar nuevo token con el estado actualizado
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id_user":   updatedUser.UserId,
-		"type":     updatedUser.Type,
+		"type":      updatedUser.Type,
 		"suspended": updatedUser.Suspended,
 	})
 	tokenString, _ := token.SignedString(jwtKey)
@@ -490,7 +449,6 @@ func (s *userService) SuspendUser(userId int) (dto.TokenDto, error) {
 
 	return tokenDto, nil
 }
-
 
 func (s *userService) ReactivateUser(userId int) (dto.TokenDto, error) {
 	var tokenDto dto.TokenDto
@@ -504,7 +462,7 @@ func (s *userService) ReactivateUser(userId int) (dto.TokenDto, error) {
 	err = s.SendReactivationNotificationEmail(userId)
 	if err != nil {
 		log.Error("Error al enviar notificación de reactivación:", err)
-		
+
 	} else {
 		log.Info("Email de reactivación enviado correctamente a usuario:", userId)
 	}
@@ -512,7 +470,7 @@ func (s *userService) ReactivateUser(userId int) (dto.TokenDto, error) {
 	// Generar nuevo token con el estado actualizado
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id_user":   updatedUser.UserId,
-		"type":     updatedUser.Type,
+		"type":      updatedUser.Type,
 		"suspended": updatedUser.Suspended,
 	})
 	tokenString, _ := token.SignedString(jwtKey)
@@ -525,7 +483,6 @@ func (s *userService) ReactivateUser(userId int) (dto.TokenDto, error) {
 	return tokenDto, nil
 }
 
-
 func (s *userService) SendSuspensionNotificationEmail(userId int, reason string) error {
 	user := userClient.UserClient.GetUserById(userId)
 	if user.UserId == 0 {
@@ -536,7 +493,7 @@ func (s *userService) SendSuspensionNotificationEmail(userId int, reason string)
 	subject := "Rescateam - Cuenta suspendida"
 	body := fmt.Sprintf("Hola %s,\n\nTu cuenta ha sido suspendida por el siguiente motivo:\n%s\n\nSi consideras que esto es un error, puedes contactar con nuestro equipo de soporte.\n\nSaludos,\nEquipo de RescaTeam", user.Name, reason)
 
-	return sendEmailWithTLS(user.Email, subject, body)
+	return sendEmailWithResend(user.Email, subject, body)
 }
 
 func (s *userService) SendReactivationNotificationEmail(userId int) error {
@@ -549,7 +506,7 @@ func (s *userService) SendReactivationNotificationEmail(userId int) error {
 	subject := "Rescateam - Cuenta reactivada"
 	body := fmt.Sprintf("Hola %s,\n\n¡Buenas noticias! Tu cuenta ha sido reactivada y ya puedes volver a utilizar todos los servicios de RescaTeam. Te pedimos que a partir de ahora respetes las normas del sitio. \n\nGracias por tu paciencia.\n\nSaludos,\nEquipo de RescaTeam", user.Name)
 
-	return sendEmailWithTLS(user.Email, subject, body)
+	return sendEmailWithResend(user.Email, subject, body)
 }
 
 func (s *userService) SendAccountDeletionEmailWithUserData(user model.User, admin model.User) error {
@@ -557,7 +514,7 @@ func (s *userService) SendAccountDeletionEmailWithUserData(user model.User, admi
 	subject := "RescaTeam - Cuenta eliminada por administrador"
 	body := fmt.Sprintf("Hola %s,\n\nTu cuenta en RescaTeam ha sido eliminada por un administrador debido a violaciones de nuestros términos de servicio.\n\nSi consideras que esto es un error, puedes contactar con nuestro equipo de soporte.\n\nSaludos,\nEquipo de RescaTeam", user.Name)
 
-	err := sendEmailWithTLS(user.Email, subject, body)
+	err := sendEmailWithResend(user.Email, subject, body)
 	if err != nil {
 		log.Println("Error al enviar mail de eliminación de cuenta por admin:", err)
 		return err
