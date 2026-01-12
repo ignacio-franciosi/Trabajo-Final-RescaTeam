@@ -78,12 +78,22 @@ const MyPetsPage = () => {
   }, [fetchMyPets]);
 
   const handleDeleteClick = (pet) => {
+    // Bloquear si el usuario está suspendido
+    if (user?.suspended) {
+      alert('No puedes eliminar publicaciones mientras tu cuenta está suspendida');
+      return;
+    }
     setModalAction('delete');
     setPetSelected(pet);
     setShowModal(true);
   };
 
   const handleMarkAdoptedClick = (pet) => {
+    // Bloquear si el usuario está suspendido
+    if (user?.suspended) {
+      alert('No puedes marcar publicaciones como resueltas mientras tu cuenta está suspendida');
+      return;
+    }
     setModalAction('resolve');
     setPetSelected(pet);
     setShowModal(true);

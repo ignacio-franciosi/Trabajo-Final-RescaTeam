@@ -39,6 +39,12 @@ const ReportPostModal = ({ post, ownerUserId, isOpen, onClose, onSuccess }) => {
         setError('');
         setDone(false);
 
+        // Verificar si el usuario está suspendido
+        if (user?.suspended) {
+            setError('No puedes reportar publicaciones mientras tu cuenta está suspendida');
+            return;
+        }
+
         if (!reason) {
             setError('La razón es obligatoria');
             return;

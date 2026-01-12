@@ -105,6 +105,33 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Verificar estado de suspensión del usuario periódicamente
+  useEffect(() => {
+    if (!user?.userId || !token) return;
+
+    const checkUserStatus = async () => {
+      try {
+        const res = await api.get(`/user/${user.userId}`);
+        if (res.data?.suspended !== user.suspended) {
+          // El estado de suspensión cambió, actualizar
+          const updatedUser = { ...user, suspended: res.data.suspended };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          setUser(updatedUser);
+        }
+      } catch (err) {
+        console.error("Error verificando estado de usuario:", err);
+      }
+    };
+
+    // Verificar inmediatamente
+    checkUserStatus();
+
+    // Verificar cada 30 segundos
+    const interval = setInterval(checkUserStatus, 30000);
+
+    return () => clearInterval(interval);
+  }, [user?.userId, token]);
+
   return (
     <AuthContext.Provider value={{ user, token, login, logout, register, initialized, setAuth }}>
       {children}
