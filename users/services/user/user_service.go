@@ -1,7 +1,6 @@
 package services
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -278,83 +277,43 @@ func (s *userService) ChangePassword(changePasswordDto dto.ChangePasswordDto) er
 }
 
 var smtpServer = "smtp.gmail.com"
-var smtpPort = "465"
+var smtpPort = "587"
 
-// Helper function para enviar emails con TLS
+// Helper function para enviar emails con STARTTLS (puerto 587)
 func sendEmailWithTLS(to, subject, body string) error {
 	from := os.Getenv("MAIL_USER")
 	pass := os.Getenv("MAIL_PASS")
 
 	if from == "" || pass == "" {
+		log.Error("MAIL_USER o MAIL_PASS no configurados")
 		return errors.New("MAIL_USER o MAIL_PASS no configurados")
 	}
 
-	// Construir mensaje
-	msg := []byte("Subject: " + subject + "\r\n\r\n" + body)
+	// Construir mensaje con formato MIME correcto
+	headers := make(map[string]string)
+	headers["From"] = from
+	headers["To"] = to
+	headers["Subject"] = subject
+	headers["MIME-Version"] = "1.0"
+	headers["Content-Type"] = "text/plain; charset=\"utf-8\""
+
+	message := ""
+	for k, v := range headers {
+		message += fmt.Sprintf("%s: %s\r\n", k, v)
+	}
+	message += "\r\n" + body
 
 	// Configurar autenticación
 	auth := smtp.PlainAuth("", from, pass, smtpServer)
 
-	// Configurar TLS
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: false,
-		ServerName:         smtpServer,
-	}
-
-	// Conectar con TLS
-	conn, err := tls.Dial("tcp", smtpServer+":"+smtpPort, tlsConfig)
+	// Intentar enviar usando smtp.SendMail con STARTTLS automático
+	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{to}, []byte(message))
 	if err != nil {
-		log.Println("Error al conectar con TLS:", err)
-		return err
-	}
-	defer conn.Close()
-
-	client, err := smtp.NewClient(conn, smtpServer)
-	if err != nil {
-		log.Println("Error al crear cliente SMTP:", err)
-		return err
-	}
-	defer client.Close()
-
-	if err = client.Auth(auth); err != nil {
-		log.Println("Error de autenticación SMTP:", err)
+		log.Error("Error al enviar email:", err)
 		return err
 	}
 
-	if err = client.Mail(from); err != nil {
-		log.Println("Error al establecer remitente:", err)
-		return err
-	}
-
-	if err = client.Rcpt(to); err != nil {
-		log.Println("Error al establecer destinatario:", err)
-		return err
-	}
-
-	w, err := client.Data()
-	if err != nil {
-		log.Println("Error al iniciar datos:", err)
-		return err
-	}
-
-	_, err = w.Write(msg)
-	if err != nil {
-		log.Println("Error al escribir mensaje:", err)
-		return err
-	}
-
-	err = w.Close()
-	if err != nil {
-		log.Println("Error al cerrar escritura:", err)
-		return err
-	}
-
-	err = client.Quit()
-	if err != nil {
-		log.Println("Error al cerrar conexión:", err)
-		return err
-	}
-
+	log.Info("Email enviado exitosamente a:", to)
 	return nil
 }
 

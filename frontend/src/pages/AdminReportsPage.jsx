@@ -153,18 +153,37 @@ const AdminReportsPage = () => {
             alert('El comentario del administrador es obligatorio.');
             return;
         }
+
+        setUpdating(true);
+        let success = false;
+
         try {
-            setUpdating(true);
             const payload = { adminComment: adminComment.trim(), reportStatus: 'revised' };
             const res = await updateReport(selected.reportId, payload);
-            if (!res.success) throw new Error(res.message);
+            if (!res.success) {
+                throw new Error(res.message || 'Error al marcar como revisado');
+            }
+
+            success = true;
+            alert('✅ Reporte marcado como revisado correctamente');
+
             setSelected(null);
             setAdminComment('');
-            await fetchReports();
+
         } catch (e) {
-            alert(e.message || 'Error al marcar como revisado');
+            console.error('Error en handleMarkRevised:', e);
+            alert('❌ ' + (e.message || 'Error al marcar como revisado'));
         } finally {
             setUpdating(false);
+
+            // Recargar solo si fue exitoso
+            if (success) {
+                try {
+                    await fetchReports();
+                } catch (refreshError) {
+                    console.error('Error al recargar reportes:', refreshError);
+                }
+            }
         }
     };
 
@@ -181,26 +200,41 @@ const AdminReportsPage = () => {
         if (!window.confirm(`¿Suspender la cuenta del usuario denunciado (${selected.complainingUserId}) y marcar el reporte como revisado?`)) return;
 
         setSuspendLoading(true);
+        let success = false;
+
         try {
             const suspendRes = await suspendUser(selected.complainingUserId);
-            if (!suspendRes.success) throw new Error(suspendRes.message);
+            if (!suspendRes.success) {
+                throw new Error(suspendRes.message || 'Error al suspender usuario');
+            }
 
             const payload = { adminComment: adminComment.trim(), reportStatus: 'revised' };
             const updRes = await updateReport(selected.reportId, payload);
-            if (!updRes.success) throw new Error(updRes.message);
+            if (!updRes.success) {
+                throw new Error(updRes.message || 'Error al actualizar reporte');
+            }
 
-            // Limpiar estado antes de recargar
+            success = true;
+            alert('✅ Usuario suspendido y reporte marcado como revisado correctamente');
+
+            // Limpiar estado
             setSelected(null);
             setAdminComment('');
 
-            // Recargar reportes
-            await fetchReports();
         } catch (e) {
             console.error('Error en handleSuspendAndRevised:', e);
-            alert(e.message || 'Error al suspender y actualizar el reporte');
+            alert('❌ ' + (e.message || 'Error al suspender y actualizar el reporte'));
         } finally {
-            // Asegurar que el loading se resetee siempre
             setSuspendLoading(false);
+
+            // Recargar reportes solo si fue exitoso
+            if (success) {
+                try {
+                    await fetchReports();
+                } catch (refreshError) {
+                    console.error('Error al recargar reportes:', refreshError);
+                }
+            }
         }
     };
 
@@ -211,21 +245,43 @@ const AdminReportsPage = () => {
             return;
         }
         if (!window.confirm(`¿Eliminar la publicación ${selected.postId}? Esta acción no se puede deshacer.`)) return;
+
+        setDeleteLoading(true);
+        let success = false;
+
         try {
-            setDeleteLoading(true);
             const res = await deletePost(selected.postId);
-            if (!res.success) throw new Error(res.message || 'Error al eliminar publicación');
+            if (!res.success) {
+                throw new Error(res.message || 'Error al eliminar publicación');
+            }
+
             // marcar reporte como revisado y añadir adminComment
             const payload = { adminComment: adminComment.trim(), reportStatus: 'revised' };
             const updRes = await updateReport(selected.reportId, payload);
-            if (!updRes.success) throw new Error(updRes.message || 'Error al actualizar reporte');
+            if (!updRes.success) {
+                throw new Error(updRes.message || 'Error al actualizar reporte');
+            }
+
+            success = true;
+            alert('✅ Publicación eliminada y reporte marcado como revisado correctamente');
+
             setSelected(null);
             setAdminComment('');
-            await fetchReports();
+
         } catch (e) {
-            alert(e.message || 'Error al eliminar la publicación');
+            console.error('Error en handleDeletePost:', e);
+            alert('❌ ' + (e.message || 'Error al eliminar la publicación'));
         } finally {
             setDeleteLoading(false);
+
+            // Recargar solo si fue exitoso
+            if (success) {
+                try {
+                    await fetchReports();
+                } catch (refreshError) {
+                    console.error('Error al recargar reportes:', refreshError);
+                }
+            }
         }
     };
 
