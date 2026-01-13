@@ -1,0 +1,26 @@
+{
+    "short_name": "RescaTeam",
+    "name": "RescaTeam - Plataforma de Adopción y Búsqueda de Mascotas",
+    "icons": [
+        {
+            "src": "/favicon.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        }
+    ],
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#ffffff",
+    "orientation": "portrait",
+    "categories": [
+        "perros",
+        "mascotas",
+        "social",
+        "gatos",
+        "perdidos",
+        "encontrados",
+        "adopcion"
+    ]
+
+}
