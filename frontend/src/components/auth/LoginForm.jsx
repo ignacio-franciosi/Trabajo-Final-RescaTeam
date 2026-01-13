@@ -30,11 +30,11 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md mt-24 mb-24">
-      <h2 className="text-2xl font-bold mb-6 text-center">Iniciar Sesión</h2>
+    <div className="max-w-md mx-auto px-4 sm:px-6 py-6 bg-white rounded-lg shadow-md mt-8 sm:mt-16 md:mt-24 mb-8 sm:mb-16 md:mb-24">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">Iniciar Sesión</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label 
+          <label
             htmlFor="email"
             className="block text-sm font-medium text-gray-700"
           >Correo electrónico</label>
@@ -48,7 +48,7 @@ const LoginForm = () => {
           />
         </div>
         <div>
-          <label 
+          <label
             htmlFor="password"
             className="block text-sm font-medium text-gray-700"
           >Contraseña</label>

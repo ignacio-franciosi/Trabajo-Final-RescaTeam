@@ -11,19 +11,19 @@ const AboutSection = () => {
   return (
     <section
       id="about"
-      className="relative py-24 bg-cover bg-fixed bg-center"
+      className="relative py-12 sm:py-16 md:py-20 lg:py-24 bg-cover bg-fixed bg-center"
       style={{ backgroundImage: `url(${logo3})` }}
     >
       {/* Overlay para legibilidad (más transparente) */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/30"></div>
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <Framer.motion.div
           ref={ref}
           initial={{ opacity: 0, y: 50 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7 }}
-          className="flex flex-col md:flex-row items-center gap-10 md:gap-12 bg-white/60 backdrop-blur-md p-8 md:p-10 rounded-2xl shadow-2xl ring-1 ring-black/10"
+          className="flex flex-col md:flex-row items-center gap-6 sm:gap-8 md:gap-10 lg:gap-12 bg-white/60 backdrop-blur-md p-6 sm:p-8 md:p-10 rounded-xl sm:rounded-2xl shadow-2xl ring-1 ring-black/10"
         >
           {/* Imagen */}
           <Framer.motion.div
@@ -46,7 +46,7 @@ const AboutSection = () => {
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.7, delay: 0.25 }}
           >
-            <h2 className="text-4xl md:text-5xl font-extrabold text-center md:text-left leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-center md:text-left leading-tight">
               Sobre
               {' '}
               <span className="text-blue-600">
@@ -54,10 +54,10 @@ const AboutSection = () => {
               </span>
             </h2>
 
-            <p className="text-gray-700 text-lg leading-relaxed">
+            <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed">
               Conectamos personas y mascotas: ya sea para adoptar un compañero, reportar una mascota perdida o ayudar a reunir a una encontrada con su familia.
             </p>
-            <p className="text-gray-700 text-lg leading-relaxed">
+            <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed">
               Publicá publicaciones de adopción, avisos de pérdida o hallazgo, y descubrí listados filtrados por categoría para actuar rápido y con información clara.
             </p>
 

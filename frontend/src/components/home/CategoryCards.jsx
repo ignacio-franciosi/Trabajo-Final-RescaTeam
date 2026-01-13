@@ -25,13 +25,13 @@ const HomeSolidIcon = ({ className = 'w-16 h-16 text-blue-600' }) => (
 const Card = ({ title, description, actionLabel, to, colorClass, borderColor, badgeColor, icon, count, countSuffix }) => {
     const navigate = useNavigate();
     return (
-        <div className={`rounded-xl shadow-md p-6 bg-white border-t-4 ${borderColor} text-center flex flex-col items-center`}>
-            <div className="mb-3">
+        <div className={`rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6 bg-white border-t-4 ${borderColor} text-center flex flex-col items-center hover:shadow-lg transition-shadow`}>
+            <div className="mb-2 sm:mb-3">
                 {icon}
             </div>
-            <h3 className="text-xl font-bold mb-2">{title}</h3>
-            <p className="text-gray-600 mb-2">{description}</p>
-            <p className="text-sm text-gray-500 mb-4">
+            <h3 className="text-lg sm:text-xl font-bold mb-1 sm:mb-2">{title}</h3>
+            <p className="text-sm sm:text-base text-gray-600 mb-1 sm:mb-2">{description}</p>
+            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
                 {typeof count === 'number'
                     ? <>
                         <span className="font-semibold">{count}</span> mascotas {countSuffix}
@@ -40,7 +40,7 @@ const Card = ({ title, description, actionLabel, to, colorClass, borderColor, ba
             </p>
             <button
                 onClick={() => navigate(to)}
-                className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="inline-block bg-blue-600 text-white px-4 py-2 text-sm sm:text-base rounded hover:bg-blue-700 transition-colors w-full sm:w-auto"
             >
                 {actionLabel}
             </button>
@@ -76,9 +76,9 @@ const CategoryCards = () => {
     }, []);
 
     return (
-        <section id="pets-list" className="container mx-auto px-4 py-10">
-            <h2 className="text-3xl font-bold text-center mb-8">Explora por categoría</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <section id="pets-list" className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+            <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">Explora por categoría</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <Card
                     title="Adopción"
                     description="Encontrá a tu nuevo mejor amigo entre las mascotas que buscan un hogar."

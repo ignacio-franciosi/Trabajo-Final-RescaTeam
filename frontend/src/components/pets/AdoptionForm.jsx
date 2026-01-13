@@ -144,10 +144,10 @@ const AdoptionForm = () => {
         return <SuspendedNotice />;
     }
     return (
-        <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow mt-8">
-            <h2 className="text-2xl font-bold mb-2 text-center">Publicar Mascota en Adopción</h2>
-            <p className="text-center text-gray-600 mb-6 text-sm">Completá los datos para ayudar a que encuentre un hogar.</p>
-            <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6 bg-white rounded-lg sm:rounded-xl shadow mt-4 sm:mt-8 mb-4 sm:mb-8">
+            <h2 className="text-xl sm:text-2xl font-bold mb-2 text-center">Publicar Mascota en Adopción</h2>
+            <p className="text-center text-gray-600 mb-4 sm:mb-6 text-xs sm:text-sm">Completá los datos para ayudar a que encuentre un hogar.</p>
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                 {/* AI Autocomplete */}
                 <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
                     <div className="flex items-center gap-3">
@@ -184,7 +184,7 @@ const AdoptionForm = () => {
                     </div>
                     <input id="ai-file-input-adoption" hidden type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleAiSelect} />
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                         <label htmlFor="name" className="text-sm font-medium">Nombre (opcional)</label>
                         <input id="name" name="name" value={formData.name} onChange={handleChange} className={inputClass('name')} placeholder="Ej: Lola" />
