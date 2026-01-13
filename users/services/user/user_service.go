@@ -287,7 +287,7 @@ func sendEmailWithResend(to, subject, body string) error {
 	client := resend.NewClient(apiKey)
 
 	params := &resend.SendEmailRequest{
-		From:    "RescaTeam <rescateam2025@gmail.com>",
+		From:    "RescaTeam <onboarding@resend.dev>",
 		To:      []string{to},
 		Subject: subject,
 		Text:    body,
