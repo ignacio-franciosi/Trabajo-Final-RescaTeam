@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +14,7 @@ import (
 	"users/utils/queue"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/resend/resend-go/v2"
+	sib_api_v3_sdk "github.com/sendinblue/APIv3-go-library/v2/lib"
 	"golang.org/x/crypto/bcrypt"
 
 	log "github.com/sirupsen/logrus"
@@ -276,30 +277,45 @@ func (s *userService) ChangePassword(changePasswordDto dto.ChangePasswordDto) er
 	return nil
 }
 
-// Helper function para enviar emails con Resend API
-func sendEmailWithResend(to, subject, body string) error {
-	apiKey := os.Getenv("RESEND_API_KEY")
+// Helper function para enviar emails con Brevo API
+func sendEmailWithBrevo(to, subject, body string) error {
+	apiKey := os.Getenv("BREVO_API_KEY")
 	if apiKey == "" {
-		log.Error("RESEND_API_KEY no configurada")
-		return errors.New("RESEND_API_KEY no configurada")
+		log.Error("BREVO_API_KEY no configurada")
+		return errors.New("BREVO_API_KEY no configurada")
 	}
 
-	client := resend.NewClient(apiKey)
+	// Configurar cliente de Brevo
+	cfg := sib_api_v3_sdk.NewConfiguration()
+	cfg.AddDefaultHeader("api-key", apiKey)
+	client := sib_api_v3_sdk.NewAPIClient(cfg)
 
-	params := &resend.SendEmailRequest{
-		From:    "RescaTeam <onboarding@resend.dev>",
-		To:      []string{to},
-		Subject: subject,
-		Text:    body,
+	// Preparar el email
+	sender := sib_api_v3_sdk.SendSmtpEmailSender{
+		Name:  "RescaTeam",
+		Email: "rescateam2025@gmail.com",
 	}
 
-	sent, err := client.Emails.Send(params)
+	recipient := sib_api_v3_sdk.SendSmtpEmailTo{
+		Email: to,
+	}
+
+	sendEmail := sib_api_v3_sdk.SendSmtpEmail{
+		Sender:      &sender,
+		To:          []sib_api_v3_sdk.SendSmtpEmailTo{recipient},
+		Subject:     subject,
+		TextContent: body,
+	}
+
+	// Enviar el email
+	ctx := context.Background()
+	result, _, err := client.TransactionalEmailsApi.SendTransacEmail(ctx, sendEmail)
 	if err != nil {
-		log.Error("Error al enviar email via Resend:", err)
+		log.Error("Error al enviar email via Brevo:", err)
 		return err
 	}
 
-	log.Info("✅ Email enviado exitosamente via Resend. ID:", sent.Id, "| Destinatario:", to)
+	log.Info("✅ Email enviado exitosamente via Brevo. ID:", result.MessageId, "| Destinatario:", to)
 	return nil
 }
 
@@ -324,11 +340,11 @@ func (s *userService) SendPasswordResetEmail(email string) error {
 	frontendURL := os.Getenv("FRONTEND_BASE_URL")                                 // ej: http://localhost:5173
 	resetLink := fmt.Sprintf("%s/reset-password?token=%s", frontendURL, tokenStr) // despues, url de front
 
-	// Enviar email con Resend
+	// Enviar email con Brevo
 	subject := "Recuperación de contraseña"
 	body := fmt.Sprintf("Hola! Para restablecer tu contraseña, hacé clic en este enlace:\n\n%s", resetLink)
 
-	return sendEmailWithResend(email, subject, body)
+	return sendEmailWithBrevo(email, subject, body)
 }
 
 func (s *userService) ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error {
@@ -493,7 +509,7 @@ func (s *userService) SendSuspensionNotificationEmail(userId int, reason string)
 	subject := "Rescateam - Cuenta suspendida"
 	body := fmt.Sprintf("Hola %s,\n\nTu cuenta ha sido suspendida por el siguiente motivo:\n%s\n\nSi consideras que esto es un error, puedes contactar con nuestro equipo de soporte.\n\nSaludos,\nEquipo de RescaTeam", user.Name, reason)
 
-	return sendEmailWithResend(user.Email, subject, body)
+	return sendEmailWithBrevo(user.Email, subject, body)
 }
 
 func (s *userService) SendReactivationNotificationEmail(userId int) error {
@@ -506,7 +522,7 @@ func (s *userService) SendReactivationNotificationEmail(userId int) error {
 	subject := "Rescateam - Cuenta reactivada"
 	body := fmt.Sprintf("Hola %s,\n\n¡Buenas noticias! Tu cuenta ha sido reactivada y ya puedes volver a utilizar todos los servicios de RescaTeam. Te pedimos que a partir de ahora respetes las normas del sitio. \n\nGracias por tu paciencia.\n\nSaludos,\nEquipo de RescaTeam", user.Name)
 
-	return sendEmailWithResend(user.Email, subject, body)
+	return sendEmailWithBrevo(user.Email, subject, body)
 }
 
 func (s *userService) SendAccountDeletionEmailWithUserData(user model.User, admin model.User) error {
@@ -514,7 +530,7 @@ func (s *userService) SendAccountDeletionEmailWithUserData(user model.User, admi
 	subject := "RescaTeam - Cuenta eliminada por administrador"
 	body := fmt.Sprintf("Hola %s,\n\nTu cuenta en RescaTeam ha sido eliminada por un administrador debido a violaciones de nuestros términos de servicio.\n\nSi consideras que esto es un error, puedes contactar con nuestro equipo de soporte.\n\nSaludos,\nEquipo de RescaTeam", user.Name)
 
-	err := sendEmailWithResend(user.Email, subject, body)
+	err := sendEmailWithBrevo(user.Email, subject, body)
 	if err != nil {
 		log.Println("Error al enviar mail de eliminación de cuenta por admin:", err)
 		return err
