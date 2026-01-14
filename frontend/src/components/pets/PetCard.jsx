@@ -68,6 +68,7 @@ const PetCard = ({ pet }) => {
 
   return (
     <div
+      data-testid="post-card"
       onClick={handleClick}
       className={`${user?.suspended ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:shadow-lg'} bg-white rounded-lg shadow-md overflow-hidden transition-shadow ${typeStyles.border}`}
     >

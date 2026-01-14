@@ -63,9 +63,25 @@ func InitDB() {
 	fmt.Println("Available databases:")
 	fmt.Println(dbNames)
 
-	// Inicializar las colecciones
-	PostsCollection = MongoDb.Collection("posts")
-	ImagesCollection = MongoDb.Collection("images")
+	// Determinar nombres de colecciones basándose en el entorno
+	env := os.Getenv("ENV")
+	var postsCollectionName, imagesCollectionName string
 
-	log.Infof("Collections initialized in DB '%s': posts, images", dbName)
+	if env == "QA" {
+		postsCollectionName = os.Getenv("POSTS_COLLECTION_QA")
+		imagesCollectionName = os.Getenv("IMAGES_COLLECTION_QA")
+	} else if env == "PROD" {
+		postsCollectionName = os.Getenv("POSTS_COLLECTION_PROD")
+		imagesCollectionName = os.Getenv("IMAGES_COLLECTION_PROD")
+	} else {
+		// Por defecto o si ENV no está definido
+		postsCollectionName = "posts"
+		imagesCollectionName = "images"
+	}
+
+	// Inicializar las colecciones
+	PostsCollection = MongoDb.Collection(postsCollectionName)
+	ImagesCollection = MongoDb.Collection(imagesCollectionName)
+
+	log.Infof("Collections initialized in DB '%s': %s, %s", dbName, postsCollectionName, imagesCollectionName)
 }
