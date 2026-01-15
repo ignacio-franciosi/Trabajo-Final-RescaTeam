@@ -5,7 +5,7 @@ from torchvision import transforms
 import torch
 
 class AIModelClient:
-    def __init__(self, model_path="finetuned_model/best_resnet50_hard_triplet.pth", device=None):
+    def __init__(self, model_path="finetuned_model/best_resnet50_without_jitter.pth", device=None):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model = ResNet50Backbone(embedding_dim=2048).to(self.device)
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))

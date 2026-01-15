@@ -406,7 +406,7 @@ const PetDetail = ({ pet }) => {
       {/* Carrusel de mascotas similares */}
       {pet.postId && (pet.postType === 'lost' || pet.postType === 'found') && (
         <div className="mt-10">
-          <SimilarPetsCarousel postId={pet.postId} postType={pet.postType} petName={pet.name} />
+          <SimilarPetsCarousel postId={pet.postId} postType={pet.postType} petName={pet.name} species={pet.species} />
         </div>
       )}
 
