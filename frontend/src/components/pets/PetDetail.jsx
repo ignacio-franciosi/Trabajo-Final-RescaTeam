@@ -331,6 +331,7 @@ const PetDetail = ({ pet }) => {
                   {canStartChat && (
                     <button
                       type="button"
+                      data-testid="start-chat-button"
                       onClick={handleStartChat}
                       disabled={startingChat}
                       className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 disabled:opacity-60 text-white text-lg px-7 py-3 rounded-xl shadow-lg font-bold flex items-center gap-2 transition-all duration-200"
