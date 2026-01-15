@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
@@ -36,7 +37,19 @@ func InitDB() {
 
 	// Leer valores de .env
 	mongoURI := os.Getenv("MONGO_URI")
-	dbName := os.Getenv("MONGO_DB")
+	env := strings.ToUpper(os.Getenv("ENV"))
+	var dbName string
+	if env == "QA" {
+		dbName = os.Getenv("MONGO_DB_QA")
+	} else {
+		// For PROD and any other environments (including empty), use MONGO_DB
+		dbName = os.Getenv("MONGO_DB")
+	}
+	if dbName == "" {
+		dbName = "posts"
+	}
+
+	log.Println("DB NAME:", dbName)
 
 	if mongoURI == "" || dbName == "" {
 		log.Fatal("MONGO_URI or MONGO_DB not set in environment")
@@ -63,25 +76,9 @@ func InitDB() {
 	fmt.Println("Available databases:")
 	fmt.Println(dbNames)
 
-	// Determinar nombres de colecciones basándose en el entorno
-	env := os.Getenv("ENV")
-	var postsCollectionName, imagesCollectionName string
-
-	if env == "QA" {
-		postsCollectionName = os.Getenv("POSTS_COLLECTION_QA")
-		imagesCollectionName = os.Getenv("IMAGES_COLLECTION_QA")
-	} else if env == "PROD" {
-		postsCollectionName = os.Getenv("POSTS_COLLECTION_PROD")
-		imagesCollectionName = os.Getenv("IMAGES_COLLECTION_PROD")
-	} else {
-		// Por defecto o si ENV no está definido
-		postsCollectionName = "posts"
-		imagesCollectionName = "images"
-	}
-
 	// Inicializar las colecciones
-	PostsCollection = MongoDb.Collection(postsCollectionName)
-	ImagesCollection = MongoDb.Collection(imagesCollectionName)
+	PostsCollection = MongoDb.Collection("posts")
+	ImagesCollection = MongoDb.Collection("images")
 
-	log.Infof("Collections initialized in DB '%s': %s, %s", dbName, postsCollectionName, imagesCollectionName)
+	log.Infof("Collections initialized in DB '%s':", dbName)
 }
