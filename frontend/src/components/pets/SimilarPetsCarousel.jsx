@@ -6,7 +6,7 @@ import {
 } from '../../services/PostService';
 import { getSimilarPets } from '../../services/SearchService';
 
-const SimilarPetsCarousel = ({ postId, postType, petName }) => {
+const SimilarPetsCarousel = ({ postId, postType, petName, species }) => {
   const [loading, setLoading] = useState(true);
   const [similarPets, setSimilarPets] = useState([]);
   const [error, setError] = useState(null);
@@ -20,7 +20,7 @@ const SimilarPetsCarousel = ({ postId, postType, petName }) => {
       setError(null);
 
       try {
-        const res = await getSimilarPets(postId, postType);
+        const res = await getSimilarPets(postId, postType, species);
         if (!res.success || !res.data.matches || res.data.matches.length === 0) {
           setSimilarPets([]);
           setLoading(false);

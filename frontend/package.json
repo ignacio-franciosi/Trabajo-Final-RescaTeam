@@ -11,7 +11,9 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:coverage:summary": "vitest run --coverage --reporter=default --coverage.reporter=text-summary"
+    "test:coverage:summary": "vitest run --coverage --reporter=default --coverage.reporter=text-summary",
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open"
   },
   "dependencies": {
     "axios": "^1.9.0",
@@ -30,8 +32,10 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.4.1",
+    "@vitest/coverage-v8": "^1.0.4",
     "@vitest/ui": "^1.0.4",
     "autoprefixer": "^10.4.21",
+    "cypress": "^15.8.2",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
@@ -40,7 +44,6 @@
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.1",
     "vite": "^6.3.5",
-    "vitest": "^1.0.4",
-    "@vitest/coverage-v8": "^1.0.4"
+    "vitest": "^1.0.4"
   }
 }

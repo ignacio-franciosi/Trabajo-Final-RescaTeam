@@ -8,7 +8,8 @@ type QueueMessageDto struct {
 type QueueMessagesDto []QueueMessageDto
 
 type PostSearchMessageDto struct {
-	PostId    string `json:"post_id"`
-	PostType  string `json:"post_type"`
-	ImageUrl  string `json:"image_url"`
+	PostId   string `json:"post_id"`
+	PostType string `json:"post_type"`
+	Species  string `json:"species"`
+	ImageUrl string `json:"image_url"`
 }

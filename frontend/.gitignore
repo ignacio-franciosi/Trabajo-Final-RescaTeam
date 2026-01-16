@@ -16,6 +16,11 @@ dist-ssr
 coverage
 *.lcov
 
+# Cypress
+cypress/videos
+cypress/screenshots
+cypress/downloads
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

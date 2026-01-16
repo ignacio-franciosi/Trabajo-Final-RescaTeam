@@ -331,6 +331,7 @@ const PetDetail = ({ pet }) => {
                   {canStartChat && (
                     <button
                       type="button"
+                      data-testid="start-chat-button"
                       onClick={handleStartChat}
                       disabled={startingChat}
                       className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 disabled:opacity-60 text-white text-lg px-7 py-3 rounded-xl shadow-lg font-bold flex items-center gap-2 transition-all duration-200"
@@ -405,7 +406,7 @@ const PetDetail = ({ pet }) => {
       {/* Carrusel de mascotas similares */}
       {pet.postId && (pet.postType === 'lost' || pet.postType === 'found') && (
         <div className="mt-10">
-          <SimilarPetsCarousel postId={pet.postId} postType={pet.postType} petName={pet.name} />
+          <SimilarPetsCarousel postId={pet.postId} postType={pet.postType} petName={pet.name} species={pet.species} />
         </div>
       )}
 

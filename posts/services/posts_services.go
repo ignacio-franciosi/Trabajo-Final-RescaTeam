@@ -483,6 +483,12 @@ func (s *postsService) sendToSearchQueueIfNeeded(postId string, imageUrl string)
 		return
 	}
 
+	// species es obligatoria para search
+	if postDto.Species == nil {
+		log.Printf("Post %s has no species, skipping search queue", postId)
+		return
+	}
+
 	// Check if this is the first image (no existing images count check needed since we're in upload)
 	// We'll send every image upload, but search service can handle duplicates or we can optimize later
 
@@ -490,6 +496,7 @@ func (s *postsService) sendToSearchQueueIfNeeded(postId string, imageUrl string)
 	message := dto.PostSearchMessageDto{
 		PostId:   postId,
 		PostType: postDto.PostType,
+		Species:  *postDto.Species,
 		ImageUrl: imageUrl,
 	}
 

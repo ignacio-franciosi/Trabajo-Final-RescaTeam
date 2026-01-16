@@ -2,7 +2,6 @@ from qdrant_client import QdrantClient
 import uuid
 from qdrant_client import models
 from qdrant_client.models import Filter, FieldCondition, MatchValue
-from qdrant_client.http.models import ScrollRequest
 from app.dto.dtos import CreateEmbeddingDto, SearchPetDto
 import numpy as np
 from config.settings import QDRANT_URL, QDRANT_API_KEY, QDRANT_COLLECTION
@@ -40,6 +39,16 @@ def init_qdrant_collection():
     except Exception as e:
         print(f"El índice de post_type ya existe: {e}")
 
+    try:
+        client.create_payload_index(
+            collection_name=QDRANT_COLLECTION,
+            field_name="species",
+            field_schema=models.PayloadSchemaType.KEYWORD,
+        )
+        print("Índice creado para campo species")
+    except Exception as e:
+        print(f"El índice de species ya existe: {e}")
+
 
 def save_embedding(request: CreateEmbeddingDto, vector: np.ndarray):
     qdrant_id = str(uuid.uuid4())
@@ -53,7 +62,8 @@ def save_embedding(request: CreateEmbeddingDto, vector: np.ndarray):
                 vector=vector.tolist(),
                 payload={
                     "post_id": request.post_id,
-                    "post_type": request.post_type
+                    "post_type": request.post_type,
+                    "species": request.species
                 }
             )
         ]
@@ -79,7 +89,7 @@ def get_embedding_by_post_id(post_id: str):
 
 def search_embedding(request: SearchPetDto):
     vector = get_embedding_by_post_id(request.post_id)
-    #print("vector:", vector)
+    print("vector:", vector)
     print("norma ", np.linalg.norm(vector))
     if vector is None:
         return []
@@ -92,6 +102,10 @@ def search_embedding(request: SearchPetDto):
             FieldCondition(
                 key="post_type",
                 match=MatchValue(value=opposite_type)
+            ),
+            FieldCondition(
+                key="species",
+                match=MatchValue(value=request.species)
             )
         ]
     )

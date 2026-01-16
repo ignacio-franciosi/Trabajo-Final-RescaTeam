@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -17,10 +18,19 @@ func MustConnectMongo() (*mongo.Client, *mongo.Database) {
 	if uri == "" {
 		uri = "mongodb://localhost:27017" // valor por defecto
 	}
-	dbName := os.Getenv("MONGO_DB")
+	env := strings.ToUpper(os.Getenv("ENV"))
+	var dbName string
+	if env == "QA" {
+		dbName = os.Getenv("MONGO_DB_QA")
+	} else {
+		// For PROD and any other environments (including empty), use MONGO_DB
+		dbName = os.Getenv("MONGO_DB")
+	}
 	if dbName == "" {
 		dbName = "rescateam-chatdb"
 	}
+
+	log.Println("DB NAME:", dbName)
 
 	// Configuración cliente
 	clientOpts := options.Client().ApplyURI(uri)

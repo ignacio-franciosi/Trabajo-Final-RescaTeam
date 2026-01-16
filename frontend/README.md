@@ -19,3 +19,12 @@ npm install
 npm install react-router-dom axios
 npm run dev
 http://localhost:5173/
+
+# Para correr unit tests
+
+
+# Para correr tests E2E
+
+cd frontend
+npm run test:e2e # modo headless
+npx cypress open # modo interactivo
