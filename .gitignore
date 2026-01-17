@@ -35,4 +35,4 @@ dist/
 .vscode/
 .idea/
 
-finetuned_model/
+weights/

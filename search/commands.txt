@@ -1,6 +1,7 @@
 # DOCKER
+cd search
 docker build -t search-api .
-docker run -p 8000:8000 search-api
+docker run -p 8000:8000 --env-file .env search-api
 
 # SIN DOCKER - LINUX
 # cd search

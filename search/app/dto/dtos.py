@@ -1,5 +1,8 @@
 from pydantic import BaseModel
-from typing import Optional, List, Literal
+from typing import Literal
+
+class EmbedRequest(BaseModel):
+    image_url: str
 
 class CreateEmbeddingDto(BaseModel):
     post_id: str
