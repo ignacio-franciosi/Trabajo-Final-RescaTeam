@@ -624,15 +624,22 @@ func TestMarkRead_Success(t *testing.T) {
 	service := services.NewChatService(mockRepo, mockHub, mockPush)
 
 	ctx := context.Background()
-	chatID := primitive.NewObjectID().Hex()
+	chatObjID := primitive.NewObjectID()
+	chatID := chatObjID.Hex()
 	userID := "user1"
+	otherUser := "user2"
 
+	// Preparar chat y expectativas: GetChat, MarkRead y que el hub reciba el evento
+	chat := createTestChat(chatObjID, userID, otherUser, "post123")
+	mockRepo.On("GetChat", ctx, chatID).Return(chat, nil)
 	mockRepo.On("MarkRead", ctx, chatID, userID).Return(nil)
+	mockHub.On("SendToUser", otherUser, mock.Anything).Return()
 
 	err := service.MarkRead(ctx, chatID, userID)
 
 	assert.Nil(t, err)
 	mockRepo.AssertExpectations(t)
+	mockHub.AssertExpectations(t)
 }
 
 func TestMarkRead_Error(t *testing.T) {
@@ -643,9 +650,13 @@ func TestMarkRead_Error(t *testing.T) {
 	service := services.NewChatService(mockRepo, mockHub, mockPush)
 
 	ctx := context.Background()
-	chatID := primitive.NewObjectID().Hex()
+	chatObjID := primitive.NewObjectID()
+	chatID := chatObjID.Hex()
 	userID := "user1"
+	otherUser := "user2"
 
+	chat := createTestChat(chatObjID, userID, otherUser, "post123")
+	mockRepo.On("GetChat", ctx, chatID).Return(chat, nil)
 	mockRepo.On("MarkRead", ctx, chatID, userID).Return(errors.New("database error"))
 
 	err := service.MarkRead(ctx, chatID, userID)

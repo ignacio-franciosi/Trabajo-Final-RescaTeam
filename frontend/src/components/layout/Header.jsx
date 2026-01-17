@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiMenu, FiX } from 'react-icons/fi';
+import { FiMenu, FiX, FiMail } from 'react-icons/fi';
 import DropdownMenu from './DropdownMenu';
 import { useAuth } from '../../context/AuthContext';
 import favicon from '../../assets/favicon.png';
@@ -45,7 +45,6 @@ const Header = () => {
 
   const profileOptions = [
     { label: 'Ver mi perfil', action: 'profile' },
-    { label: <MensajesLabel />, action: 'chat' }, // ← con badge
     { label: 'Mis publicaciones', action: 'mis-publicaciones' },
     ...(user?.type ? [{ label: 'Ver reportes', action: 'admin/reportes' }] : []),
     { label: 'Cerrar Sesión', action: 'logout' },
@@ -85,6 +84,7 @@ const Header = () => {
   useEffect(() => {
     const fetchName = async () => {
       try {
+
         if (token && user?.userId) {
           const res = await getUserById(user.userId);
           if (res.success) {
@@ -190,7 +190,7 @@ const Header = () => {
                 }}
                 className="group relative px-3 py-2 rounded-md text-sm font-medium text-white/80 hover:text-white transition-colors"
               >
-                About
+                Sobre Nosotros
                 <span className="pointer-events-none absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full bg-blue-500/0 group-hover:bg-blue-500 transition-all" />
               </button>
               <button
@@ -205,7 +205,7 @@ const Header = () => {
             </nav>
 
             {/* Profile / Auth */}
-            <div className="hidden md:block">
+            <div className="hidden md:flex items-center gap-3">
               {isLoggingOut ? (
                 <div className="flex items-center text-white">
                   <svg className="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -221,10 +221,37 @@ const Header = () => {
                   label={isLoggedIn ? displayName : 'Perfil'}
                 />
               )}
+
+              {/* Mensajes: burbuja a la derecha del dropdown con texto y espacio para punto */}
+              <Link
+                to="/chat"
+                className={`relative ml-2 inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition ${isActive('/chat') ? 'bg-neutral-700 text-white' : 'bg-neutral-700/20 text-white/90 hover:bg-neutral-700/40'}`}
+                aria-label="Mensajes"
+              >
+                <FiMail className="h-5 w-5" />
+                <span className="whitespace-nowrap">Mensajes</span>
+                {/* Punto dentro del contenedor, al lado derecho del texto */}
+                {unreadTotal > 0 && location.pathname !== '/chat' && (
+                  <span className="ml-2 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-white/30 animate-pulse" aria-hidden="true" />
+                )}
+              </Link>
             </div>
 
-            {/* Mobile: Menu button */}
+            {/* Mobile: Menu button and visible Mensajes button */}
             <div className="md:hidden flex items-center gap-2">
+              {/* Mensajes visible en mobile (icono + texto pequeño) */}
+              <Link
+                to="/chat"
+                className="inline-flex items-center gap-2 rounded-full px-2 py-1 bg-neutral-700/20 text-white/90 hover:bg-neutral-700/40"
+                aria-label="Mensajes"
+              >
+                <FiMail className="h-5 w-5" />
+                <span className="text-sm whitespace-nowrap">Mensajes</span>
+                {unreadTotal > 0 && location.pathname !== '/chat' && (
+                  <span className="ml-1 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-white/30 animate-pulse" aria-hidden="true" />
+                )}
+              </Link>
+
               {isLoggingOut ? (
                 <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -263,6 +290,18 @@ const Header = () => {
               className={`block rounded-md px-3 py-2 text-sm ${isActive('/') ? 'bg-neutral-700 text-white' : 'text-white/90 hover:bg-neutral-700 hover:text-white'}`}
             >
               Home
+            </Link>
+
+            <Link
+              to="/chat"
+              className={`block rounded-md px-3 py-2 text-sm ${isActive('/chat') ? 'bg-neutral-700 text-white' : 'text-white/90 hover:bg-neutral-700 hover:text-white'}`}
+            >
+              Mensajes
+              {unreadTotal > 0 && (
+                <span className="ml-2 inline-flex min-w-[1rem] h-4 px-1 items-center justify-center rounded-full bg-blue-600 text-white text-[11px] font-semibold">
+                  {unreadTotal > 99 ? '99+' : unreadTotal}
+                </span>
+              )}
             </Link>
             <button
               onClick={goToPets}

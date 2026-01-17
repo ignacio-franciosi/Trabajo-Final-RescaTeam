@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SuspendedNotice from '../components/common/SuspendedNotice';
 import {
@@ -21,7 +22,9 @@ const MyPetsPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalAction, setModalAction] = useState('delete'); // 'delete' o 'resolve'
   const [petSelected, setPetSelected] = useState(null);
-  const [filterType, setFilterType] = useState('adoption'); // 'adoption', 'lost', 'found', 'resolved'
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const [filterType, setFilterType] = useState(params.get('type') || 'adoption'); // 'adoption', 'lost', 'found', 'resolved'
 
   const fetchMyPets = useCallback(async () => {
     if (!user) return;

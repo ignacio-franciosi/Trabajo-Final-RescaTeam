@@ -103,6 +103,10 @@ const LostFoundForm = ({ type }) => {
         const req = ['species', 'color', 'size', 'sex', 'zone', 'healthStatus'];
         const newErr = {};
         req.forEach(f => { if (!formData[f] || formData[f].toString().trim() === '') newErr[f] = 'Obligatorio'; });
+        // Imagen obligatoria
+        if (images.length === 0) {
+            setGeneralError('Debes subir al menos una imagen.');
+        }
         return newErr;
     };
 
@@ -110,7 +114,7 @@ const LostFoundForm = ({ type }) => {
         e.preventDefault();
         setGeneralError(''); setSuccessMsg('');
         const fieldErrors = validate();
-        if (Object.keys(fieldErrors).length > 0) { setErrors(fieldErrors); return; }
+        if (Object.keys(fieldErrors).length > 0 || images.length === 0) { setErrors(fieldErrors); return; }
 
         const data = new FormData();
         const finalForm = { ...formData, name: formData.name?.trim() || 'Mascota sin nombre', breed: formData.breed?.trim() || 'mestizo' };
@@ -120,7 +124,7 @@ const LostFoundForm = ({ type }) => {
         const res = await createPost(data);
         if (res.success) {
             setSuccessMsg('✅ Publicación creada correctamente. Redirigiendo...');
-            setTimeout(() => navigate('/mis-publicaciones'), 1600);
+            setTimeout(() => navigate(`/mis-publicaciones?type=${type}`), 1600);
         } else {
             setGeneralError(res.message || 'Error al crear publicación');
         }
@@ -131,25 +135,36 @@ const LostFoundForm = ({ type }) => {
     const title = type === 'lost' ? 'Publicar Mascota Perdida' : 'Publicar Mascota Encontrada';
     const subtitle = type === 'lost' ? 'Cargá los datos para ayudar a encontrarla.' : 'Brindá información para ubicar a su familia.';
 
+    // Colores según tipo
+    const borderColor = type === 'lost' ? 'border-red-500' : 'border-blue-500';
+    const titleColor = type === 'lost' ? 'text-red-700' : 'text-blue-700';
+    const bgColor = type === 'lost' ? 'bg-red-50' : 'bg-blue-50';
+    const borderBoxColor = type === 'lost' ? 'border-red-200' : 'border-blue-200';
+    const buttonBg = type === 'lost' ? 'bg-red-600' : 'bg-blue-600';
+    const buttonHover = type === 'lost' ? 'hover:bg-red-700' : 'hover:bg-blue-700';
+    const textColor = type === 'lost' ? 'text-red-900' : 'text-blue-900';
+    const textColorLight = type === 'lost' ? 'text-red-800' : 'text-blue-800';
+    const loadingColor = type === 'lost' ? 'text-red-700' : 'text-blue-700';
+
     if (user?.suspended) {
         return <SuspendedNotice />;
     }
     return (
-        <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow mt-8">
-            <h2 className="text-2xl font-bold mb-2 text-center">{title}</h2>
+        <div className={`max-w-3xl mx-auto p-6 bg-white rounded-xl shadow mt-8 border-t-4 ${borderColor}`}>
+            <h2 className={`text-2xl font-bold mb-2 text-center ${titleColor}`}>{title}</h2>
             <p className="text-center text-gray-600 mb-6 text-sm">{subtitle}</p>
             <form onSubmit={handleSubmit} className="space-y-5">
                 {/* AI Autocomplete */}
-                <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
+                <div className={`p-4 border rounded-lg ${bgColor} ${borderBoxColor}`}>
                     <div className="flex items-center gap-3">
-                        <div className="shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">AI</div>
+                        <div className={`shrink-0 w-10 h-10 ${buttonBg} text-white rounded-full flex items-center justify-center font-bold`}>AI</div>
                         <div className="flex-1">
-                            <h3 className="font-semibold text-blue-900">Autocompletar formulario con imagen</h3>
-                            <p className="text-xs text-blue-800">Seleccioná o arrastrá una imagen del post y completaremos los campos por vos. Se permite solo una imagen.</p>
+                            <h3 className={`font-semibold ${textColor}`}>Autocompletar formulario con imagen</h3>
+                            <p className={`text-xs ${textColorLight}`}>Seleccioná o arrastrá una imagen del post y completaremos los campos por vos. Se permite solo una imagen.</p>
                         </div>
                         <button
                             type="button"
-                            className="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                            className={`px-3 py-2 text-sm ${buttonBg} text-white rounded ${buttonHover}`}
                             onClick={() => document.getElementById(`ai-file-input-${type}`).click()}
                         >
                             Elegir imagen
@@ -166,7 +181,7 @@ const LostFoundForm = ({ type }) => {
                                 <img src={URL.createObjectURL(aiImage)} alt="ai-preview" className="w-16 h-16 object-cover rounded" />
                                 <div className="text-left">
                                     <p className="text-gray-700 text-sm">{aiImage.name}</p>
-                                    {aiLoading ? <p className="text-xs text-blue-700">Analizando imagen...</p> : <p className="text-xs text-gray-500">Podés volver a elegir otra para reintentar.</p>}
+                                    {aiLoading ? <p className={`text-xs ${loadingColor}`}>Analizando imagen...</p> : <p className="text-xs text-gray-500">Podés volver a elegir otra para reintentar.</p>}
                                 </div>
                             </div>
                         ) : (
@@ -254,7 +269,7 @@ const LostFoundForm = ({ type }) => {
                     <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className={inputClass('description')} />
                 </div>
                 <div>
-                    <label className="text-sm font-medium">Agregá imágenes de tu mascota (opcional)</label>
+                    <label className="text-sm font-medium">Agregá imágenes de tu mascota (obligatorio)</label>
                     <div className="mt-1 border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 transition" onClick={() => document.getElementById(`lf-file-input-${type}`).click()}>
                         <p className="text-xs text-gray-500">Click para seleccionar o arrastrar archivos</p>
                         <p className="text-[10px] text-gray-400 mt-1">Hasta 3 imágenes</p>
@@ -273,7 +288,7 @@ const LostFoundForm = ({ type }) => {
                 )}
                 {generalError && <p ref={errorRef} className="text-xs text-red-600 font-semibold">⚠ {generalError}</p>}
                 {successMsg && <p className="text-sm text-green-600 font-semibold bg-green-50 border border-green-300 rounded px-3 py-2">{successMsg}</p>}
-                <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm font-medium">Publicar</button>
+                <button type="submit" className={`w-full ${buttonBg} text-white py-2 rounded ${buttonHover} text-sm font-medium`}>Publicar</button>
             </form>
         </div>
     );

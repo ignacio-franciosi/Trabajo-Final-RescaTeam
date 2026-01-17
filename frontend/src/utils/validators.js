@@ -20,11 +20,12 @@ export const validatePassword = (password) => {
   return null; // Retorna null si es válida
 };
 
-export const validateRequiredFields = (formData, requiredFields) => {
+export const validateRequiredFields = (formData, requiredFields, fieldLabels = {}) => {
   const errors = {};
   requiredFields.forEach(field => {
     if (!formData[field] || formData[field].trim() === '') {
-      errors[field] = 'Este campo es obligatorio.';
+      const label = fieldLabels[field] || field;
+      errors[field] = `${label} es obligatorio${label.endsWith('a') ? 'a' : ''}.`;
     }
   });
   return errors;
