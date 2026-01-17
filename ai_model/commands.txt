@@ -4,3 +4,8 @@
 # source venv/bin/activate
 # pip install -r requirements.txt
 # python3 -m app.main
+
+# DOCKER
+cd ai_model
+docker build -t model-api .
+docker run -p 8001:8001 --env-file .env model-api
