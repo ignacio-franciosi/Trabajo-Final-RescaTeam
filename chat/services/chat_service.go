@@ -168,7 +168,42 @@ func (s *ChatService) ListMessages(ctx context.Context, chatID string, limit int
 }
 
 func (s *ChatService) MarkRead(ctx context.Context, chatID, userID string) error {
-	return s.repo.MarkRead(ctx, chatID, userID)
+	// Primero obtenemos el chat para saber quién es el otro usuario
+	chat, err := s.repo.GetChat(ctx, chatID)
+	if err != nil {
+		return err
+	}
+
+	// Verificar que el usuario pertenezca al chat
+	if !userBelongsToChat(userID, chat) {
+		return errors.New("no tienes permiso en este chat")
+	}
+
+	// Marcar mensajes como leídos
+	err = s.repo.MarkRead(ctx, chatID, userID)
+	if err != nil {
+		return err
+	}
+
+	// Determinar el otro usuario (el que envió los mensajes)
+	var otherUser string
+	if chat.Participants[0] == userID {
+		otherUser = chat.Participants[1]
+	} else {
+		otherUser = chat.Participants[0]
+	}
+
+	// Enviar evento de "viewed" al otro usuario por WebSocket
+	out := dto.WSOutgoing{
+		Type: "messages:viewed",
+		Payload: map[string]string{
+			"chatId":   chatID,
+			"viewedBy": userID,
+		},
+	}
+	s.hub.SendToUser(otherUser, out)
+
+	return nil
 }
 
 // SavePushSubscription guarda la suscripción en DB (llamada desde controller)

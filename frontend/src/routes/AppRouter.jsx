@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useEffect } from "react";
 
 // Layout
 import Header from "../components/layout/Header";
@@ -54,7 +55,12 @@ function AppContent() {
   const location = useLocation();
   const isChatRoute = location.pathname.startsWith("/chat");
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   return (
+    <ChatProvider>
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1">
@@ -168,9 +174,7 @@ function AppContent() {
               path="/chat"
               element={
                 <PrivateRoute>
-                  <ChatProvider>
-                    <ChatPage />
-                  </ChatProvider>
+                  <ChatPage />
                 </PrivateRoute>
               }
             />
@@ -178,9 +182,7 @@ function AppContent() {
               path="/chat/:chatId"
               element={
                 <PrivateRoute>
-                  <ChatProvider>
-                    <ChatPage />
-                  </ChatProvider>
+                  <ChatPage />
                 </PrivateRoute>
               }
             />
@@ -189,6 +191,7 @@ function AppContent() {
         </main>
         <Footer />
       </div>
+    </ChatProvider>
   );
 
 }
