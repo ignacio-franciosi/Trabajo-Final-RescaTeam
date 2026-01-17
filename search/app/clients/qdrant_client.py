@@ -1,10 +1,10 @@
+import numpy as np
 from qdrant_client import QdrantClient
 import uuid
 from qdrant_client import models
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 from app.dto.dtos import CreateEmbeddingDto, SearchPetDto
-import numpy as np
-from config.settings import QDRANT_URL, QDRANT_API_KEY, QDRANT_COLLECTION
+from app.config.settings import QDRANT_URL, QDRANT_API_KEY, QDRANT_COLLECTION
 
 client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
 
@@ -89,8 +89,8 @@ def get_embedding_by_post_id(post_id: str):
 
 def search_embedding(request: SearchPetDto):
     vector = get_embedding_by_post_id(request.post_id)
-    print("vector:", vector)
-    print("norma ", np.linalg.norm(vector))
+    #print("vector:", vector)
+    #print("norma ", np.linalg.norm(vector))
     if vector is None:
         return []
     

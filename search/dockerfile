@@ -1,26 +1,26 @@
-FROM python:3.11-slim
-
-WORKDIR /app
+FROM python:3.10.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-COPY requirements.txt .
+WORKDIR /app
 
-# instalar librerías del sistema necesarias
+# dependencias necesarias del sistema
 RUN apt-get update && apt-get install -y \
     build-essential \
-    libffi-dev \
-    libssl-dev \
-    python3-dev \
- && rm -rf /var/lib/apt/lists/*
- 
-RUN pip install --no-cache-dir -r requirements.txt
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# instalar dependencias de Python
+COPY requirements.txt .
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
 
 COPY . .
 
-RUN mkdir -p /finetuned_model
-
+# Puerto expuesto
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
