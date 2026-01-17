@@ -157,14 +157,7 @@ func InsertPost(c *gin.Context) {
 	}
 	postDto.PostStatus = postStatus == "true"
 
-	// Resto del código permanece igual...
-	createdPost, apiErr := services.PostsService.InsertPost(postDto)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	// Procesar imágenes - MODIFICADO PARA S3 Y userId
+	// Parse multipart form NOW to validate presence of images (images are mandatory)
 	form, err := c.MultipartForm()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Could not parse multipart form"})
@@ -172,6 +165,19 @@ func InsertPost(c *gin.Context) {
 	}
 
 	files := form.File["images"]
+	if len(files) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Se requiere al menos una imagen para la publicación"})
+		return
+	}
+
+	// Resto del código: crear post y luego subir las imágenes
+	createdPost, apiErr := services.PostsService.InsertPost(postDto)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// Procesar y subir cada imagen - MODIFICADO PARA S3 Y userId
 	for _, fileHeader := range files {
 		// Abrir el archivo
 		file, err := fileHeader.Open()

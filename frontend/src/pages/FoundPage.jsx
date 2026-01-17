@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FilterPanel from '../components/pets/FilterPanel';
 import PetList from '../components/pets/PetList';
 
 const FoundPage = () => {
     const [filters, setFilters] = useState({ postType: 'found' });
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     const handleFilterChange = (updated) => {
         setFilters(prev => ({ ...prev, ...updated, postType: 'found' }));

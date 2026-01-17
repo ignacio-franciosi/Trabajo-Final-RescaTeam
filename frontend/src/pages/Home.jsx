@@ -23,7 +23,13 @@ const Home = () => {
   const scrollToPets = () => {
     const petsList = document.getElementById("pets-list");
     if (petsList) {
-      petsList.scrollIntoView({ behavior: "smooth" });
+      const elementPosition = petsList.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.scrollY - 200;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
     }
   };
 

@@ -98,7 +98,7 @@ const EditLostFoundForm = ({ post, onSuccess }) => {
         for (const file of newImages) await uploadImage(post.postId, file);
 
         setSuccessMsg('✅ Publicación actualizada. Redirigiendo...');
-        setTimeout(() => { if (onSuccess) onSuccess(); else navigate('/mis-publicaciones'); }, 1200);
+        setTimeout(() => { if (onSuccess) onSuccess(); else navigate(`/mis-publicaciones?type=${post.postType}`); }, 1200);
     };
 
     const inputClass = (f) => `w-full mt-1 px-3 py-2 border rounded-md text-sm ${errors[f] ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-blue-500`;

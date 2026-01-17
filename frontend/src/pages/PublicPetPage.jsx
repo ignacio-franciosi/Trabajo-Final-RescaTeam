@@ -8,19 +8,31 @@ const cards = [
     type: 'adoption',
     title: 'Dar en Adopción',
     description: 'Publicá una mascota que está buscando un hogar responsable. Podés indicar su edad, estado de castración y vacunas.',
-    route: '/publicar/adopcion'
+    route: '/publicar/adopcion',
+    borderColor: 'border-emerald-500',
+    hoverBorderColor: 'hover:border-emerald-500',
+    hoverTextColor: 'group-hover:text-emerald-600',
+    textColor: 'text-emerald-600'
   },
   {
     type: 'lost',
     title: 'Mascota Perdida',
     description: 'Te ayudamos a encontrar tu mascota. Detallá la zona, características visibles, si tenía collar y cualquier dato útil.',
-    route: '/publicar/perdido'
+    route: '/publicar/perdido',
+    borderColor: 'border-red-500',
+    hoverBorderColor: 'hover:border-red-500',
+    hoverTextColor: 'group-hover:text-red-600',
+    textColor: 'text-red-600'
   },
   {
     type: 'found',
     title: 'Mascota Encontrada',
     description: 'Informá que encontraste una mascota para reunirla con su familia. Indicá zona, apariencia y si tenía collar.',
-    route: '/publicar/encontrado'
+    route: '/publicar/encontrado',
+    borderColor: 'border-blue-500',
+    hoverBorderColor: 'hover:border-blue-500',
+    hoverTextColor: 'group-hover:text-blue-600',
+    textColor: 'text-blue-600'
   },
 ];
 
@@ -44,11 +56,11 @@ const PublicPetPage = () => {
             <button
               key={card.type}
               onClick={() => navigate(card.route)}
-              className="relative group text-left bg-white rounded-xl shadow hover:shadow-lg p-6 transition border border-transparent hover:border-blue-500"
+              className={`relative group text-left bg-white rounded-xl shadow hover:shadow-lg p-6 transition border-t-4 ${card.borderColor} ${card.hoverBorderColor}`}
             >
-              <h2 className="text-xl font-semibold mb-2 group-hover:text-blue-600">{card.title}</h2>
+              <h2 className={`text-xl font-semibold mb-2 ${card.hoverTextColor}`}>{card.title}</h2>
               <p className="text-sm text-gray-600 leading-snug">{card.description}</p>
-              <span className="inline-block mt-4 text-blue-600 font-medium group-hover:underline">Continuar →</span>
+              <span className={`inline-block mt-4 ${card.textColor} font-medium group-hover:underline`}>Continuar →</span>
             </button>
           ))}
         </div>

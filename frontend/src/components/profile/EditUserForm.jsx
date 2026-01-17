@@ -34,18 +34,26 @@ const EditUserForm = ({ initialData, onSave, onCancel }) => {
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-center">Editar Perfil</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {['name', 'surname', 'dni', 'email'].map((field) => (
-          <div key={field}>
-            <label className="block text-sm font-medium text-gray-700 capitalize">{field}</label>
-            <input
-              type={field === 'email' ? 'email' : 'text'}
-              name={field}
-              value={formData[field] || ''}
-              onChange={handleChange}
-              className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-        ))}
+        {(() => {
+          const labels = {
+            name: 'Nombre',
+            surname: 'Apellido',
+            dni: 'DNI',
+            email: 'Email',
+          };
+          return ['name', 'surname', 'dni', 'email'].map((field) => (
+            <div key={field}>
+              <label className="block text-sm font-medium text-gray-700">{labels[field]}</label>
+              <input
+                type={field === 'email' ? 'email' : 'text'}
+                name={field}
+                value={formData[field] || ''}
+                onChange={handleChange}
+                className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+          ));
+        })()}
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <div className="flex justify-between mt-4">
           <button

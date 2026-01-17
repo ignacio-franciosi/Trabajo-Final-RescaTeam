@@ -131,7 +131,6 @@ export function ChatProvider({ children }) {
   useEffect(() => {
     if (!events.length) return;
     const evt = events[events.length - 1];
-
     if (evt.type === 'message' || evt.type === 'message:sent') {
       const msg = evt.payload;
       setMessagesByChat((prev) => {
@@ -154,6 +153,28 @@ export function ChatProvider({ children }) {
           return { ...prev, [msg.chatId]: current + 1 };
         });
       }
+    }
+
+    // Evento: otro usuario marcó mensajes como vistos
+    if (evt.type === 'messages:viewed') {
+      const { chatId, viewedBy } = evt.payload || {};
+      if (!chatId) return;
+      // Si otro usuario (no yo) vio los mensajes, marcar como viewed los mensajes que yo envié
+      if (String(viewedBy) === String(myId)) return; // si yo fui quien marcó como leído, no hace falta actualizar
+      setMessagesByChat((prev) => {
+        const list = Array.isArray(prev[chatId]) ? prev[chatId] : [];
+        const updated = list.map((m) => {
+          try {
+            if (String(m.senderId) === String(myId)) {
+              return { ...m, viewed: true };
+            }
+          } catch {
+            // noop
+          }
+          return m;
+        });
+        return { ...prev, [chatId]: updated };
+      });
     }
   }, [events, myId, activeChatId]);
 

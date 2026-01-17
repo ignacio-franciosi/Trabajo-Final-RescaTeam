@@ -133,7 +133,7 @@ const PetForm = () => {
     const res = await createPost(data);
     if (res.success) {
       setSuccessMsg('¡Mascota publicada con éxito!');
-      setTimeout(() => navigate('/mis-publicaciones'), 1500);
+      setTimeout(() => navigate(`/mis-publicaciones?type=${formData.postType}`), 1500);
     } else {
       setGeneralError(res.message || 'Error al publicar la mascota.');
     }

@@ -105,6 +105,10 @@ const AdoptionForm = () => {
         const newErr = {};
         req.forEach(f => { if (!formData[f] || formData[f].toString().trim() === '') newErr[f] = 'Obligatorio'; });
         const ageValue = parseInt(formData.age, 10); if (isNaN(ageValue) || ageValue < 0) newErr.age = 'Edad inválida';
+        // Imagen obligatoria
+        if (images.length === 0) {
+            setGeneralError('Debes subir al menos una imagen.');
+        }
         return newErr;
     };
 
@@ -112,7 +116,7 @@ const AdoptionForm = () => {
         e.preventDefault();
         setGeneralError(''); setSuccessMsg('');
         const fieldErrors = validate();
-        if (Object.keys(fieldErrors).length > 0) { setErrors(fieldErrors); return; }
+        if (Object.keys(fieldErrors).length > 0 || images.length === 0) { setErrors(fieldErrors); return; }
 
         const data = new FormData();
         const finalForm = {
@@ -132,7 +136,7 @@ const AdoptionForm = () => {
         const res = await createPost(data);
         if (res.success) {
             setSuccessMsg('✅ Publicación creada correctamente. Redirigiendo...');
-            setTimeout(() => navigate('/mis-publicaciones'), 1600);
+            setTimeout(() => navigate('/mis-publicaciones?type=adoption'), 1600);
         } else {
             setGeneralError(res.message || 'Error al crear publicación');
         }
@@ -144,21 +148,21 @@ const AdoptionForm = () => {
         return <SuspendedNotice />;
     }
     return (
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6 bg-white rounded-lg sm:rounded-xl shadow mt-4 sm:mt-8 mb-4 sm:mb-8">
-            <h2 className="text-xl sm:text-2xl font-bold mb-2 text-center">Publicar Mascota en Adopción</h2>
-            <p className="text-center text-gray-600 mb-4 sm:mb-6 text-xs sm:text-sm">Completá los datos para ayudar a que encuentre un hogar.</p>
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+        <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow mt-8 border-t-4 border-emerald-500">
+            <h2 className="text-2xl font-bold mb-2 text-center text-emerald-700">Publicar Mascota en Adopción</h2>
+            <p className="text-center text-gray-600 mb-6 text-sm">Completá los datos para ayudar a que encuentre un hogar.</p>
+            <form onSubmit={handleSubmit} className="space-y-5">
                 {/* AI Autocomplete */}
-                <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
+                <div className="p-4 border rounded-lg bg-emerald-50 border-emerald-200">
                     <div className="flex items-center gap-3">
-                        <div className="shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">AI</div>
+                        <div className="shrink-0 w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold">AI</div>
                         <div className="flex-1">
-                            <h3 className="font-semibold text-blue-900">Autocompletar formulario con imagen</h3>
-                            <p className="text-xs text-blue-800">Seleccioná o arrastrá una imagen del post y completaremos los campos por vos. Se permite solo una imagen.</p>
+                            <h3 className="font-semibold text-emerald-900">Autocompletar formulario con imagen</h3>
+                            <p className="text-xs text-emerald-800">Seleccioná o arrastrá una imagen del post y completaremos los campos por vos. Se permite solo una imagen.</p>
                         </div>
                         <button
                             type="button"
-                            className="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                            className="px-3 py-2 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700"
                             onClick={() => document.getElementById('ai-file-input-adoption').click()}
                         >
                             Elegir imagen
@@ -175,7 +179,7 @@ const AdoptionForm = () => {
                                 <img src={URL.createObjectURL(aiImage)} alt="ai-preview" className="w-16 h-16 object-cover rounded" />
                                 <div className="text-left">
                                     <p className="text-gray-700 text-sm">{aiImage.name}</p>
-                                    {aiLoading ? <p className="text-xs text-blue-700">Analizando imagen...</p> : <p className="text-xs text-gray-500">Podés volver a elegir otra para reintentar.</p>}
+                                    {aiLoading ? <p className="text-xs text-emerald-700">Analizando imagen...</p> : <p className="text-xs text-gray-500">Podés volver a elegir otra para reintentar.</p>}
                                 </div>
                             </div>
                         ) : (
@@ -256,7 +260,7 @@ const AdoptionForm = () => {
                     </label>
                 </div>
                 <div>
-                    <label className="text-sm font-medium">Agregá imágenes de tu mascota (opcional)</label>
+                    <label className="text-sm font-medium">Agregá imágenes de tu mascota (obligatorio)</label>
                     <div className="mt-1 border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 transition" onClick={() => document.getElementById('adoption-file-input').click()}>
                         <p className="text-xs text-gray-500">Click para seleccionar o arrastrar archivos</p>
                         <p className="text-[10px] text-gray-400 mt-1">Hasta 3 imágenes</p>
@@ -275,7 +279,7 @@ const AdoptionForm = () => {
                 )}
                 {generalError && <p ref={errorRef} className="text-xs text-red-600 font-semibold">⚠ {generalError}</p>}
                 {successMsg && <p className="text-sm text-green-600 font-semibold bg-green-50 border border-green-300 rounded px-3 py-2">{successMsg}</p>}
-                <button type="submit" data-testid="submit-post" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm font-medium">Publicar</button>
+                <button type="submit" data-testid="submit-post" className="w-full bg-emerald-600 text-white py-2 rounded hover:bg-emerald-700 text-sm font-medium">Publicar</button>
             </form>
         </div>
     );

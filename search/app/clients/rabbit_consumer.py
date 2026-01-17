@@ -1,9 +1,8 @@
 import json
 import aio_pika
 import asyncio
-import os
 import httpx
-from config.settings import RABBITMQ_URL, RABBITMQ_QUEUE, CREATE_VECTORS_URL
+from app.config.settings import RABBITMQ_URL, RABBITMQ_QUEUE, CREATE_VECTORS_URL
 
 async def process_message(message: aio_pika.IncomingMessage):
     async with message.process():
@@ -26,5 +25,12 @@ async def consume():
     print(f"Escuchando mensajes en la cola '{RABBITMQ_QUEUE}'")
     await queue.consume(process_message)
 
+    await asyncio.Future()
+
+async def start_consumer():
     while True:
-        await asyncio.sleep(1)
+        try:
+            await consume()
+        except Exception as e:
+            print("RabbitMQ connection failed, retrying in 5s:", e)
+            await asyncio.sleep(5)

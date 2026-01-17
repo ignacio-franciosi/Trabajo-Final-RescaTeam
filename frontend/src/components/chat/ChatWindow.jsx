@@ -53,6 +53,16 @@ export default function ChatWindow({ chatId }) {
     }
   }, [chatId, sendEvent]);
 
+  // Al entrar a un chat específico, forzar scroll hasta el último mensaje
+  useEffect(() => {
+    if (!chatId) return;
+    // esperar a que el contenido renderice y luego bajar
+    const t = setTimeout(() => {
+      scrollToBottom();
+    }, 50);
+    return () => clearTimeout(t);
+  }, [chatId, scrollToBottom]);
+
   // Debounce para markRead
   const markTimerRef = useRef(null);
   const lastMarkedCountRef = useRef(0);
