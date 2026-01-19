@@ -8,6 +8,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -124,12 +127,47 @@ func (s *ChatService) SendMessage(ctx context.Context, senderID string, in dto.W
 			fmt.Printf("[PUSH] error ListSubscriptions(%s): %v\n", receiver, err)
 		}
 		if len(subs) > 0 {
+			// intentar resolver nombre público del remitente desde el micro de Users
+			senderName := senderID
+			usersBase := os.Getenv("USERS_BASE_URL")
+			if usersBase == "" {
+				usersBase = "http://localhost:8080"
+			}
+			// endpoint esperado: /user/public/{id}
+			url := fmt.Sprintf("%s/user/public/%s", strings.TrimRight(usersBase, "/"), senderID)
+			if resp, err := http.Get(url); err == nil {
+				defer resp.Body.Close()
+				if resp.StatusCode == http.StatusOK {
+					if b, rerr := io.ReadAll(resp.Body); rerr == nil {
+						var info map[string]interface{}
+						if jerr := json.Unmarshal(b, &info); jerr == nil {
+							// buscar name + surname
+							name := ""
+							if v, ok := info["name"].(string); ok {
+								name = v
+							}
+							if v, ok := info["surname"].(string); ok && v != "" {
+								if name != "" {
+									name = name + " " + v
+								} else {
+									name = v
+								}
+							}
+							if name != "" {
+								senderName = name
+							}
+						}
+					}
+				}
+			}
+
 			payload := map[string]interface{}{
-				"title": "Nuevo mensaje en RescaTeam",
-				"body":  saved.Content,
+				"title": "Rescateam",
+				"body":  fmt.Sprintf("Nuevo mensaje de %s\n%s", senderName, saved.Content),
 				"data": map[string]string{
-					"chatId":   saved.ChatID.Hex(),
-					"fromUser": senderID,
+					"chatId":       saved.ChatID.Hex(),
+					"fromUser":     senderID,
+					"fromUserName": senderName,
 				},
 			}
 			data, _ := json.Marshal(payload)

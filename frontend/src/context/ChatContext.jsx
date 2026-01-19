@@ -137,13 +137,24 @@ export function ChatProvider({ children }) {
         const list = prev[msg.chatId] || [];
         return { ...prev, [msg.chatId]: [...list, msg] };
       });
-      setChats((prev) =>
-        prev.map((c) =>
-          c.chatId === msg.chatId
-            ? { ...c, lastMessage: msg.content, lastUpdate: msg.timestamp }
-            : c
-        )
-      );
+
+      // Update chats: move the chat with the new message to the top (most recent)
+      setChats((prev) => {
+        const existing = prev.find((c) => c.chatId === msg.chatId);
+        const others = prev.filter((c) => c.chatId !== msg.chatId);
+
+        const updated = existing
+          ? { ...existing, lastMessage: msg.content, lastUpdate: msg.timestamp }
+          : { chatId: msg.chatId, participants: [msg.senderId, myId], lastMessage: msg.content, lastUpdate: msg.timestamp };
+
+        const merged = [updated, ...others];
+        merged.sort((a, b) => {
+          const ta = a.lastUpdate ? new Date(a.lastUpdate).getTime() : 0;
+          const tb = b.lastUpdate ? new Date(b.lastUpdate).getTime() : 0;
+          return tb - ta;
+        });
+        return merged;
+      });
       if (String(msg.senderId) !== String(myId)) {
         setUnreadByChat((prev) => {
           const current = prev[msg.chatId] ?? 0;
