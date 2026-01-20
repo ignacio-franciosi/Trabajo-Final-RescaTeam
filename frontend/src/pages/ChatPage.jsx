@@ -42,8 +42,8 @@ export default function ChatPage() {
   );
 
   return (
-    // altura de viewport; si tu header mide ~64px, restamos eso
-    <div className="h-[calc(100vh-64px)] grid grid-cols-1 md:grid-cols-12">
+    // altura de viewport; restar la altura real del header (h-20 => 80px)
+    <div className="h-[calc(100vh-80px)] grid grid-cols-1 md:grid-cols-12">
       {/* Columna izquierda: lista (oculta en mobile) */}
       <div className="hidden md:block md:col-span-3 border-r overflow-hidden">
         <div className="h-full flex flex-col">
@@ -57,7 +57,7 @@ export default function ChatPage() {
               onSelect={setActiveId}
               currentUserId={String(user?.userId ?? '')}
               nameMap={nameMap}
-              unreadByChat={unreadByChat} 
+              unreadByChat={unreadByChat}
             />
           </div>
         </div>
@@ -67,6 +67,19 @@ export default function ChatPage() {
       <div className="col-span-1 md:col-span-9 lg:col-span-6 overflow-hidden flex flex-col">
         {/* Barra superior en mobile */}
         {MobileBackBar}
+        {/* Chat list visible en mobile encima de la ventana */}
+        <div className="md:hidden border-b">
+          <div className="max-h-56 overflow-auto">
+            <ChatList
+              chats={chats}
+              selectedChatId={activeId}
+              onSelect={setActiveId}
+              currentUserId={String(user?.userId ?? '')}
+              nameMap={nameMap}
+              getUnreadCount={(id) => unreadByChat?.[id] ?? 0}
+            />
+          </div>
+        </div>
         <div className="flex-1 min-h-0">
           {activeId
             ? <ChatWindow chatId={activeId} />
