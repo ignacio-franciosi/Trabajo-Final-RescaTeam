@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiMenu, FiX, FiMail } from 'react-icons/fi';
+import { FiMail } from 'react-icons/fi';
 import DropdownMenu from './DropdownMenu';
 import { useAuth } from '../../context/AuthContext';
 import favicon from '../../assets/favicon.png';
@@ -15,7 +15,7 @@ const Header = () => {
   const timeoutRef = useRef(null);
   const [displayName, setDisplayName] = useState('Perfil');
   const isLoggedIn = !!token;
-  const [mobileOpen, setMobileOpen] = useState(false);
+
 
   // === total de no leídos para el badge de "Mensajes" ===
   const [unreadTotal, setUnreadTotal] = useState(() => {
@@ -128,10 +128,7 @@ const Header = () => {
     navigate(`/${action}`);
   };
 
-  // Cerrar menú móvil cuando cambia de ruta
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [location.pathname]);
+  // (mobile menu removed) no-op for mobile state
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
@@ -237,9 +234,36 @@ const Header = () => {
               </Link>
             </div>
 
-            {/* Mobile: Menu button and visible Mensajes button */}
+            {/* Mobile: fila 1 - logo a la izquierda (texto oculto) y Perfil + Mensajes a la derecha */}
             <div className="md:hidden flex items-center gap-2">
-              {/* Mensajes visible en mobile (icono + texto pequeño) */}
+              {isLoggingOut ? (
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+              ) : (
+                <DropdownMenu
+                  options={isLoggedIn ? profileOptions : guestOptions}
+                  onSelect={handleProfileSelect}
+                  compact
+                  label={
+                    isLoggedIn && displayName && !['Perfil', 'Mi cuenta'].includes(displayName)
+                      ? (() => {
+                        const parts = String(displayName).split(/\s+/).filter(Boolean);
+                        const first = parts[0] ?? '';
+                        const rest = parts.slice(1).join(' ');
+                        return (
+                          <span className="flex flex-col items-start max-w-[8rem]">
+                            <span className="text-sm truncate">{first}</span>
+                            {rest ? <span className="text-sm truncate -mt-0.5">{rest}</span> : null}
+                          </span>
+                        );
+                      })()
+                      : 'Perfil'
+                  }
+                />
+              )}
+
               <Link
                 to="/chat"
                 className="inline-flex items-center gap-2 rounded-full px-2 py-1 bg-neutral-700/20 text-white/90 hover:bg-neutral-700/40"
@@ -251,84 +275,59 @@ const Header = () => {
                   <span className="ml-1 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-white/30 animate-pulse" aria-hidden="true" />
                 )}
               </Link>
-
-              {isLoggingOut ? (
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-              ) : (
-                <DropdownMenu
-                  options={isLoggedIn ? profileOptions : guestOptions}
-                  onSelect={handleProfileSelect}
-                  label={isLoggedIn ? displayName : 'Perfil'}
-                  compact
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => setMobileOpen((v) => !v)}
-                className="inline-flex items-center justify-center rounded-md p-2 text-white hover:bg-neutral-700/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-controls="primary-navigation"
-                aria-expanded={mobileOpen}
-              >
-                <span className="sr-only">Abrir menú</span>
-                {mobileOpen ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
-              </button>
             </div>
           </div>
         </div>
+        {/* Mobile: fila 2 - mostrar opciones del menú en horizontal (sin hamburguesa) */}
+        <div className="md:hidden border-t border-white/10 bg-neutral-800/95">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            <div className="flex items-center justify-between space-x-2 overflow-x-auto">
+              <Link
+                to="/"
+                className="inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-1 text-sm text-white/90 hover:bg-neutral-700 hover:text-white"
+              >
+                Home
+              </Link>
 
-        {/* Mobile menu */}
-        <div
-          id="primary-navigation"
-          className={`md:hidden overflow-hidden transition-[max-height,opacity] duration-300 ${mobileOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
-        >
-          <div className="px-4 pb-4 pt-2 space-y-2 border-t border-white/10 bg-neutral-800/95">
-            <Link
-              to="/"
-              className={`block rounded-md px-3 py-2 text-sm ${isActive('/') ? 'bg-neutral-700 text-white' : 'text-white/90 hover:bg-neutral-700 hover:text-white'}`}
-            >
-              Home
-            </Link>
+              {/* Mensajes ya aparece en la fila 1; no repetir aquí */}
 
-            <Link
-              to="/chat"
-              className={`block rounded-md px-3 py-2 text-sm ${isActive('/chat') ? 'bg-neutral-700 text-white' : 'text-white/90 hover:bg-neutral-700 hover:text-white'}`}
-            >
-              Mensajes
-              {unreadTotal > 0 && (
-                <span className="ml-2 inline-flex min-w-[1rem] h-4 px-1 items-center justify-center rounded-full bg-blue-600 text-white text-[11px] font-semibold">
-                  {unreadTotal > 99 ? '99+' : unreadTotal}
+              <button
+                onClick={goToPets}
+                className="inline-flex shrink-0 items-center justify-center rounded-md px-3 py-1 text-sm text-white/90 hover:bg-neutral-700 hover:text-white"
+              >
+                <span className="flex flex-col items-center leading-none">
+                  <span className="text-sm">Ver</span>
+                  <span className="text-sm -mt-0.5">mascotas</span>
                 </span>
-              )}
-            </Link>
-            <button
-              onClick={goToPets}
-              className="block w-full text-left rounded-md px-3 py-2 text-sm text-white/90 hover:bg-neutral-700 hover:text-white"
-            >
-              Ver mascotas
-            </button>
-            <button
-              onClick={() => {
-                const aboutSection = document.getElementById('about');
-                if (aboutSection) {
-                  aboutSection.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}
-              className="block w-full text-left rounded-md px-3 py-2 text-sm text-white/90 hover:bg-neutral-700 hover:text-white"
-            >
-              About
-            </button>
-            <button
-              onClick={() => handleProtectedAction('publicar')}
-              disabled={!!user?.suspended}
-              className={`block w-full text-left rounded-md px-3 py-2 text-sm ${user?.suspended ? 'text-white/40 bg-neutral-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500'
-                }`}
-              title={user?.suspended ? 'Cuenta suspendida: no puedes publicar' : ''}
-            >
-              Publicar Mascota
-            </button>
+              </button>
+
+              <button
+                onClick={() => {
+                  const aboutSection = document.getElementById('about');
+                  if (aboutSection) {
+                    aboutSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="inline-flex shrink-0 items-center justify-center rounded-md px-3 py-1 text-sm text-white/90 hover:bg-neutral-700 hover:text-white"
+              >
+                <span className="flex flex-col items-center leading-none">
+                  <span className="text-sm">Sobre</span>
+                  <span className="text-sm -mt-0.5">Nosotros</span>
+                </span>
+              </button>
+
+              <button
+                onClick={() => handleProtectedAction('publicar')}
+                disabled={!!user?.suspended}
+                className={`inline-flex shrink-0 items-center justify-center rounded-md px-3 py-1 text-sm ${user?.suspended ? 'text-white/40 bg-neutral-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500'}`}
+                title={user?.suspended ? 'Cuenta suspendida: no puedes publicar' : ''}
+              >
+                <span className="flex flex-col items-center leading-none">
+                  <span className="text-sm">Publicar</span>
+                  <span className="text-sm -mt-0.5">Mascota</span>
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
