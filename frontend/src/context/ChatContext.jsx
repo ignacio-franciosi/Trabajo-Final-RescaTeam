@@ -153,6 +153,20 @@ export function ChatProvider({ children }) {
           const tb = b.lastUpdate ? new Date(b.lastUpdate).getTime() : 0;
           return tb - ta;
         });
+
+        // Enriquecer nombres para chats nuevos/via WS (no bloquear el hilo principal)
+        (async () => {
+          try {
+            const enriched = await enrichChatsWithNames(merged);
+            // Solo actualizar si sigue sin cambios mayores (evitar sobrescribir cambios concurrentes)
+            setChats((prev) => {
+              return enriched;
+            });
+          } catch (e) {
+            // noop: si falla la consulta de nombres, dejamos los chats tal cual (mostrar ids)
+          }
+        })();
+
         return merged;
       });
       if (String(msg.senderId) !== String(myId)) {
