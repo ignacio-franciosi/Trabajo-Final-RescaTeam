@@ -41,9 +41,27 @@ export default function ChatPage() {
     </div>
   );
 
+  const [headerHeight, setHeaderHeight] = useState(80);
+
+  useEffect(() => {
+    const update = () => {
+      const h = document.querySelector('header')?.offsetHeight ?? 80;
+      setHeaderHeight(h);
+    };
+    update();
+    window.addEventListener('resize', update);
+    const headerEl = document.querySelector('header');
+    const mo = headerEl ? new MutationObserver(update) : null;
+    if (mo && headerEl) mo.observe(headerEl, { attributes: true, childList: true, subtree: true });
+    return () => {
+      window.removeEventListener('resize', update);
+      if (mo) mo.disconnect();
+    };
+  }, []);
+
   return (
-    // altura de viewport; restar la altura real del header (h-20 => 80px)
-    <div className="h-[calc(100vh-80px)] grid grid-cols-1 md:grid-cols-12">
+    // altura calculada dinámicamente según el header
+    <div style={{ height: `calc(100vh - ${headerHeight}px)` }} className="grid grid-cols-1 md:grid-cols-12">
       {/* Columna izquierda: lista (oculta en mobile) */}
       <div className="hidden md:block md:col-span-3 border-r overflow-hidden">
         <div className="h-full flex flex-col">
@@ -64,7 +82,7 @@ export default function ChatPage() {
       </div>
 
       {/* Columna central: ventana de chat */}
-      <div className="col-span-1 md:col-span-9 lg:col-span-6 overflow-hidden flex flex-col">
+      <div className="col-span-1 md:col-span-9 lg:col-span-6 overflow-hidden flex flex-col min-h-0">
         {/* Barra superior en mobile */}
         {MobileBackBar}
         {/* Chat list visible en mobile encima de la ventana */}
@@ -88,7 +106,7 @@ export default function ChatPage() {
       </div>
 
       {/* Columna derecha: card del post (sólo en lg+) */}
-      <div className="hidden lg:block lg:col-span-3 border-l overflow-auto">
+      <div className="hidden lg:block lg:col-span-3 border-l overflow-auto min-h-0">
         {postId
           ? <ChatPostPanel postId={postId} />
           : <div className="p-4 text-sm text-gray-500">Sin publicación vinculada</div>}

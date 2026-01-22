@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useImperativeHandle, forwardRef } from "react";
 
 /*
  * Caja de texto + botón enviar.
@@ -8,13 +8,24 @@ import React, { useState } from "react";
  * - placeholder?: string
 */
 
-export default function ChatMessageInput({
+function ChatMessageInput({
   onSend,
   disabled = false,
   placeholder = "Escribe un mensaje…",
-}) {
+}, ref) {
   const [value, setValue] = useState("");
   const [sending, setSending] = useState(false);
+  const textareaRef = useRef(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      try {
+        textareaRef.current?.focus();
+      } catch (e) {
+        /* noop */
+      }
+    },
+  }));
 
   const handleSend = async () => {
     const text = value.trim();
@@ -39,6 +50,7 @@ export default function ChatMessageInput({
     <div className="border-t border-gray-200 p-3 bg-white">
       <div className="flex items-end gap-2">
         <textarea
+          ref={textareaRef}
           className="flex-1 resize-none rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 text-sm"
           rows={1}
           value={value}
@@ -63,3 +75,5 @@ export default function ChatMessageInput({
     </div>
   );
 }
+
+export default forwardRef(ChatMessageInput);

@@ -157,8 +157,8 @@ const Header = () => {
             {/* Brand */}
             <div className="flex items-center gap-3">
               <Link to="/" className="flex items-center gap-2 group">
-                <img src={favicon} alt="RescaTeam" className="h-10 w-10 rounded-full ring-1 ring-white/20 group-hover:ring-blue-500/50 transition" />
-                <span className="text-xl font-semibold tracking-tight text-white">RescaTeam</span>
+                <img src={favicon} alt="RescaTeam" className="h-12 w-12 ml-2 rounded-full ring-1 ring-white/20 group-hover:ring-blue-500/50 transition md:h-10 md:w-10 md:ml-0" />
+                <span className="hidden md:inline text-xl font-semibold tracking-tight text-white">RescaTeam</span>
               </Link>
             </div>
 
@@ -219,19 +219,21 @@ const Header = () => {
                 />
               )}
 
-              {/* Mensajes: burbuja a la derecha del dropdown con texto y espacio para punto */}
-              <Link
-                to="/chat"
-                className={`relative ml-2 inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition ${isActive('/chat') ? 'bg-neutral-700 text-white' : 'bg-neutral-700/20 text-white/90 hover:bg-neutral-700/40'}`}
-                aria-label="Mensajes"
-              >
-                <FiMail className="h-5 w-5" />
-                <span className="whitespace-nowrap">Mensajes</span>
-                {/* Punto dentro del contenedor, al lado derecho del texto */}
-                {unreadTotal > 0 && location.pathname !== '/chat' && (
-                  <span className="ml-2 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-white/30 animate-pulse" aria-hidden="true" />
-                )}
-              </Link>
+              {/* Mensajes: burbuja a la derecha del dropdown con texto y espacio para punto (solo si está logueado) */}
+              {isLoggedIn && (
+                <Link
+                  to="/chat"
+                  className={`relative ml-2 inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition ${isActive('/chat') ? 'bg-neutral-700 text-white' : 'bg-neutral-700/20 text-white/90 hover:bg-neutral-700/40'}`}
+                  aria-label="Mensajes"
+                >
+                  <FiMail className="h-5 w-5" />
+                  <span className="whitespace-nowrap">Mensajes</span>
+                  {/* Punto dentro del contenedor, al lado derecho del texto */}
+                  {unreadTotal > 0 && location.pathname !== '/chat' && (
+                    <span className="ml-2 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-white/30 animate-pulse" aria-hidden="true" />
+                  )}
+                </Link>
+              )}
             </div>
 
             {/* Mobile: fila 1 - logo a la izquierda (texto oculto) y Perfil + Mensajes a la derecha */}
@@ -264,17 +266,19 @@ const Header = () => {
                 />
               )}
 
-              <Link
-                to="/chat"
-                className="inline-flex items-center gap-2 rounded-full px-2 py-1 bg-neutral-700/20 text-white/90 hover:bg-neutral-700/40"
-                aria-label="Mensajes"
-              >
-                <FiMail className="h-5 w-5" />
-                <span className="text-sm whitespace-nowrap">Mensajes</span>
-                {unreadTotal > 0 && location.pathname !== '/chat' && (
-                  <span className="ml-1 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-white/30 animate-pulse" aria-hidden="true" />
-                )}
-              </Link>
+              {isLoggedIn && (
+                <Link
+                  to="/chat"
+                  className="inline-flex items-center gap-2 rounded-full px-2 py-1 bg-neutral-700/20 text-white/90 hover:bg-neutral-700/40"
+                  aria-label="Mensajes"
+                >
+                  <FiMail className="h-5 w-5" />
+                  <span className="text-sm whitespace-nowrap">Mensajes</span>
+                  {unreadTotal > 0 && location.pathname !== '/chat' && (
+                    <span className="ml-1 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-white/30 animate-pulse" aria-hidden="true" />
+                  )}
+                </Link>
+              )}
             </div>
           </div>
         </div>
