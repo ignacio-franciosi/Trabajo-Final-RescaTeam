@@ -7,6 +7,7 @@ WORKDIR /app
 
 # dependencias
 RUN apt-get update && apt-get install -y \
+    libavif-dev \
     libgl1 \
     libglib2.0-0 \
     ca-certificates \

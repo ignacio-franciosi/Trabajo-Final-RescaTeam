@@ -5,7 +5,7 @@ import torchvision.models as models
 class ResNet50Backbone(nn.Module):
     def __init__(self, embedding_dim=2048):
         super().__init__()
-        resnet = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
+        resnet = models.resnet50(weights=None)
 
         # Quitar la capa de clasificación final
         self.backbone = nn.Sequential(*list(resnet.children())[:-1])

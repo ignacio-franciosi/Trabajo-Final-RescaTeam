@@ -1,6 +1,7 @@
 import io
 from urllib.parse import urlparse
 from PIL import Image
+import pillow_avif
 
 class ImageRepository:
     def __init__(self, s3_client, bucket_name: str):
@@ -28,5 +29,11 @@ class ImageRepository:
     def load_image(self, image_url: str) -> Image.Image:
         image_key = self.get_image_key(image_url)
         obj = self.s3_client.get_object(Bucket=self.bucket, Key=image_key)
+
+        #print("S3 ContentType:", obj.get("ContentType"))
         image_bytes = obj["Body"].read()
+        #print("Bytes length:", len(image_bytes))
+        #print("First 200 bytes:", image_bytes[:200])
+
+        #image_bytes = obj["Body"].read()
         return Image.open(io.BytesIO(image_bytes)).convert("RGB")
