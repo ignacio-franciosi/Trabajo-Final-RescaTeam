@@ -1,9 +1,6 @@
 from pydantic import BaseModel
 from typing import Literal
 
-class EmbedRequest(BaseModel):
-    image_url: str
-
 class CreateEmbeddingDto(BaseModel):
     post_id: str
     post_type: Literal["lost", "found"]
