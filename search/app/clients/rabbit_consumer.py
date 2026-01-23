@@ -2,7 +2,7 @@ import json
 import aio_pika
 import asyncio
 import httpx
-from app.config.settings import RABBITMQ_URL, RABBITMQ_QUEUE, CREATE_VECTORS_URL
+from app.settings.settings import RABBITMQ_URL, RABBITMQ_QUEUE, CREATE_VECTORS_URL
 
 async def process_message(message: aio_pika.IncomingMessage):
     async with message.process():

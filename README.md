@@ -26,9 +26,6 @@ Real-time messaging system between users. Includes WebSockets for instant commun
 **Port:** 8000 | **Technology:** Python (FastAPI) + Qdrant  
 Semantic pet search service using vectors. Generates image embeddings and allows searching for similar pets through similarity search in a vector database.
 
-#### AI Model Microservice
-**Port:** 8001 | **Technology:** Python (FastAPI) + PyTorch  
-API that exposes a model (ResNet50) to generate embeddings for pet images. Receives image URLs from S3 and returns feature vectors for semantic search.
 
 #### Frontend
 **Port:** 5173 | **Technology:** React + Vite  
@@ -44,7 +41,7 @@ Platform user interface. SPA web application built with React that consumes the 
   - MySQL (for Users microservice)
   - MongoDB (for Posts and Chat microservices)
   - Qdrant (for Search microservice)
-  - AWS S3 (for Posts and Ai-model microservices)
+  - AWS S3 (for Posts)
 - **Message Queue:** RabbitMQ
 - **Go 1.x** (for Go microservices)
 - **Python 3.x** (for Python microservices)
@@ -111,17 +108,8 @@ python3 -m app.main
 ```
 ##### Note: for Windows same commands but replacing python3 for python
 
-#### 6. AI Model Microservice
-```bash
-cd ai_model
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python3 -m app.main
-```
-##### Note: for Windows same commands but replacing python3 for python
 
-#### 7. Frontend
+#### 6. Frontend
 ```bash
 cd frontend
 npm install
@@ -185,20 +173,7 @@ docker build -t search-api .
 docker run -p 8000:8000 --env-file .env search-api
 ```
 
-#### 6. AI Model Microservice
-```bash
-cd ai_model
-docker build -t model-api .
-docker run -d --network=rescateam --name model-api -p 8001:8001 --env-file .env model-api
-```
-or
-```bash
-cd ai_model
-docker build -t model-api .
-docker run -p 8001:8001 --env-file .env model-api
-```
-
-#### 7. Frontend
+#### 6. Frontend
 ```bash
 cd frontend
 docker build -t rescateam-frontend .
@@ -254,10 +229,7 @@ cd search
 pytest app/services/embedding_service_test.py --cov=app.services.embedding_service --cov-report=term --cov-report=html -v
 ```
 
-#### 6. AI Model Microservice
-No unit tests yet
-
-#### 7. Frontend
+#### 6. Frontend
 ```bash
 cd frontend
 npm run test:coverage

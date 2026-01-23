@@ -63,6 +63,20 @@ export default function ChatWindow({ chatId }) {
     return () => clearTimeout(t);
   }, [chatId, scrollToBottom]);
 
+  // Focus al abrir chat para que en mobile el input suba y sea visible
+  const inputRef = useRef(null);
+  useEffect(() => {
+    if (!chatId) return;
+    const t = setTimeout(() => {
+      try {
+        inputRef.current?.focus();
+      } catch (e) {
+        /* noop */
+      }
+    }, 200);
+    return () => clearTimeout(t);
+  }, [chatId]);
+
   // Debounce para markRead
   const markTimerRef = useRef(null);
   const lastMarkedCountRef = useRef(0);
@@ -138,8 +152,8 @@ export default function ChatWindow({ chatId }) {
       )}
 
       {/* Input de mensaje */}
-      <div className="border-t p-3">
-        <ChatMessageInput onSend={handleSend} />
+      <div className="border-t px-3 py-2 md:p-3">
+        <ChatMessageInput ref={inputRef} onSend={handleSend} />
       </div>
     </div>
   );
