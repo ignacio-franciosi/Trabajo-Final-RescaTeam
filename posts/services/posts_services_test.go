@@ -123,7 +123,7 @@ func TestInsertPost_Success(t *testing.T) {
 		PostId:   primitive.NewObjectID(),
 		UserId:   inputDto.UserId,
 		PostType: inputDto.PostType,
-		Name:     stringPtr("Max"),
+		Name:     stringPtr("Doggy"),
 		Species:  stringPtr("Perro"),
 		Sex:      stringPtr("Macho"),
 	}
