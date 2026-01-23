@@ -1,0 +1,60 @@
+name: Posts - Tests and Deploy
+
+on:
+  push:
+    branches:
+      - deploy
+
+jobs:
+  test-posts:
+    name: Run Posts Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.1'
+          cache-dependency-path: posts/go.sum
+      
+      - name: Install dependencies
+        working-directory: ./posts
+        run: go mod download
+      
+      - name: Run tests
+        working-directory: ./posts
+        run: go test -v ./services/...
+      
+      - name: Test Summary
+        if: success()
+        run: echo "✅ All tests passed successfully!"
+      
+      - name: Test Failed
+        if: failure()
+        run: |
+          echo "❌ Tests failed. Deployment blocked."
+          exit 1
+
+  deploy-to-railway:
+    name: Deploy to Railway
+    needs: test-posts
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+      
+      - name: Deploy Posts Service
+        run: railway up --service posts --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      
+      - name: Deployment Success
+        run: echo "🚀 Posts service deployed successfully!"
