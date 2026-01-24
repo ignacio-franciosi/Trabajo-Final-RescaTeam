@@ -36,4 +36,4 @@ dist/
 .idea/
 
 # model weights
-*.pth*.pth
+*.pth
