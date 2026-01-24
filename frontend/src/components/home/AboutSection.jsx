@@ -54,11 +54,11 @@ const AboutSection = () => {
               </span>
             </h2>
 
-            <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed">
-              Conectamos personas y mascotas: ya sea para adoptar un compañero, reportar una mascota perdida o ayudar a reunir a una encontrada con su familia.
+            <p className="text-gray-700 text-lg leading-relaxed text-justify">
+              Hola, somos Ignacio Franciosi, Victoria Elliott y Carolina Havenstein, tres amigos estudiantes de Ingeniería en Sistemas. RescaTeam nace como nuestro proyecto de tesis, pero sobre todo como una solución real a un problema que nos toca de cerca.
             </p>
-            <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed">
-              Publicá publicaciones de adopción, avisos de pérdida o hallazgo, y descubrí listados filtrados por categoría para actuar rápido y con información clara.
+            <p className="text-gray-700 text-lg leading-relaxed text-justify">
+              Creamos esta plataforma para conectar personas con mascotas de forma rápida y efectiva. Acá podés publicar avisos de adopción, reportar mascotas perdidas o ayudar a reunir a un animal encontrado con su familia. Todo en un solo lugar, con información clara y filtros que te permiten actuar cuando más importa.
             </p>
 
             {/* Features */}

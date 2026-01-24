@@ -34,3 +34,6 @@ dist/
 # IDE configs
 .vscode/
 .idea/
+
+# model weights
+*.pth

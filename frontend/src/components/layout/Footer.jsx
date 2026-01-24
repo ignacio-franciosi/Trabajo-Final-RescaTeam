@@ -31,7 +31,7 @@ const Footer = () => {
             className="h-24 w-auto object-contain"
           />
           <p className="text-sm font-light text-gray-300">
-            Salvando vidas, una patita a la vez. 💙🐾
+            Salvando vidas, una patita a la vez
           </p>
         </div>
 
