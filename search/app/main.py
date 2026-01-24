@@ -15,6 +15,7 @@ from app.clients.ai_model_client import AIModelClient
 from app.repositories.image_repository import ImageRepository
 from app.repositories.vector_repository import VectorRepository
 from app.repositories.vector_repository import init_qdrant_collection
+from app.utils.model_loader import ensure_model_downloaded
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,7 +36,8 @@ async def lifespan(app: FastAPI):
         client=qdrant_client,
         collection=QDRANT_COLLECTION
     )
-
+    model_path = "ai_model/best_resnet50.pth"
+    ensure_model_downloaded(model_path)
     # AI model client
     app.state.ai_client = AIModelClient("ai_model/best_resnet50.pth")
 
