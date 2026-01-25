@@ -1,0 +1,63 @@
+name: Search - Tests and Deploy
+
+on:
+  push:
+    branches:
+      - deploy
+
+jobs:
+  test-search:
+    name: Run Search Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: search/requirements.txt
+      
+      - name: Install dependencies
+        working-directory: ./search
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run tests
+        working-directory: ./search
+        run: pytest app/services/search_service_test.py -v
+      
+      - name: Test Summary
+        if: success()
+        run: echo "✅ All tests passed successfully!"
+      
+      - name: Test Failed
+        if: failure()
+        run: |
+          echo "❌ Tests failed. Deployment blocked."
+          exit 1
+
+  deploy-to-railway:
+    name: Deploy to Railway
+    needs: test-search
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+      
+      - name: Deploy Search Service
+        run: railway up --service Search --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      
+      - name: Deployment Success
+        run: echo "🚀 Search service deployed successfully!"
