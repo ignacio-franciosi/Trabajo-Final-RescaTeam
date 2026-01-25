@@ -199,6 +199,45 @@ const PetDetail = ({ pet }) => {
   const leftDetails = details.slice(0, mid);
   const rightDetails = details.slice(mid);
 
+  const getTypeStyles = () => {
+    switch (pet.postType) {
+      case 'adoption':
+        return {
+          badge: 'bg-emerald-500',
+          text: 'En adopción',
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          )
+        };
+      case 'lost':
+        return {
+          badge: 'bg-red-500',
+          text: 'Perdido',
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          )
+        };
+      case 'found':
+        return {
+          badge: 'bg-blue-500',
+          text: 'Encontrado',
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          )
+        };
+      default:
+        return { badge: 'bg-gray-500', text: 'Mascota', icon: null };
+    }
+  };
+  const typeStyles = getTypeStyles();
+
   return (
     <div className="relative max-w-5xl mx-auto p-4">
       <button
@@ -210,32 +249,29 @@ const PetDetail = ({ pet }) => {
 
       {/* Add top padding to avoid header overlap */}
       <div className="mt-12 pt-10 p-6 bg-white rounded-lg shadow-md">
-        {/* Título grande según tipo de publicación */}
-        <h1 className="text-4xl font-bold text-center mb-16 text-black tracking-tight" style={{ fontFamily: "'Poppins', sans-serif", letterSpacing: '-0.01em' }}>
-          {pet.postType === 'adoption'
-            ? 'Mascota en adopción'
-            : pet.postType === 'lost'
-              ? 'Mascota perdida'
-              : pet.postType === 'found'
-                ? 'Mascota encontrada'
-                : 'Mascota'}
-        </h1>
         <div className="flex flex-col md:flex-row gap-6 md:items-center">
           {/* Imágenes */}
           <div className="md:w-1/2 relative">
+            {/* Badge tipo de publicación (como PetCard) */}
+            <div className={`absolute top-2 left-2 z-10 ${typeStyles.badge} text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md flex items-center gap-2`}>
+              {typeStyles.icon}
+              {typeStyles.text}
+            </div>
             {hasImages ? (
               <>
-                <img
-                  src={
-                    pet.imagenes[currentImage].filepath && /^https?:\/\//i.test(pet.imagenes[currentImage].filepath)
-                      ? pet.imagenes[currentImage].filepath
-                      : `${import.meta.env.VITE_POSTS_API_URL || 'http://localhost:8090'}${(pet.imagenes[currentImage].filepath || '').startsWith('/') ? '' : '/'}${pet.imagenes[currentImage].filepath || ''}`
-                  }
-                  alt={`Mascota ${currentImage + 1}`}
-                  className="w-full rounded-lg object-cover h-72 max-h-[420px] cursor-pointer"
-                  onClick={() => setShowFullImage(true)}
-                  title="Ver imagen completa"
-                />
+                <div className="w-full max-h-[420px] flex items-center justify-center rounded-lg overflow-hidden">
+                  <img
+                    src={
+                      pet.imagenes[currentImage].filepath && /^https?:\/\//i.test(pet.imagenes[currentImage].filepath)
+                        ? pet.imagenes[currentImage].filepath
+                        : `${import.meta.env.VITE_POSTS_API_URL || 'http://localhost:8090'}${(pet.imagenes[currentImage].filepath || '').startsWith('/') ? '' : '/'}${pet.imagenes[currentImage].filepath || ''}`
+                    }
+                    alt={`Mascota ${currentImage + 1}`}
+                    className="max-w-full max-h-[420px] w-auto h-auto object-contain rounded-lg cursor-pointer block"
+                    onClick={() => setShowFullImage(true)}
+                    title="Ver imagen completa"
+                  />
+                </div>
                 {pet.imagenes.length > 1 && (
                   <>
                     <button
