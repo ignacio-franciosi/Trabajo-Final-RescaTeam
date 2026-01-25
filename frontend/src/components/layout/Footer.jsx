@@ -30,7 +30,7 @@ const Footer = () => {
             alt="RescaTeam Logo"
             className="h-24 w-auto object-contain"
           />
-          <p className="text-sm font-light text-gray-300">
+          <p className="text-sm text-gray-300">
             Salvando vidas, una patita a la vez
           </p>
         </div>
@@ -78,31 +78,30 @@ const Footer = () => {
         {/* Contacto */}
         <div>
           <h4 className="font-bold text-lg mb-3 text-blue-500">Contacto</h4>
-          <p className="text-sm text-gray-300">
-            📍 Córdoba, Argentina <br />
-            📞 +54 351 123 4567 <br />
-            ✉️ rescateam2025@gmail.com
-          </p>
+          <div className="space-y-2 text-sm text-gray-300">
+            <p>📍 Córdoba, Argentina</p>
+            <p>✉️ rescateam2025@gmail.com</p>
+          </div>
         </div>
 
         {/* Redes sociales */}
         <div>
           <h4 className="font-bold text-lg mb-3 text-blue-500">Seguinos</h4>
-          <div className="flex space-x-4 text-white text-xl">
-            <a href="https://facebook.com" target="_blank" rel="noreferrer"
-              className="hover:text-blue-400 transition-colors">
-              <FaFacebookF />
-            </a>
-            <a href="https://instagram.com" target="_blank" rel="noreferrer"
-              className="hover:text-pink-400 transition-colors">
-              <FaInstagram />
-            </a>
-            <a href="https://twitter.com" target="_blank" rel="noreferrer"
-              className="hover:text-cyan-400 transition-colors">
-              <FaTwitter />
-            </a>
-          </div>
-          <div className="mt-6">
+          <div className="space-y-2">
+            <div className="flex space-x-4 text-white text-xl">
+              <a href="https://facebook.com" target="_blank" rel="noreferrer"
+                className="hover:text-blue-400 transition-colors">
+                <FaFacebookF />
+              </a>
+              <a href="https://instagram.com" target="_blank" rel="noreferrer"
+                className="hover:text-pink-400 transition-colors">
+                <FaInstagram />
+              </a>
+              <a href="https://twitter.com" target="_blank" rel="noreferrer"
+                className="hover:text-cyan-400 transition-colors">
+                <FaTwitter />
+              </a>
+            </div>
             <p className="text-xs text-blue-300">
               © {new Date().getFullYear()} RescaTeam. Todos los derechos reservados.
             </p>
