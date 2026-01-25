@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
-      return { success: false, message: error.response?.data?.message || "Error al iniciar sesión." };
+      return { success: false, message: error.response?.data?.error || error.response?.data?.message || "Error al iniciar sesión." };
     }
   };
 
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
-      return { success: false, message: error.response?.data?.message || "Error al registrarse." };
+      return { success: false, message: error.response?.data?.error || error.response?.data?.message || "Error al registrarse." };
     }
   };
 

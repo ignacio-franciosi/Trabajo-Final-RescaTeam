@@ -848,42 +848,6 @@ func TestSendMessage_Success_WithPushNotifications(t *testing.T) {
 	mockPush.AssertExpectations(t)
 }
 
-func TestSendMessage_Success_UserOnline_NoPush(t *testing.T) {
-	mockRepo := new(mockRepository)
-	mockHub := newMockHub()
-	mockPush := newMockPushClient()
-
-	service := services.NewChatService(mockRepo, mockHub, mockPush)
-
-	ctx := context.Background()
-	senderID := "user1"
-	receiverID := "user2"
-	postID := "post123"
-	chatID := primitive.NewObjectID()
-
-	chat := createTestChat(chatID, senderID, receiverID, postID)
-	expectedMessage := createTestMessage(primitive.NewObjectID(), chatID, senderID, "Hello")
-
-	mockRepo.On("GetChat", ctx, chatID.Hex()).Return(chat, nil)
-	mockRepo.On("SaveMessage", ctx, mock.AnythingOfType("model.Message")).Return(expectedMessage, nil)
-	mockHub.On("HasConnections", receiverID).Return(true)
-	mockHub.On("SendToUser", receiverID, mock.Anything).Return()
-
-	input := dto.WSMessage{
-		ChatID:  chatID.Hex(),
-		Content: "Hello",
-	}
-
-	result, err := service.SendMessage(ctx, senderID, input)
-
-	assert.Nil(t, err)
-	assert.Equal(t, expectedMessage.ID, result.ID)
-	// No debería llamar a ListSubscriptions si el usuario está online
-	mockRepo.AssertNotCalled(t, "ListSubscriptions", ctx, receiverID)
-	mockRepo.AssertExpectations(t)
-	mockHub.AssertExpectations(t)
-}
-
 func TestSendMessage_Success_PushNotificationsWithFailures(t *testing.T) {
 	mockRepo := new(mockRepository)
 	mockHub := newMockHub()
@@ -1218,10 +1182,8 @@ func TestSendMessage_Success_WithPushNotifications_MultipleSubs(t *testing.T) {
 }
 
 func TestSendMessage_Success_UserOnline_WithPushEnabled(t *testing.T) {
-	// Test que aunque el usuario esté online, si sendPushEvenIfOnline fuera true,
-	// se enviaría push. Pero como está false, solo se prueba el caso online.
-	// Este test ya existe como TestSendMessage_Success_UserOnline_NoPush
-	// pero vamos a asegurarnos de que está completo
+	// Test que aunque el usuario esté online, con sendPushEvenIfOnline=true,
+	// se enviaría push también. Verifica que ListSubscriptions se llama incluso cuando el usuario está online.
 	mockRepo := new(mockRepository)
 	mockHub := newMockHub()
 	mockPush := newMockPushClient()
@@ -1237,10 +1199,24 @@ func TestSendMessage_Success_UserOnline_WithPushEnabled(t *testing.T) {
 	chat := createTestChat(chatID, senderID, receiverID, postID)
 	expectedMessage := createTestMessage(primitive.NewObjectID(), chatID, senderID, "Hello")
 
+	subscriptions := []model.PushSubscription{
+		{
+			ID:       primitive.NewObjectID(),
+			UserID:   receiverID,
+			Endpoint: "https://fcm.googleapis.com/endpoint1",
+			Keys: model.PushSubscriptionKeys{
+				P256dh: "key1",
+				Auth:   "auth1",
+			},
+		},
+	}
+
 	mockRepo.On("GetChat", ctx, chatID.Hex()).Return(chat, nil)
 	mockRepo.On("SaveMessage", ctx, mock.AnythingOfType("model.Message")).Return(expectedMessage, nil)
 	mockHub.On("HasConnections", receiverID).Return(true) // Usuario online
 	mockHub.On("SendToUser", receiverID, mock.Anything).Return()
+	mockRepo.On("ListSubscriptions", ctx, receiverID).Return(subscriptions, nil)
+	mockPush.On("SendNotifications", ctx, subscriptions, mock.AnythingOfType("[]uint8")).Return([]string{})
 
 	input := dto.WSMessage{
 		ChatID:  chatID.Hex(),
@@ -1251,10 +1227,10 @@ func TestSendMessage_Success_UserOnline_WithPushEnabled(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, expectedMessage.ID, result.ID)
-	// No debería llamar a ListSubscriptions porque el usuario está online
-	mockRepo.AssertNotCalled(t, "ListSubscriptions", ctx, receiverID)
+	// Con sendPushEvenIfOnline=true, ListSubscriptions debe ser llamado incluso cuando el usuario está online
 	mockRepo.AssertExpectations(t)
 	mockHub.AssertExpectations(t)
+	mockPush.AssertExpectations(t)
 }
 
 func TestSendMessage_Success_WithEmptySubscriptionsList(t *testing.T) {

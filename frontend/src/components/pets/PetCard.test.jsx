@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import PetCard from './PetCard'
+import { AuthContext } from '../../context/AuthContext'
 
 // Mocks
 const mockNavigate = vi.fn()
@@ -16,10 +17,22 @@ vi.mock('react-router-dom', async () => {
 })
 
 // Helper
-const renderWithRouter = (pet) => {
+const renderWithProviders = (pet, user = { userId: '123', suspended: false }) => {
+  const authValue = {
+    user,
+    token: 'test-token',
+    login: vi.fn(),
+    logout: vi.fn(),
+    register: vi.fn(),
+    initialized: true,
+    setAuth: vi.fn(),
+  }
+
   return render(
     <BrowserRouter>
-      <PetCard pet={pet} />
+      <AuthContext.Provider value={authValue}>
+        <PetCard pet={pet} />
+      </AuthContext.Provider>
     </BrowserRouter>
   )
 }
@@ -47,7 +60,7 @@ describe('PetCard', () => {
       zone: 'Centro',
     }
 
-    renderWithRouter(pet)
+    renderWithProviders(pet)
 
     expect(screen.getByText('Lola')).toBeInTheDocument()
     expect(screen.getByText(/en adopción/i)).toBeInTheDocument()
@@ -64,7 +77,7 @@ describe('PetCard', () => {
       zone: 'Villa Allende',
     }
 
-    renderWithRouter(pet)
+    renderWithProviders(pet)
 
     expect(screen.getByText('Max')).toBeInTheDocument()
     expect(screen.getByText(/perdido/i)).toBeInTheDocument()
@@ -80,7 +93,7 @@ describe('PetCard', () => {
       zone: 'Norte',
     }
 
-    renderWithRouter(pet)
+    renderWithProviders(pet)
 
     expect(screen.getByText('Bella')).toBeInTheDocument()
     expect(screen.getByText(/encontrado/i)).toBeInTheDocument()
@@ -97,7 +110,7 @@ describe('PetCard', () => {
       zone: 'Centro',
     }
 
-    renderWithRouter(pet)
+    renderWithProviders(pet)
 
     expect(screen.getByText(/5 años/i)).toBeInTheDocument()
     expect(screen.getByText(/hembra/i)).toBeInTheDocument()
@@ -114,7 +127,7 @@ describe('PetCard', () => {
       zone: 'Villa Allende',
     }
 
-    renderWithRouter(pet)
+    renderWithProviders(pet)
 
     expect(screen.getByText(/macho/i)).toBeInTheDocument()
     expect(screen.getByText(/gato/i)).toBeInTheDocument()
@@ -127,7 +140,7 @@ describe('PetCard', () => {
       species: 'perro',
     }
 
-    renderWithRouter(pet)
+    renderWithProviders(pet)
 
     expect(screen.getByText('Sin nombre')).toBeInTheDocument()
   })
@@ -141,7 +154,7 @@ describe('PetCard', () => {
       species: 'perro',
     }
 
-    renderWithRouter(pet)
+    renderWithProviders(pet)
 
     const card = screen.getByText('Lola').closest('div[class*="cursor-pointer"]')
     await user.click(card)
@@ -160,7 +173,7 @@ describe('PetCard', () => {
       species: 'perro',
     }
 
-    renderWithRouter(pet)
+    renderWithProviders(pet)
 
     const card = screen.getByText('Max').closest('div[class*="cursor-pointer"]')
     await user.click(card)
@@ -178,7 +191,7 @@ describe('PetCard', () => {
       species: 'perro',
     }
 
-    renderWithRouter(pet)
+    renderWithProviders(pet)
 
     const img = screen.getByAltText('Lola')
     expect(img).toHaveAttribute('src', '/no-image.png')
@@ -193,7 +206,7 @@ describe('PetCard', () => {
       foto: 'invalid-url',
     }
 
-    renderWithRouter(pet)
+    renderWithProviders(pet)
 
     const img = screen.getByAltText('Lola')
     expect(img).toHaveAttribute('src', 'invalid-url')

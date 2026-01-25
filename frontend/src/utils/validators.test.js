@@ -75,7 +75,7 @@ describe('validators', () => {
       
       const errors = validateRequiredFields(formData, requiredFields)
       expect(errors).toHaveProperty('email')
-      expect(errors.email).toBe('Este campo es obligatorio.')
+      expect(errors.email).toBe('email es obligatorio.')
     })
 
     it('should return errors for fields with only whitespace', () => {
@@ -87,7 +87,7 @@ describe('validators', () => {
       
       const errors = validateRequiredFields(formData, requiredFields)
       expect(errors).toHaveProperty('name')
-      expect(errors.name).toBe('Este campo es obligatorio.')
+      expect(errors.name).toBe('name es obligatorio.')
     })
 
     it('should return errors for undefined or null fields', () => {

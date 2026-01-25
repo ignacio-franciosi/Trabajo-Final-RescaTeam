@@ -56,6 +56,8 @@ describe('Chat E2E', () => {
   // =====================
   it('Usuario B inicia chat y Usuario A recibe el mensaje', () => {
     const postData = {
+      postType: 'lost',
+      postStatus: true,
       name: 'Post Chat Test',
       species: 'Perro',
       breed: 'Pichi',
@@ -92,11 +94,11 @@ describe('Chat E2E', () => {
         return cy.createPostViaAPI(postData, result1.token)
       })
       .then((response) => {
-        // cy.request devuelve el response crudo
+        // createPostViaAPI devuelve un objeto envuelto con postId extraído
         expect(response.status).to.eq(201)
-        expect(response.body.postId).to.exist
+        expect(response.postId).to.exist
 
-        postId = response.body.postId
+        postId = response.postId
 
         cy.get('@createdPosts').then((posts) => {
           posts.push({ postId })
@@ -120,6 +122,8 @@ describe('Chat E2E', () => {
         })
       })
       .then((result2) => {
+        cy.log(JSON.stringify(result2))
+        console.log('REGISTER USER 2 RESULT', result2)
         expect(result2.success).to.be.true
         expect(result2.token).to.exist
         expect(postId).to.exist

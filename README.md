@@ -260,6 +260,7 @@ MONGO_DB_QA=rescateam_chatdb_qa
 Headless mode:
 ```bash
 cd frontend
+npx cypress install
 npm run test:e2e
 ```
 

@@ -84,40 +84,18 @@ Cypress.Commands.add('loginUserViaAPI', (email, password) => {
 // Crea un post via API
 Cypress.Commands.add(
   'createPostViaAPI',
-  (
-    {
-      postType = 'adoption',
-      postStatus = true,
-      name,
-      species,
-      breed,
-      color,
-      size,
-      sex,
-      description,
-      zone,
-      healthStatus = 'Sano',
-      date,
-    },
-    token
-  ) => {
+  (postData, token) => {
     return cy.fixture('test-image.png', 'binary').then((file) => {
       const blob = Cypress.Blob.binaryStringToBlob(file, 'image/png')
 
       const formData = new FormData()
 
-      formData.append('postType', postType)
-      formData.append('postStatus', String(postStatus))
-      formData.append('name', name)
-      formData.append('species', species)
-      if (breed) formData.append('breed', breed)
-      formData.append('color', color)
-      formData.append('size', size)
-      formData.append('sex', sex)
-      formData.append('description', description)
-      if (date) formData.append('date', date)
-      formData.append('zone', zone)
-      formData.append('healthStatus', healthStatus)
+      Object.entries(postData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, String(value))
+        }
+      })
+
       formData.append('images', blob, 'perro.png')
 
       return cy.request({
@@ -125,21 +103,18 @@ Cypress.Commands.add(
         url: `${API_POSTS_BASE_URL}/post`,
         headers: {
           Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
         body: formData,
-        encoding: 'binary',
+        responseType: 'json',
         failOnStatusCode: false,
       }).then((response) => {
-        cy.log('POST /post response:')
+        cy.log(`STATUS: ${response.status}`)
         cy.log(JSON.stringify(response.body))
-
+      
         return cy.wrap({
-          success: response.status === 201 || response.status === 200,
           status: response.status,
-          postId:
-            response.body?.postId ||
-            response.body?.id ||
-            response.body?._id,
+          postId: response.body?.postId,
           body: response.body,
         })
       })
