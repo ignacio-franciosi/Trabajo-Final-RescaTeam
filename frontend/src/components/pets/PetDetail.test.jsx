@@ -125,7 +125,7 @@ describe('PetDetail', () => {
 
     renderWithProviders(pet)
 
-    expect(screen.getByRole('heading', { level: 1, name: /mascota en adopción/i })).toBeInTheDocument()
+    expect(screen.getByText('En adopción')).toBeInTheDocument()
     expect(screen.getByText('Lola')).toBeInTheDocument()
   })
 
@@ -139,7 +139,7 @@ describe('PetDetail', () => {
 
     renderWithProviders(pet)
 
-    expect(screen.getByRole('heading', { level: 1, name: /mascota perdida/i })).toBeInTheDocument()
+    expect(screen.getByText('Perdido')).toBeInTheDocument()
   })
 
   it('renders found pet detail with title', () => {
@@ -152,6 +152,6 @@ describe('PetDetail', () => {
 
     renderWithProviders(pet)
 
-    expect(screen.getByRole('heading', { level: 1, name: /mascota encontrada/i })).toBeInTheDocument()
+    expect(screen.getByText('Encontrado')).toBeInTheDocument()
   })
 })

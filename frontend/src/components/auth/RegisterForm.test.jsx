@@ -73,8 +73,19 @@ const renderWithProviders = (registerMock = mockRegister) => {
 }
 
 const fillForm = async (user, formData) => {
+  // Map field names to more specific label patterns or use getByRole/getById
+  const fieldSelectors = {
+    password: () => screen.getByLabelText(/^contraseña$/i), // Exact match, not "Confirmar Contraseña"
+    confirmPassword: () => screen.getByLabelText(/confirmar contraseña/i),
+    nombre: () => screen.getByLabelText(/^nombre$/i),
+    apellido: () => screen.getByLabelText(/^apellido$/i),
+    dni: () => screen.getByLabelText(/^dni$/i),
+    email: () => screen.getByLabelText(/^email$/i),
+  }
+  
   for (const [field, value] of Object.entries(formData)) {
-    const input = screen.getByLabelText(new RegExp(field, 'i'))
+    const getInput = fieldSelectors[field] || (() => screen.getByLabelText(new RegExp(field, 'i')))
+    const input = getInput()
     await user.clear(input)
     await user.type(input, value)
   }
@@ -92,11 +103,11 @@ describe('RegisterForm', () => {
     renderWithProviders()
 
     expect(screen.getByRole('heading', { level: 2, name: /registrarse/i })).toBeInTheDocument()
-    expect(screen.getByLabelText(/nombre/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/apellido/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/dni/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^nombre$/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^apellido$/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^dni$/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^contraseña$/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /registrarse/i })).toBeInTheDocument()
   })
 
@@ -116,14 +127,15 @@ describe('RegisterForm', () => {
         dni: '12345678',
         email: 'juan@example.com',
         password: 'Password123',
+        confirmPassword: 'Password123',
       })
     })
 
-    expect(screen.getByLabelText(/nombre/i)).toHaveValue('Juan')
-    expect(screen.getByLabelText(/apellido/i)).toHaveValue('Pérez')
-    expect(screen.getByLabelText(/dni/i)).toHaveValue('12345678')
-    expect(screen.getByLabelText(/email/i)).toHaveValue('juan@example.com')
-    expect(screen.getByLabelText(/password/i)).toHaveValue('Password123')
+    expect(screen.getByLabelText(/^nombre$/i)).toHaveValue('Juan')
+    expect(screen.getByLabelText(/^apellido$/i)).toHaveValue('Pérez')
+    expect(screen.getByLabelText(/^dni$/i)).toHaveValue('12345678')
+    expect(screen.getByLabelText(/^email$/i)).toHaveValue('juan@example.com')
+    expect(screen.getByLabelText(/^contraseña$/i)).toHaveValue('Password123')
   })
 
   it('clears field error when user starts typing', async () => {
@@ -137,6 +149,7 @@ describe('RegisterForm', () => {
         dni: '12345678',
         email: 'juan@example.com',
         password: 'Password123',
+        confirmPassword: 'Password123',
       })
       await user.click(screen.getByRole('button', { name: /registrarse/i }))
     })
@@ -206,6 +219,7 @@ describe('RegisterForm', () => {
         dni: '12345678',
         email: 'juan@example.com',
         password: 'Password123',
+        confirmPassword: 'Password123',
       })
       await user.click(screen.getByRole('button', { name: /registrarse/i }))
     })
@@ -235,6 +249,7 @@ describe('RegisterForm', () => {
         dni: '12345678',
         email: 'juan@example.com',
         password: 'Password123',
+        confirmPassword: 'Password123',
       })
       await user.click(screen.getByRole('button', { name: /registrarse/i }))
     })
@@ -264,6 +279,7 @@ describe('RegisterForm', () => {
         dni: '12345678',
         email: 'juan@example.com',
         password: 'Password123',
+        confirmPassword: 'Password123',
       })
       await user.click(screen.getByRole('button', { name: /registrarse/i }))
     })
@@ -296,6 +312,7 @@ describe('RegisterForm', () => {
         dni: '12345678',
         email: 'juan@example.com',
         password: 'Password123',
+        confirmPassword: 'Password123',
       })
       await user.click(screen.getByRole('button', { name: /registrarse/i }))
     })
@@ -319,6 +336,7 @@ describe('RegisterForm', () => {
         dni: '12345678',
         email: 'juan@example.com',
         password: 'Password123',
+        confirmPassword: 'Password123',
       })
       await user.click(screen.getByRole('button', { name: /registrarse/i }))
     })
@@ -343,6 +361,7 @@ describe('RegisterForm', () => {
         dni: '12345678',
         email: 'juan@example.com',
         password: 'Password123',
+        confirmPassword: 'Password123',
       })
       await user.click(screen.getByRole('button', { name: /registrarse/i }))
     })

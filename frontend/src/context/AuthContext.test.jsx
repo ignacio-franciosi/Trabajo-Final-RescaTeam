@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './AuthContext'
 // Mocks
 const mockInitPush = vi.fn()
 const mockApiPost = vi.fn()
+const mockApiGet = vi.fn()
 
 vi.mock('../services/PushService', () => ({
   initPush: (token) => mockInitPush(token),
@@ -13,6 +14,7 @@ vi.mock('../services/PushService', () => ({
 vi.mock('../services/axiosConfigUsers', () => ({
   default: {
     post: (url, data) => mockApiPost(url, data),
+    get: (url) => mockApiGet(url),
   },
 }))
 
@@ -27,6 +29,10 @@ describe('AuthContext', () => {
     vi.clearAllMocks()
     localStorage.clear()
     mockInitPush.mockResolvedValue(undefined)
+    // Mock api.get to return user data with suspended status
+    mockApiGet.mockResolvedValue({
+      data: { suspended: false },
+    })
   })
 
   afterEach(() => {

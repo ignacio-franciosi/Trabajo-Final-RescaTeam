@@ -70,6 +70,10 @@ describe('AdoptionForm', () => {
     
     // Mock scrollIntoView for jsdom
     Element.prototype.scrollIntoView = vi.fn()
+    
+    // Mock URL.createObjectURL for file previews
+    global.URL.createObjectURL = vi.fn(() => 'blob:mock-url')
+    global.URL.revokeObjectURL = vi.fn()
   })
 
   it('renders adoption form with all required fields', () => {
@@ -155,14 +159,21 @@ describe('AdoptionForm', () => {
     mockCreatePost.mockResolvedValue({ success: true, data: { id: '123' } })
     renderWithProviders()
 
+    // Create a mock file
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+
     await act(async () => {
       const ageInput = screen.getByLabelText(/edad/i)
       const colorInput = screen.getByLabelText(/color/i)
       const zoneSelect = screen.getByTestId('zone-select')
+      const fileInput = document.getElementById('adoption-file-input')
 
       await user.type(ageInput, '5')
       await user.type(colorInput, 'Blanco')
       await user.selectOptions(zoneSelect, 'Centro')
+      
+      // Add image file (required for form submission)
+      await user.upload(fileInput, file)
     })
 
     await act(async () => {
@@ -182,14 +193,22 @@ describe('AdoptionForm', () => {
     mockCreatePost.mockResolvedValue({ success: true, data: { id: '123' } })
     renderWithProviders()
 
+    // Create a mock file
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+
     await act(async () => {
       const ageInput = screen.getByLabelText(/edad/i)
       const colorInput = screen.getByLabelText(/color/i)
       const zoneSelect = screen.getByTestId('zone-select')
+      const fileInput = document.getElementById('adoption-file-input')
 
       await user.type(ageInput, '5')
       await user.type(colorInput, 'Blanco')
       await user.selectOptions(zoneSelect, 'Centro')
+      
+      // Add image file (required for form submission)
+      await user.upload(fileInput, file)
+      
       await user.click(screen.getByRole('button', { name: /publicar/i }))
     })
 
@@ -199,7 +218,7 @@ describe('AdoptionForm', () => {
 
     await waitFor(
       () => {
-        expect(mockNavigate).toHaveBeenCalledWith('/mis-publicaciones')
+        expect(mockNavigate).toHaveBeenCalledWith('/mis-publicaciones?type=adoption')
       },
       { timeout: 2000 }
     )
@@ -210,14 +229,22 @@ describe('AdoptionForm', () => {
     mockCreatePost.mockResolvedValue({ success: false })
     renderWithProviders()
 
+    // Create a mock file
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+
     await act(async () => {
       const ageInput = screen.getByLabelText(/edad/i)
       const colorInput = screen.getByLabelText(/color/i)
       const zoneSelect = screen.getByTestId('zone-select')
+      const fileInput = document.getElementById('adoption-file-input')
 
       await user.type(ageInput, '5')
       await user.type(colorInput, 'Blanco')
       await user.selectOptions(zoneSelect, 'Centro')
+      
+      // Add image file (required for form submission)
+      await user.upload(fileInput, file)
+      
       await user.click(screen.getByRole('button', { name: /publicar/i }))
     })
 
@@ -247,19 +274,27 @@ describe('AdoptionForm', () => {
     mockCreatePost.mockResolvedValue({ success: true, data: { id: '123' } })
     renderWithProviders()
 
+    // Create a mock file
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+
     await act(async () => {
       const ageInput = screen.getByLabelText(/edad/i)
       const colorInput = screen.getByLabelText(/color/i)
       const zoneSelect = screen.getByTestId('zone-select')
+      const fileInput = document.getElementById('adoption-file-input')
 
       await user.type(ageInput, '5')
       await user.type(colorInput, 'Blanco')
       await user.selectOptions(zoneSelect, 'Centro')
+      
+      // Add image file
+      await user.upload(fileInput, file)
+      
       await user.click(screen.getByRole('button', { name: /publicar/i }))
     })
 
     await waitFor(() => {
       expect(screen.getByText(/publicación creada correctamente/i)).toBeInTheDocument()
-    })
+    }, { timeout: 3000 })
   })
 })
