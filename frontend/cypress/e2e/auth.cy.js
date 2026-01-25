@@ -52,6 +52,7 @@ describe('Auth E2E Tests', () => {
       cy.get('input[name="dni"]').type(userData.dni.toString())
       cy.get('input[name="email"]').type(userData.email)
       cy.get('input[name="password"]').type(userData.password)
+      cy.get('input[name="confirmPassword"]').type(userData.password)
 
       cy.contains('button', /registrarse/i).click()
 
@@ -94,9 +95,10 @@ describe('Auth E2E Tests', () => {
         cy.get('input[name="dni"]').type(userData.dni.toString())
         cy.get('input[name="email"]').type(userData.email)
         cy.get('input[name="password"]').type(userData.password)
+        cy.get('input[name="confirmPassword"]').type(userData.password)
 
         cy.contains('button', /registrarse/i).click()
-        cy.contains(/error|already exists|exists/i).should('be.visible')
+        cy.contains(/error|already exists|exists|ya existe/i).should('be.visible')
       })
     })
   })
@@ -139,7 +141,7 @@ describe('Auth E2E Tests', () => {
       cy.get('input[type="password"]').type('WrongPassword123')
       cy.contains('button', /ingresar/i).click()
 
-      cy.contains(/error|invalid|credentials/i).should('be.visible')
+      cy.contains(/error|invalid|inválido|credentials|acceso/i).should('be.visible')
       cy.window().its('localStorage.token').should('not.exist')
     })
   })
