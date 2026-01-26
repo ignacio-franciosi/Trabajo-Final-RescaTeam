@@ -157,7 +157,7 @@ const Header = () => {
             {/* Brand */}
             <div className="flex items-center gap-3">
               <Link to="/" className="flex items-center gap-2 group">
-                <img src={favicon} alt="RescaTeam" className="h-12 w-12 ml-2 rounded-full ring-1 ring-white/20 group-hover:ring-blue-500/50 transition md:h-10 md:w-10 md:ml-0" />
+                <img src={favicon} alt="RescaTeam" className="h-12 w-12 ml-2 rounded-full ring-1 ring-white/20 group-hover:ring-blue-500/50 transition md:h-15 md:w-15 md:ml-0" />
                 <span className="hidden md:inline text-xl font-semibold tracking-tight text-white">RescaTeam</span>
               </Link>
             </div>
