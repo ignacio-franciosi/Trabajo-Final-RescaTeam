@@ -252,14 +252,14 @@ const PetDetail = ({ pet }) => {
         <div className="flex flex-col md:flex-row gap-6 md:items-center">
           {/* Imágenes */}
           <div className="md:w-1/2 relative">
-            {/* Badge tipo de publicación (como PetCard) */}
-            <div className={`absolute top-2 left-2 z-10 ${typeStyles.badge} text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md flex items-center gap-2`}>
-              {typeStyles.icon}
-              {typeStyles.text}
-            </div>
             {hasImages ? (
               <>
-                <div className="w-full max-h-[420px] flex items-center justify-center rounded-lg overflow-hidden">
+                <div className="w-full h-[420px] flex items-center justify-center rounded-lg overflow-hidden bg-gray-100 relative">
+                  {/* Badge tipo de publicación (como PetCard) */}
+                  <div className={`absolute top-2 left-2 z-10 ${typeStyles.badge} text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md flex items-center gap-2`}>
+                    {typeStyles.icon}
+                    {typeStyles.text}
+                  </div>
                   <img
                     src={
                       pet.imagenes[currentImage].filepath && /^https?:\/\//i.test(pet.imagenes[currentImage].filepath)
@@ -267,7 +267,7 @@ const PetDetail = ({ pet }) => {
                         : `${import.meta.env.VITE_POSTS_API_URL || 'http://localhost:8090'}${(pet.imagenes[currentImage].filepath || '').startsWith('/') ? '' : '/'}${pet.imagenes[currentImage].filepath || ''}`
                     }
                     alt={`Mascota ${currentImage + 1}`}
-                    className="max-w-full max-h-[420px] w-auto h-auto object-contain rounded-lg cursor-pointer block"
+                    className="max-w-full max-h-full w-auto h-auto object-contain cursor-pointer"
                     onClick={() => setShowFullImage(true)}
                     title="Ver imagen completa"
                   />
@@ -320,7 +320,12 @@ const PetDetail = ({ pet }) => {
                 )}
               </>
             ) : (
-              <div className="w-full h-72 bg-gray-100 rounded-lg flex items-center justify-center">
+              <div className="w-full h-72 bg-gray-100 rounded-lg flex items-center justify-center relative">
+                {/* Badge tipo de publicación (como PetCard) */}
+                <div className={`absolute top-2 left-2 z-10 ${typeStyles.badge} text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md flex items-center gap-2`}>
+                  {typeStyles.icon}
+                  {typeStyles.text}
+                </div>
                 <img
                   src="/no-image.png"
                   alt="Sin imagen"
