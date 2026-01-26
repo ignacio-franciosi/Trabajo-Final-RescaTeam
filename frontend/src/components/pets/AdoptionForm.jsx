@@ -186,7 +186,14 @@ const AdoptionForm = () => {
                             <p className="text-gray-600">Soltá acá la imagen del post o hacé click para seleccionarla</p>
                         )}
                     </div>
-                    <input id="ai-file-input-adoption" hidden type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleAiSelect} />
+                    <input
+                        id="ai-file-input-adoption"
+                        hidden
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp"
+                        capture="environment"
+                        onChange={handleAiSelect}
+                    />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                     <div>
