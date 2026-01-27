@@ -162,13 +162,29 @@ const LostFoundForm = ({ type }) => {
                             <h3 className={`font-semibold ${textColor}`}>Autocompletar formulario con imagen</h3>
                             <p className={`text-xs ${textColorLight}`}>Seleccioná o arrastrá una imagen del post y completaremos los campos por vos. Se permite solo una imagen.</p>
                         </div>
-                        <button
-                            type="button"
-                            className={`px-3 py-2 text-sm ${buttonBg} text-white rounded ${buttonHover}`}
-                            onClick={() => document.getElementById(`ai-file-input-${type}`).click()}
-                        >
-                            Elegir imagen
-                        </button>
+                        <div className="flex flex-col gap-2">
+                            <button
+                                type="button"
+                                className={`hidden md:block px-3 py-2 text-sm ${buttonBg} text-white rounded ${buttonHover}`}
+                                onClick={() => document.getElementById(`ai-file-input-${type}`).click()}
+                            >
+                                Elegir imagen
+                            </button>
+                            <button
+                                type="button"
+                                className={`md:hidden px-3 py-2 text-xs ${buttonBg} text-white rounded ${buttonHover}`}
+                                onClick={() => document.getElementById(`ai-file-input-${type}`).click()}
+                            >
+                                Galería
+                            </button>
+                            <button
+                                type="button"
+                                className={`md:hidden px-3 py-2 text-xs ${buttonBg} text-white rounded ${buttonHover}`}
+                                onClick={() => document.getElementById(`ai-camera-input-${type}`).click()}
+                            >
+                                Cámara
+                            </button>
+                        </div>
                     </div>
                     <div
                         className={`mt-3 border-2 border-dashed rounded-md p-4 text-center text-sm ${aiLoading ? 'opacity-60' : ''}`}
@@ -193,6 +209,13 @@ const LostFoundForm = ({ type }) => {
                         hidden
                         type="file"
                         accept=".jpg,.jpeg,.png,.webp"
+                        onChange={handleAiSelect}
+                    />
+                    <input
+                        id={`ai-camera-input-${type}`}
+                        hidden
+                        type="file"
+                        accept="image/*"
                         capture="environment"
                         onChange={handleAiSelect}
                     />

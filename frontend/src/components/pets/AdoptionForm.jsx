@@ -160,13 +160,29 @@ const AdoptionForm = () => {
                             <h3 className="font-semibold text-emerald-900">Autocompletar formulario con imagen</h3>
                             <p className="text-xs text-emerald-800">Seleccioná o arrastrá una imagen del post y completaremos los campos por vos. Se permite solo una imagen.</p>
                         </div>
-                        <button
-                            type="button"
-                            className="px-3 py-2 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700"
-                            onClick={() => document.getElementById('ai-file-input-adoption').click()}
-                        >
-                            Elegir imagen
-                        </button>
+                        <div className="flex flex-col gap-2">
+                            <button
+                                type="button"
+                                className="hidden md:block px-3 py-2 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700"
+                                onClick={() => document.getElementById('ai-file-input-adoption').click()}
+                            >
+                                Elegir imagen
+                            </button>
+                            <button
+                                type="button"
+                                className="md:hidden px-3 py-2 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700"
+                                onClick={() => document.getElementById('ai-file-input-adoption').click()}
+                            >
+                                Galería
+                            </button>
+                            <button
+                                type="button"
+                                className="md:hidden px-3 py-2 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700"
+                                onClick={() => document.getElementById('ai-camera-input-adoption').click()}
+                            >
+                                Cámara
+                            </button>
+                        </div>
                     </div>
                     <div
                         className={`mt-3 border-2 border-dashed rounded-md p-4 text-center text-sm ${aiLoading ? 'opacity-60' : ''}`}
@@ -191,6 +207,13 @@ const AdoptionForm = () => {
                         hidden
                         type="file"
                         accept=".jpg,.jpeg,.png,.webp"
+                        onChange={handleAiSelect}
+                    />
+                    <input
+                        id="ai-camera-input-adoption"
+                        hidden
+                        type="file"
+                        accept="image/*"
                         capture="environment"
                         onChange={handleAiSelect}
                     />
