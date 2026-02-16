@@ -148,7 +148,7 @@ describe('AdoptionForm', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/edad inválida/i)).toBeInTheDocument()
+      expect(screen.getByText(/edad en años inválida/i)).toBeInTheDocument()
     })
 
     expect(mockCreatePost).not.toHaveBeenCalled()

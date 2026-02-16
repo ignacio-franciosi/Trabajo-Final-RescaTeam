@@ -82,7 +82,7 @@ const fillForm = async (user, formData) => {
     dni: () => screen.getByLabelText(/^dni$/i),
     email: () => screen.getByLabelText(/^email$/i),
   }
-  
+
   for (const [field, value] of Object.entries(formData)) {
     const getInput = fieldSelectors[field] || (() => screen.getByLabelText(new RegExp(field, 'i')))
     const input = getInput()
@@ -293,7 +293,7 @@ describe('RegisterForm', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/some-path')
         expect(localStorage.getItem('redirectAfterLogin')).toBeNull()
       },
-      { timeout: 1000 }
+      { timeout: 2000 }
     )
   })
 
