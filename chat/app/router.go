@@ -52,7 +52,14 @@ func SetupRouter() *gin.Engine {
 	router := gin.Default()
 
 	// Configuración de CORS - obtener orígenes permitidos desde variable de entorno
-	allowedOrigins := []string{"http://localhost:5173"} // default para desarrollo
+	allowedOrigins := []string{
+		"http://localhost:5173",
+		"https://rescateam.up.railway.app",
+		"https://rescateam.com",
+		"https://www.rescateam.com",
+		"http://rescateam.com",
+		"http://www.rescateam.com",
+	}
 
 	// Si hay ALLOWED_ORIGINS en env, usarlos (para producción)
 	if envOrigins := os.Getenv("ALLOWED_ORIGINS"); envOrigins != "" {

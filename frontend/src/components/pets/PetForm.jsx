@@ -90,7 +90,7 @@ const PetForm = () => {
 
     const ageValue = parseInt(formData.age);
     if (isNaN(ageValue) || ageValue < 0) {
-      newErrors.age = 'La edad debe ser un número válido y no negativo.';
+      newErrors.age = 'La edad en años debe ser un número válido y no negativo.';
     }
 
     if (images.length === 0) {
@@ -200,7 +200,7 @@ const PetForm = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Edad</label>
+            <label className="block text-sm font-medium text-gray-700">Edad (años)</label>
             <input type="number" name="age" value={formData.age} onChange={handleChange} className={inputClass('age')} />
             {errors.age && <p className="text-red-500 text-sm">{errors.age}</p>}
           </div>

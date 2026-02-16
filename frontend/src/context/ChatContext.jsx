@@ -28,6 +28,10 @@ export function ChatProvider({ children }) {
   const inflightFetch = useRef(new Map()); // chatId -> Promise
   const lastFetchAt = useRef({});          // chatId -> timestamp (ms)
 
+  // Ref to track pending chat reloads
+  const pendingReloadRef = useRef(false);
+  const reloadTimeoutRef = useRef(null);
+
   const myId = useMemo(() => {
     try {
       const savedUser = localStorage.getItem('user');
@@ -37,7 +41,7 @@ export function ChatProvider({ children }) {
     }
   }, []);
 
-  async function enrichChatsWithNames(rawChats) {
+  const enrichChatsWithNames = useCallback(async (rawChats) => {
     if (!Array.isArray(rawChats)) return [];
     const out = [];
     for (const ch of rawChats) {
@@ -66,7 +70,28 @@ export function ChatProvider({ children }) {
       out.push({ ...ch, otherId, displayName });
     }
     return out;
-  }
+  }, [myId]);
+
+  // Function to reload chats from server
+  const reloadChats = useCallback(async () => {
+    if (!token || pendingReloadRef.current) return;
+    pendingReloadRef.current = true;
+
+    try {
+      const { data } = await ChatService.listChats(token);
+      const enriched = await enrichChatsWithNames(data);
+      setChats(enriched);
+      setUnreadByChat((prev) => {
+        const next = { ...prev };
+        for (const ch of enriched) if (next[ch.chatId] == null) next[ch.chatId] = 0;
+        return next;
+      });
+    } catch (err) {
+      console.error('Error reloading chats:', err);
+    } finally {
+      pendingReloadRef.current = false;
+    }
+  }, [token, enrichChatsWithNames]);
 
   // cargar lista de chats
   useEffect(() => {
@@ -85,8 +110,7 @@ export function ChatProvider({ children }) {
         setChats([]);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, enrichChatsWithNames]);
 
   // --- Helper: fetch de mensajes con de-dupe + throttle + retry 429 ---
   const safeFetchMessages = useCallback(async (chatId) => {
@@ -138,37 +162,33 @@ export function ChatProvider({ children }) {
         return { ...prev, [msg.chatId]: [...list, msg] };
       });
 
-      // Update chats: move the chat with the new message to the top (most recent)
+      // Update chats AND check if chat exists
       setChats((prev) => {
         const existing = prev.find((c) => c.chatId === msg.chatId);
         const others = prev.filter((c) => c.chatId !== msg.chatId);
 
-        const updated = existing
-          ? { ...existing, lastMessage: msg.content, lastUpdate: msg.timestamp }
-          : { chatId: msg.chatId, participants: [msg.senderId, myId], lastMessage: msg.content, lastUpdate: msg.timestamp };
+        if (!existing) {
+          // New chat detected - schedule a reload
+          if (reloadTimeoutRef.current) clearTimeout(reloadTimeoutRef.current);
+          reloadTimeoutRef.current = setTimeout(() => {
+            reloadChats();
+          }, 50);
 
-        const merged = [updated, ...others];
-        merged.sort((a, b) => {
-          const ta = a.lastUpdate ? new Date(a.lastUpdate).getTime() : 0;
-          const tb = b.lastUpdate ? new Date(b.lastUpdate).getTime() : 0;
-          return tb - ta;
-        });
-
-        // Enriquecer nombres para chats nuevos/via WS (no bloquear el hilo principal)
-        (async () => {
-          try {
-            const enriched = await enrichChatsWithNames(merged);
-            // Solo actualizar si sigue sin cambios mayores (evitar sobrescribir cambios concurrentes)
-            setChats((prev) => {
-              return enriched;
-            });
-          } catch (e) {
-            // noop: si falla la consulta de nombres, dejamos los chats tal cual (mostrar ids)
-          }
-        })();
-
-        return merged;
+          // Return unchanged for now - reload will add it
+          return prev;
+        } else {
+          // Update existing chat
+          const updated = { ...existing, lastMessage: msg.content, lastUpdate: msg.timestamp };
+          const merged = [updated, ...others];
+          merged.sort((a, b) => {
+            const ta = a.lastUpdate ? new Date(a.lastUpdate).getTime() : 0;
+            const tb = b.lastUpdate ? new Date(b.lastUpdate).getTime() : 0;
+            return tb - ta;
+          });
+          return merged;
+        }
       });
+
       if (String(msg.senderId) !== String(myId)) {
         setUnreadByChat((prev) => {
           const current = prev[msg.chatId] ?? 0;
@@ -201,7 +221,7 @@ export function ChatProvider({ children }) {
         return { ...prev, [chatId]: updated };
       });
     }
-  }, [events, myId, activeChatId]);
+  }, [events, myId, activeChatId, reloadChats]);
 
   const getChatById = useCallback(
     (id) => chats.find((c) => c.chatId === id) || null,
@@ -240,17 +260,7 @@ export function ChatProvider({ children }) {
     nameMap,
     getChatById,
     setActiveChat,
-    reloadChats: async () => {
-      if (!token) return;
-      const { data } = await ChatService.listChats(token);
-      const enriched = await enrichChatsWithNames(data);
-      setChats(enriched);
-      setUnreadByChat((prev) => {
-        const next = { ...prev };
-        for (const ch of enriched) if (next[ch.chatId] == null) next[ch.chatId] = 0;
-        return next;
-      });
-    },
+    reloadChats,
     fetchMessages: safeFetchMessages,
     markRead: async (chatId) => {
       if (!token || !chatId) return;
@@ -259,7 +269,7 @@ export function ChatProvider({ children }) {
     },
   }), [
     status, chats, messagesByChat, unreadByChat, activeChatId,
-    sendMessage, sendEvent, token, nameMap, getChatById, setActiveChat, safeFetchMessages
+    sendMessage, sendEvent, token, nameMap, getChatById, setActiveChat, safeFetchMessages, reloadChats
   ]);
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

@@ -1,7 +1,20 @@
 import axios from 'axios';
 
+// Prefer explicit env var when available (useful for testing or production builds)
+const SEARCH_API_URL = import.meta.env.VITE_SEARCH_API_URL;
+
+const getBaseURL = () => {
+  if (SEARCH_API_URL) return SEARCH_API_URL;
+  // If running in browser on same machine, use localhost
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:8000';
+  }
+  // For PWA on mobile accessing the app via PC IP, construct host based on current hostname
+  return `http://${window.location.hostname}:8000`;
+};
+
 const apiSearch = axios.create({
-  baseURL: import.meta.env.VITE_SEARCH_API_URL || 'http://localhost:8000',
+  baseURL: getBaseURL(),
 });
 
 // Agregar token a todas las requests (si existe)

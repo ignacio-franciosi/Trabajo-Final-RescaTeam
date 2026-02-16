@@ -180,9 +180,15 @@ const Header = () => {
               </button>
               <button
                 onClick={() => {
-                  const aboutSection = document.getElementById('about');
-                  if (aboutSection) {
-                    aboutSection.scrollIntoView({ behavior: 'smooth' });
+                  // Si no estamos en home, navegar primero
+                  if (location.pathname !== '/') {
+                    navigate('/', { state: { scrollToAbout: true } });
+                  } else {
+                    // Si ya estamos en home, hacer scroll directo
+                    const aboutSection = document.getElementById('about');
+                    if (aboutSection) {
+                      aboutSection.scrollIntoView({ behavior: 'smooth' });
+                    }
                   }
                 }}
                 className="group relative px-3 py-2 rounded-md text-sm font-medium text-white/80 hover:text-white transition-colors"
@@ -307,9 +313,15 @@ const Header = () => {
 
               <button
                 onClick={() => {
-                  const aboutSection = document.getElementById('about');
-                  if (aboutSection) {
-                    aboutSection.scrollIntoView({ behavior: 'smooth' });
+                  // Si no estamos en home, navegar primero
+                  if (location.pathname !== '/') {
+                    navigate('/', { state: { scrollToAbout: true } });
+                  } else {
+                    // Si ya estamos en home, hacer scroll directo
+                    const aboutSection = document.getElementById('about');
+                    if (aboutSection) {
+                      aboutSection.scrollIntoView({ behavior: 'smooth' });
+                    }
                   }
                 }}
                 className="inline-flex shrink-0 items-center justify-center rounded-md px-3 py-1 text-sm text-white/90 hover:bg-neutral-700 hover:text-white"

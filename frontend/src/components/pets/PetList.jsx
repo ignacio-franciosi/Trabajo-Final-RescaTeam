@@ -51,7 +51,7 @@ const PetList = ({ filters = {} }) => {
         setPets(postsWithImages);
       } catch (err) {
         console.error('Error al cargar mascotas:', err.message);
-        setError('No se encontraron mascotas con esas caracteristicas.');
+        setError('No se encontraron mascotas con esas características. Intentá de nuevo más tarde.');
       } finally {
         setLoading(false);
       }

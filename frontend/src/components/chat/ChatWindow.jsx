@@ -5,6 +5,7 @@ import ChatBubble from './ChatBubble';
 import ChatMessageInput from './ChatMessageInput';
 import { AuthContext } from '../../context/AuthContext';
 import { useAutoScroll } from '../../hooks/useAutoScroll';
+import { FaExclamationTriangle } from 'react-icons/fa';
 
 export default function ChatWindow({ chatId }) {
   const {
@@ -122,6 +123,24 @@ export default function ChatWindow({ chatId }) {
           <div className="font-medium text-gray-900 truncate">{otherName}</div>
         </div>
       </header>
+
+      {/* Mensaje de seguridad */}
+      <div className="bg-amber-50 border-b border-amber-200 px-2 py-2 md:px-4 md:py-3">
+        <div className="flex gap-2 md:gap-3">
+          <div className="flex-shrink-0 mt-0.5">
+            <FaExclamationTriangle className="text-amber-600 text-base md:text-lg" />
+          </div>
+          <div className="text-xs md:text-sm text-gray-700 leading-relaxed">
+            <p className="font-semibold text-amber-900 mb-0.5 md:mb-1">Recomendación de seguridad</p>
+            <p>
+              Por seguridad, antes de entregar o reclamar una mascota, se recomienda solicitar información que permita verificar la tenencia responsable (fotos previas, características particulares, libreta sanitaria u otra documentación).
+            </p>
+            <p className="mt-0.5 md:mt-1 text-[10px] md:text-xs text-gray-600">
+              RescaTeam solo actúa como intermediario y no valida la titularidad de los usuarios.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Lista de mensajes */}
       <div ref={containerRef} className="flex-1 overflow-auto p-4 space-y-2">

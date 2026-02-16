@@ -54,7 +54,7 @@ const SimilarPetsCarousel = ({ postId, postType, petName, species }) => {
     };
 
     fetchSimilar();
-  }, [postId, postType]);
+  }, [postId, postType, species]);
 
   const scroll = (direction) => {
     if (!carouselRef.current) return;

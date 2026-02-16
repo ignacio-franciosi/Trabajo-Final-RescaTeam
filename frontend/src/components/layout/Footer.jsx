@@ -1,4 +1,4 @@
-import { FaFacebookF, FaInstagram, FaTwitter } from 'react-icons/fa';
+import { FaFacebookF, FaInstagram, FaTwitter, FaMapMarkerAlt, FaEnvelope } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../../assets/logo.png';
 import { useAuth } from '../../context/AuthContext';
@@ -24,13 +24,13 @@ const Footer = () => {
       {/* Contenedor principal sin márgenes superiores */}
       <div className="container mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Logo y eslogan */}
-        <div className="space-y-3">
+        <div className="flex flex-col items-center space-y-3">
           <img
             src={logo}
             alt="RescaTeam Logo"
             className="h-24 w-auto object-contain"
           />
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-gray-300 text-center">
             Salvando vidas, una patita a la vez
           </p>
         </div>
@@ -79,34 +79,42 @@ const Footer = () => {
         <div>
           <h4 className="font-bold text-lg mb-3 text-blue-500">Contacto</h4>
           <div className="space-y-2 text-sm text-gray-300">
-            <p>📍 Córdoba, Argentina</p>
-            <p>✉️ rescateam2025@gmail.com</p>
+            <p className="flex items-center gap-2">
+              <FaMapMarkerAlt className="text-rose-600" />
+              Córdoba, Argentina
+            </p>
+            <p className="flex items-center gap-2">
+              <FaEnvelope className="text-rose-600" />
+              rescateam2025@gmail.com
+            </p>
           </div>
         </div>
 
         {/* Redes sociales */}
         <div>
           <h4 className="font-bold text-lg mb-3 text-blue-500">Seguinos</h4>
-          <div className="space-y-2">
-            <div className="flex space-x-4 text-white text-xl">
-              <a href="https://facebook.com" target="_blank" rel="noreferrer"
-                className="hover:text-blue-400 transition-colors">
-                <FaFacebookF />
-              </a>
-              <a href="https://instagram.com" target="_blank" rel="noreferrer"
-                className="hover:text-pink-400 transition-colors">
-                <FaInstagram />
-              </a>
-              <a href="https://twitter.com" target="_blank" rel="noreferrer"
-                className="hover:text-cyan-400 transition-colors">
-                <FaTwitter />
-              </a>
-            </div>
-            <p className="text-xs text-blue-300">
-              © {new Date().getFullYear()} RescaTeam. Todos los derechos reservados.
-            </p>
+          <div className="flex space-x-4 text-white text-xl">
+            <a href="https://facebook.com" target="_blank" rel="noreferrer"
+              className="hover:text-blue-400 transition-colors">
+              <FaFacebookF />
+            </a>
+            <a href="https://instagram.com" target="_blank" rel="noreferrer"
+              className="hover:text-pink-400 transition-colors">
+              <FaInstagram />
+            </a>
+            <a href="https://twitter.com" target="_blank" rel="noreferrer"
+              className="hover:text-cyan-400 transition-colors">
+              <FaTwitter />
+            </a>
           </div>
         </div>
+      </div>
+
+      {/* Copyright centrado */}
+      <div className="text-center pb-6">
+        <p className="text-xs text-blue-300">
+          © {new Date().getFullYear()} RescaTeam. Todos los derechos reservados.
+        </p>
       </div>
 
       {/* Línea decorativa inferior */}

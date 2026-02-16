@@ -104,7 +104,7 @@ const AdoptionForm = () => {
         const req = ['species', 'age', 'color', 'size', 'sex', 'zone'];
         const newErr = {};
         req.forEach(f => { if (!formData[f] || formData[f].toString().trim() === '') newErr[f] = 'Obligatorio'; });
-        const ageValue = parseInt(formData.age, 10); if (isNaN(ageValue) || ageValue < 0) newErr.age = 'Edad inválida';
+        const ageValue = parseInt(formData.age, 10); if (isNaN(ageValue) || ageValue < 0) newErr.age = 'Edad en años inválida';
         // Imagen obligatoria
         if (images.length === 0) {
             setGeneralError('Debes subir al menos una imagen.');
@@ -232,7 +232,7 @@ const AdoptionForm = () => {
                         {errors.species && <p className="text-xs text-red-500">{errors.species}</p>}
                     </div>
                     <div>
-                        <label htmlFor="age" className="text-sm font-medium">Edad <span className="text-red-500">*</span></label>
+                        <label htmlFor="age" className="text-sm font-medium">Edad (años) <span className="text-red-500">*</span></label>
                         <input id="age" type="number" name="age" value={formData.age} onChange={handleChange} className={inputClass('age')} />
                         {errors.age && <p className="text-xs text-red-500">{errors.age}</p>}
                     </div>
