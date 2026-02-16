@@ -30,7 +30,6 @@ export function ChatProvider({ children }) {
 
   // Ref to track pending chat reloads
   const pendingReloadRef = useRef(false);
-  const reloadTimeoutRef = useRef(null);
 
   const myId = useMemo(() => {
     try {
@@ -168,13 +167,10 @@ export function ChatProvider({ children }) {
         const others = prev.filter((c) => c.chatId !== msg.chatId);
 
         if (!existing) {
-          // New chat detected - schedule a reload
-          if (reloadTimeoutRef.current) clearTimeout(reloadTimeoutRef.current);
-          reloadTimeoutRef.current = setTimeout(() => {
-            reloadChats();
-          }, 50);
+          // New chat detected - reload immediately to get full chat data
+          reloadChats(); // Call immediately instead of setTimeout
 
-          // Return unchanged for now - reload will add it
+          // Return unchanged for now - reload will add it soon
           return prev;
         } else {
           // Update existing chat
