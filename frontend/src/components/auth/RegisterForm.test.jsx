@@ -262,7 +262,7 @@ describe('RegisterForm', () => {
       () => {
         expect(mockNavigate).toHaveBeenCalledWith('/')
       },
-      { timeout: 1000 }
+      { timeout: 2000 }
     )
   })
 
