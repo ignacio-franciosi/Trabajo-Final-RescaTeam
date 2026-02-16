@@ -35,7 +35,8 @@ const PetList = ({ filters = {} }) => {
               if (rawPath && /^https?:\/\//i.test(rawPath)) {
                 post.foto = rawPath; // URL completa (S3)
               } else if (rawPath) {
-                post.foto = `http://localhost:8090${rawPath.startsWith('/') ? '' : '/'}${rawPath}`; // ruta local
+                const baseUrl = import.meta.env.VITE_POSTS_API_URL || 'http://localhost:8090';
+                post.foto = `${baseUrl}${rawPath.startsWith('/') ? '' : '/'}${rawPath}`; // ruta local
               } else {
                 post.foto = '/no-image.png';
               }

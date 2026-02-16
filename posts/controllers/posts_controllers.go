@@ -1,11 +1,11 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"net/smtp"
 	"os"
 	"path/filepath"
 	"posts/services"
@@ -17,11 +17,51 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	sib_api_v3_sdk "github.com/sendinblue/APIv3-go-library/v2/lib"
 	log "github.com/sirupsen/logrus"
 )
 
-var smtpServer = "smtp.gmail.com"
-var smtpPort = "587"
+// Helper function para enviar emails con Brevo API
+func sendEmailWithBrevo(to, subject, body string) error {
+	apiKey := os.Getenv("BREVO_API_KEY")
+	if apiKey == "" {
+		log.Error("BREVO_API_KEY no configurada")
+		return fmt.Errorf("BREVO_API_KEY no configurada")
+	}
+
+	// Configurar cliente de Brevo
+	cfg := sib_api_v3_sdk.NewConfiguration()
+	cfg.AddDefaultHeader("api-key", apiKey)
+	client := sib_api_v3_sdk.NewAPIClient(cfg)
+
+	// Preparar el email
+	sender := sib_api_v3_sdk.SendSmtpEmailSender{
+		Name:  "RescaTeam",
+		Email: "rescateam2025@gmail.com",
+	}
+
+	recipient := sib_api_v3_sdk.SendSmtpEmailTo{
+		Email: to,
+	}
+
+	sendEmail := sib_api_v3_sdk.SendSmtpEmail{
+		Sender:      &sender,
+		To:          []sib_api_v3_sdk.SendSmtpEmailTo{recipient},
+		Subject:     subject,
+		TextContent: body,
+	}
+
+	// Enviar el email
+	ctx := context.Background()
+	result, _, err := client.TransactionalEmailsApi.SendTransacEmail(ctx, sendEmail)
+	if err != nil {
+		log.Error("Error al enviar email via Brevo:", err)
+		return err
+	}
+
+	log.Info("✅ Email enviado exitosamente via Brevo. ID:", result.MessageId, "| Destinatario:", to)
+	return nil
+}
 
 func InsertPost(c *gin.Context) {
 	authorized, userId, _ := authhelper.VerifyTokenAndAuthorize(c, true, true)
@@ -205,7 +245,7 @@ func DeletePost(c *gin.Context) {
 	// Si la acción la realizó un admin, enviamos un mail al owner informando la eliminación
 	if isAdmin {
 		// obtenemos datos del usuario desde users service (forward token para autorizar)
-		usersUrl := fmt.Sprintf("http://localhost:8080/user/%d", postDto.UserId)
+		usersUrl := fmt.Sprintf("https://users-ms.up.railway.app/user/%d", postDto.UserId)
 		req, _ := http.NewRequest("GET", usersUrl, nil)
 		if t := c.GetHeader("Authorization"); t != "" {
 			req.Header.Set("Authorization", t)
@@ -223,12 +263,6 @@ func DeletePost(c *gin.Context) {
 					email, _ := userObj["email"].(string)
 					name, _ := userObj["name"].(string)
 					if email != "" {
-						// Use same SMTP defaults as users service: allow overriding MAIL_SMTP and MAIL_SMTP_PORT,
-						// but default to gmail settings when not provided. Read MAIL_USER and MAIL_PASS for auth.
-						// use package-level smtpServer and smtpPort (defaults set above)
-						from := os.Getenv("MAIL_USER")
-						pass := os.Getenv("MAIL_PASS")
-						subject := "Subject: RescaTeam - Publicación eliminada\n"
 						reason := "Violación de los términos de servicio"
 
 						// Construir descripción legible de la mascota (nombre, especie, sexo) si está disponible
@@ -250,10 +284,10 @@ func DeletePost(c *gin.Context) {
 							petInfo = fmt.Sprintf("ID: %s", id)
 						}
 
+						subject := "RescaTeam - Publicación eliminada"
 						body := fmt.Sprintf("Hola %s,\n\nTu publicación (%s) ha sido eliminada por un administrador.\nMotivo: %s\n\nSi crees que esto es un error, contactáctanos por este medio.\n\nSaludos,\nEquipo de RescaTeam", name, petInfo, reason)
-						msg := []byte(subject + "\n" + body)
-						auth := smtp.PlainAuth("", from, pass, smtpServer)
-						if err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{email}, msg); err != nil {
+
+						if err := sendEmailWithBrevo(email, subject, body); err != nil {
 							log.Error("Error al enviar email de eliminación de post: ", err)
 						}
 					}

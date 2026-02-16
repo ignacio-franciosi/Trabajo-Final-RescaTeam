@@ -1,6 +1,7 @@
 // src/push/pushClient.js
-const VAPID_URL = 'http://localhost:8083/api/chat/push/public-key';
-const SUB_URL   = 'http://localhost:8083/api/chat/push/subscribe';
+const BASE_CHAT_URL = import.meta.env.VITE_CHAT_API_URL || 'http://localhost:8083';
+const VAPID_URL = `${BASE_CHAT_URL}/api/chat/push/public-key`;
+const SUB_URL   = `${BASE_CHAT_URL}/api/chat/push/subscribe`;
 
 // Convierte la public key base64 (VAPID) a UInt8Array
 function urlBase64ToUint8Array(base64String) {

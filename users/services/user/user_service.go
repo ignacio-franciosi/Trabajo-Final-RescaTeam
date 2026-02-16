@@ -1,10 +1,10 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/smtp"
 	"os"
 	"regexp"
 	"time"
@@ -14,6 +14,7 @@ import (
 	"users/utils/queue"
 
 	"github.com/golang-jwt/jwt/v4"
+	sib_api_v3_sdk "github.com/sendinblue/APIv3-go-library/v2/lib"
 	"golang.org/x/crypto/bcrypt"
 
 	log "github.com/sirupsen/logrus"
@@ -276,8 +277,47 @@ func (s *userService) ChangePassword(changePasswordDto dto.ChangePasswordDto) er
 	return nil
 }
 
-var smtpServer = "smtp.gmail.com"
-var smtpPort = "587"
+// Helper function para enviar emails con Brevo API
+func sendEmailWithBrevo(to, subject, body string) error {
+	apiKey := os.Getenv("BREVO_API_KEY")
+	if apiKey == "" {
+		log.Error("BREVO_API_KEY no configurada")
+		return errors.New("BREVO_API_KEY no configurada")
+	}
+
+	// Configurar cliente de Brevo
+	cfg := sib_api_v3_sdk.NewConfiguration()
+	cfg.AddDefaultHeader("api-key", apiKey)
+	client := sib_api_v3_sdk.NewAPIClient(cfg)
+
+	// Preparar el email
+	sender := sib_api_v3_sdk.SendSmtpEmailSender{
+		Name:  "RescaTeam",
+		Email: "rescateam2025@gmail.com",
+	}
+
+	recipient := sib_api_v3_sdk.SendSmtpEmailTo{
+		Email: to,
+	}
+
+	sendEmail := sib_api_v3_sdk.SendSmtpEmail{
+		Sender:      &sender,
+		To:          []sib_api_v3_sdk.SendSmtpEmailTo{recipient},
+		Subject:     subject,
+		TextContent: body,
+	}
+
+	// Enviar el email
+	ctx := context.Background()
+	result, _, err := client.TransactionalEmailsApi.SendTransacEmail(ctx, sendEmail)
+	if err != nil {
+		log.Error("Error al enviar email via Brevo:", err)
+		return err
+	}
+
+	log.Info("✅ Email enviado exitosamente via Brevo. ID:", result.MessageId, "| Destinatario:", to)
+	return nil
+}
 
 func (s *userService) SendPasswordResetEmail(email string) error {
 
@@ -300,22 +340,11 @@ func (s *userService) SendPasswordResetEmail(email string) error {
 	frontendURL := os.Getenv("FRONTEND_BASE_URL")                                 // ej: http://localhost:5173
 	resetLink := fmt.Sprintf("%s/reset-password?token=%s", frontendURL, tokenStr) // despues, url de front
 
-	// Email
-	subject := "Subject: Recuperación de contraseña\n"
+	// Enviar email con Brevo
+	subject := "Recuperación de contraseña"
 	body := fmt.Sprintf("Hola! Para restablecer tu contraseña, hacé clic en este enlace:\n\n%s", resetLink)
-	msg := []byte(subject + "\n" + body)
 
-	from := os.Getenv("MAIL_USER")
-	pass := os.Getenv("MAIL_PASS")
-
-	auth := smtp.PlainAuth("", from, pass, smtpServer)
-	err = smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{email}, msg)
-	if err != nil {
-		log.Println("Error al enviar mail:", err)
-		return err
-	}
-
-	return nil
+	return sendEmailWithBrevo(email, subject, body)
 }
 
 func (s *userService) ResetPassword(tokenUserId int, resetPasswordDto dto.ResetPasswordDto) error {
@@ -412,10 +441,13 @@ func (s *userService) SuspendUser(userId int) (dto.TokenDto, error) {
 		return tokenDto, err
 	}
 
+	// Enviar email de forma SINCRÓNICA (producción-safe)
 	reason := "Violación de los términos de servicio"
 	err = s.SendSuspensionNotificationEmail(userId, reason)
 	if err != nil {
 		log.Error("Error al enviar notificación de suspensión:", err)
+	} else {
+		log.Info("Email de suspensión enviado correctamente a usuario:", userId)
 	}
 
 	// Generar nuevo token con el estado actualizado
@@ -442,9 +474,13 @@ func (s *userService) ReactivateUser(userId int) (dto.TokenDto, error) {
 		return tokenDto, err
 	}
 
+	// Enviar email de forma SINCRÓNICA (producción-safe)
 	err = s.SendReactivationNotificationEmail(userId)
 	if err != nil {
 		log.Error("Error al enviar notificación de reactivación:", err)
+
+	} else {
+		log.Info("Email de reactivación enviado correctamente a usuario:", userId)
 	}
 
 	// Generar nuevo token con el estado actualizado
@@ -470,21 +506,10 @@ func (s *userService) SendSuspensionNotificationEmail(userId int, reason string)
 	}
 
 	// Email de suspensión
-	subject := "Subject: Rescateam - Cuenta suspendida\n"
+	subject := "Rescateam - Cuenta suspendida"
 	body := fmt.Sprintf("Hola %s,\n\nTu cuenta ha sido suspendida por el siguiente motivo:\n%s\n\nSi consideras que esto es un error, puedes contactar con nuestro equipo de soporte.\n\nSaludos,\nEquipo de RescaTeam", user.Name, reason)
-	msg := []byte(subject + "\n" + body)
 
-	from := os.Getenv("MAIL_USER")
-	pass := os.Getenv("MAIL_PASS")
-
-	auth := smtp.PlainAuth("", from, pass, smtpServer)
-	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{user.Email}, msg)
-	if err != nil {
-		log.Println("Error al enviar mail de suspensión:", err)
-		return err
-	}
-
-	return nil
+	return sendEmailWithBrevo(user.Email, subject, body)
 }
 
 func (s *userService) SendReactivationNotificationEmail(userId int) error {
@@ -494,34 +519,18 @@ func (s *userService) SendReactivationNotificationEmail(userId int) error {
 	}
 
 	// Email de reactivación
-	subject := "Subject: Rescateam - Cuenta reactivada\n"
+	subject := "Rescateam - Cuenta reactivada"
 	body := fmt.Sprintf("Hola %s,\n\n¡Buenas noticias! Tu cuenta ha sido reactivada y ya puedes volver a utilizar todos los servicios de RescaTeam. Te pedimos que a partir de ahora respetes las normas del sitio. \n\nGracias por tu paciencia.\n\nSaludos,\nEquipo de RescaTeam", user.Name)
-	msg := []byte(subject + "\n" + body)
 
-	from := os.Getenv("MAIL_USER")
-	pass := os.Getenv("MAIL_PASS")
-
-	auth := smtp.PlainAuth("", from, pass, smtpServer)
-	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{user.Email}, msg)
-	if err != nil {
-		log.Println("Error al enviar mail de reactivación:", err)
-		return err
-	}
-
-	return nil
+	return sendEmailWithBrevo(user.Email, subject, body)
 }
 
 func (s *userService) SendAccountDeletionEmailWithUserData(user model.User, admin model.User) error {
 	// Email de notificación de eliminación de cuenta por admin
-	subject := "Subject: RescaTeam - Cuenta eliminada por administrador\n"
+	subject := "RescaTeam - Cuenta eliminada por administrador"
 	body := fmt.Sprintf("Hola %s,\n\nTu cuenta en RescaTeam ha sido eliminada por un administrador debido a violaciones de nuestros términos de servicio.\n\nSi consideras que esto es un error, puedes contactar con nuestro equipo de soporte.\n\nSaludos,\nEquipo de RescaTeam", user.Name)
-	msg := []byte(subject + "\n" + body)
 
-	from := os.Getenv("MAIL_USER")
-	pass := os.Getenv("MAIL_PASS")
-
-	auth := smtp.PlainAuth("", from, pass, smtpServer)
-	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{user.Email}, msg)
+	err := sendEmailWithBrevo(user.Email, subject, body)
 	if err != nil {
 		log.Println("Error al enviar mail de eliminación de cuenta por admin:", err)
 		return err

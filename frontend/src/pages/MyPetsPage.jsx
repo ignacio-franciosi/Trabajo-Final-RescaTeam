@@ -47,7 +47,8 @@ const MyPetsPage = () => {
               if (rawPath && /^https?:\/\//i.test(rawPath)) {
                 imageUrl = rawPath;
               } else if (rawPath) {
-                imageUrl = `http://localhost:8090${rawPath.startsWith('/') ? '' : '/'}${rawPath}`;
+                const baseUrl = import.meta.env.VITE_POSTS_API_URL || 'http://localhost:8090';
+                imageUrl = `${baseUrl}${rawPath.startsWith('/') ? '' : '/'}${rawPath}`;
               }
             }
 

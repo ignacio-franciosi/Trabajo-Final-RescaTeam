@@ -218,7 +218,7 @@ const AdoptionForm = () => {
                         onChange={handleAiSelect}
                     />
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                         <label htmlFor="name" className="text-sm font-medium">Nombre (opcional)</label>
                         <input id="name" name="name" value={formData.name} onChange={handleChange} className={inputClass('name')} placeholder="Ej: Lola" />

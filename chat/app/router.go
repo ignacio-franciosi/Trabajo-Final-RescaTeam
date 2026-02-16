@@ -1,6 +1,8 @@
 package app
 
 import (
+	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -49,9 +51,39 @@ func RateLimitMiddleware() gin.HandlerFunc {
 func SetupRouter() *gin.Engine {
 	router := gin.Default()
 
-	// Configuración de CORS
+	// Configuración de CORS - obtener orígenes permitidos desde variable de entorno
+	allowedOrigins := []string{
+		"http://localhost:5173",
+		"https://rescateam.up.railway.app",
+		"https://rescateam.com",
+		"https://www.rescateam.com",
+		"http://rescateam.com",
+		"http://www.rescateam.com",
+	}
+
+	// Si hay ALLOWED_ORIGINS en env, usarlos (para producción)
+	if envOrigins := os.Getenv("ALLOWED_ORIGINS"); envOrigins != "" {
+		origins := strings.Split(envOrigins, ",")
+		allowedOrigins = []string{} // limpiar defaults
+		for _, origin := range origins {
+			allowedOrigins = append(allowedOrigins, strings.TrimSpace(origin))
+		}
+	}
+
 	config := cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // frontend Vite
+		AllowOriginFunc: func(origin string) bool {
+			// Permitir origins específicos de la lista
+			for _, allowed := range allowedOrigins {
+				if origin == allowed {
+					return true
+				}
+			}
+			// También permitir cualquier origin de railway.app para facilitar deploys
+			if strings.HasSuffix(origin, ".railway.app") || strings.HasSuffix(origin, "railway.app") {
+				return true
+			}
+			return false
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},

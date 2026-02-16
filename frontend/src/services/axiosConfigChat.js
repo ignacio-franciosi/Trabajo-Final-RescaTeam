@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 export const axiosChat = axios.create({
-  baseURL: import.meta.env.VITE_CHAT_API_URL || 'http://localhost:8083', // puerto del microservicio de CHAT
+  baseURL: import.meta.env.VITE_CHAT_API_URL || 'http://localhost:8083',
   withCredentials: true,
 });
 
