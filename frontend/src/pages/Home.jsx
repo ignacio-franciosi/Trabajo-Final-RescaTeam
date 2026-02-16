@@ -18,6 +18,15 @@ const Home = () => {
         }, 100);
       }
     }
+    // Manejar scroll a "Sobre Nosotros" desde otras páginas
+    if (location.state?.scrollToAbout) {
+      const aboutSection = document.getElementById("about");
+      if (aboutSection) {
+        setTimeout(() => {
+          aboutSection.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      }
+    }
   }, [location]);
 
   const scrollToPets = () => {

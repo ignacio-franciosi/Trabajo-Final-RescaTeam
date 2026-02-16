@@ -15,6 +15,7 @@ const RegisterForm = () => {
 
   const [errors, setErrors] = useState({});
   const [backendError, setBackendError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -38,6 +39,10 @@ const RegisterForm = () => {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+
+    // Limpiar mensajes de error y éxito cuando el usuario empieza a editar
+    if (backendError) setBackendError('');
+    if (successMessage) setSuccessMessage('');
   };
 
   const handleSubmit = async (e) => {
@@ -60,6 +65,7 @@ const RegisterForm = () => {
 
     setErrors(fieldErrors);
     setBackendError('');
+    setSuccessMessage('');
 
     if (Object.keys(fieldErrors).length === 0) {
       const userPayload = {
@@ -75,12 +81,13 @@ const RegisterForm = () => {
       const result = await register(userPayload);
 
       if (result.success) {
+        setSuccessMessage('✅ Registro exitoso. Redirigiendo...');
         const redirectUrl = localStorage.getItem('redirectAfterLogin');
         if (redirectUrl) {
           localStorage.removeItem('redirectAfterLogin');
-          setTimeout(() => navigate(redirectUrl), 500);
+          setTimeout(() => navigate(redirectUrl), 1500);
         } else {
-          setTimeout(() => navigate('/'), 500);
+          setTimeout(() => navigate('/'), 1500);
         }
       } else {
         setBackendError(result.message || 'Error al registrarse');
@@ -206,8 +213,16 @@ const RegisterForm = () => {
           {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
         </div>
 
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm text-center">
+            {successMessage}
+          </div>
+        )}
+
         {backendError && (
-          <p className="text-red-500 text-sm text-center">{backendError}</p>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm text-center">
+            {backendError}
+          </div>
         )}
 
         <button
