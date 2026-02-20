@@ -328,8 +328,11 @@ func (s postsService) UploadImage(postId string, userId int, file multipart.File
 		return dto.ImageDto{}, e.NewInternalServerApiError("Cannot save image to database", dbErr)
 	}
 
-	// Check if this is the first image of a lost or found post and send to search queue
-	go s.sendToSearchQueueIfNeeded(postId, fileURL)
+	// Solo enviar la primera imagen de la mascota a la cola de search
+	images, _ := postsClient.PostClient.GetImagesByPostId(postId)
+	if len(images) == 1 {
+		go s.sendToSearchQueueIfNeeded(postId, fileURL)
+	}
 
 	return dto.ImageDto{
 		ImageId:  savedImage.ImageId.Hex(), // Convert ObjectID to string
