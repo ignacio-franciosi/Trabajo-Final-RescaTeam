@@ -32,15 +32,16 @@ const SimilarPetsCarousel = ({ postId, postType, petName, species }) => {
           const resPost = await getPostById(matchId);
           if (resPost.success) {
             const post = resPost.data;
-            const resImages = await getImagesByPostId(matchId);
-            const firstImage = resImages.success
-              ? resImages.data?.[0]?.filepath
-              : null;
-
-            petsData.push({
-              ...post,
-              foto: firstImage || null,
-            });
+            if (post.postStatus === false) {
+              const resImages = await getImagesByPostId(matchId);
+              const firstImage = resImages.success
+                ? resImages.data?.[0]?.filepath
+                : null;
+              petsData.push({
+                ...post,
+                foto: firstImage || null,
+              });
+            }
           }
         }
 
@@ -61,11 +62,6 @@ const SimilarPetsCarousel = ({ postId, postType, petName, species }) => {
     const width = carouselRef.current.offsetWidth;
     carouselRef.current.scrollBy({ left: direction === 'left' ? -width : width, behavior: 'smooth' });
   };
-
-  console.log('similarPets state:', similarPets);
-  if (loading) return <div className="mt-8 text-center text-gray-500">Buscando mascotas parecidas…</div>;
-  if (error) return <div className="mt-8 text-center text-red-600">{error}</div>;
-  if (similarPets.length === 0) return <div className="mt-8 text-center text-gray-500">Nuestro asistente de IA aún no encontró mascotas parecidas.</div>;
 
   const displayName = petName || 'esta mascota';
 
