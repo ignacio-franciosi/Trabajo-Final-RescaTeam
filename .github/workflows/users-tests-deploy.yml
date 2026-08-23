@@ -1,0 +1,64 @@
+name: Users - Tests and Deploy
+
+on:
+  push:
+    branches:
+      - deploy
+
+jobs:
+  test-users:
+    name: Run Users Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.1'
+          cache-dependency-path: users/go.sum
+      
+      - name: Install dependencies
+        working-directory: ./users
+        run: go mod download
+      
+      - name: Run User Service Tests
+        working-directory: ./users
+        run: go test -v ./services/user/...
+      
+      - name: Run Report Service Tests
+        working-directory: ./users
+        run: go test -v ./services/report/...
+      
+      - name: Test Summary
+        if: success()
+        run: echo "✅ All user and report tests passed successfully!"
+      
+      - name: Test Failed
+        if: failure()
+        run: |
+          echo "❌ Tests failed. Deployment blocked."
+          exit 1
+
+  deploy-to-railway:
+    name: Deploy to Railway
+    needs: test-users
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+      
+      - name: Deploy Users Service
+        run: railway up --service Users --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      
+      - name: Deployment Success
+        run: echo "🚀 Users service deployed successfully!"

@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+
+# Environment variables
+*.env
+
+# Test coverage
+coverage.out
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+*.cover
+
+# Logs
+*.log
+
+# Build / dist
+build/
+dist/
+
+# Temporary files
+*.swp
+*.swo
+*.tmp
+
+# IDE configs
+.vscode/
+.idea/
+
+# model weights
+*.pth

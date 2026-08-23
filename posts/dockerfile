@@ -1,0 +1,18 @@
+FROM golang:latest
+
+COPY . /adoption
+
+WORKDIR /adoption
+RUN go mod init adoption
+RUN go mod tidy
+RUN go build -o adoption .
+
+ENV DB_USERNAME=root
+ENV DB_PASSWORD=root
+ENV DB_HOST=rescateam-db-adoption
+ENV DB_PORT=3306
+ENV DB_DATABASE=adoptionPost
+
+EXPOSE 8090
+
+CMD ["/adoption/adoption"]

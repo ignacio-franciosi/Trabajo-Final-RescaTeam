@@ -1,0 +1,2 @@
+docker build -t rescateam-db-adoption .
+docker run -d --network=rescateam --name rescateam-db-adoption -p 3307:3309 rescateam-db-adoption
